@@ -1,6 +1,8 @@
 # Health Literacy Estimation in Newham Using MRP
 
-Welcome to the GitHub repository for estimating health literacy levels in Newham using multilevel regression and poststratification (MRP) with the Skills for Life survey data.
+Welcome to the GitHub repository for estimating health literacy levels in [Newham, London](https://www.newham.gov.uk/) using multilevel regression and poststratification (MRP) with the Skills for Life survey data.
+
+This work is carreid-out as part of a [Newham Policy Fellowship Award](https://www.ucl.ac.uk/statistics/news/2024/may/newham-policy-fellowship-award#:~:text=The%20Fellowship%20Programme%20strengthens%20UCL's,Link%20to%20the%20fellowship%20programme.) at University College London (UCL).
 
 ## Table of Contents
 
@@ -18,9 +20,9 @@ This project aims to estimate the health literacy of residents in Newham, London
 
 ## Data Sources
 
-- **Skills for Life Survey**: A survey measuring basic skills in literacy, numeracy, and ICT among adults in England.
-- **Newham Resident Survey**: Data from the from an annual probability sample survey on the population characteristics of Newham.
-- **Census 2021 and Annual Population Survey**: Local health profiles and indicators from the Office for National Statistics.
+- **[Skills for Life Survey](https://www.gov.uk/government/publications/2011-skills-for-life-survey)**: A survey measuring basic skills in literacy, numeracy, and ICT among adults in England.
+- **[Newham Resident Survey](https://www.newham.info/residents-survey/)**: Data from the from an annual probability sample survey on the population characteristics of Newham.
+- **[Census 2021](https://www.ons.gov.uk/census) and [Annual Population Survey](https://beta.ukdataservice.ac.uk/datacatalogue/series/series?id=200002)**: Local health profiles and indicators from the Office for National Statistics.
 
 ## Methodology
 
@@ -30,7 +32,7 @@ This project aims to estimate the health literacy of residents in Newham, London
 
 ## Setup
 
-1. **Clone the Repository**
+**Clone the Repository**
 
     ```sh
     git clone https://github.com/n8thangreen/healthliteracy.git
