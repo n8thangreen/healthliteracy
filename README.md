@@ -34,10 +34,10 @@ This project aims to estimate the health literacy of residents in Newham, London
 
 **Clone the Repository**
 
-    ```sh
-    git clone https://github.com/n8thangreen/healthliteracy.git
-    cd healthliteracy
-    ```
+```sh
+git clone https://github.com/n8thangreen/healthliteracy.git
+cd healthliteracy
+```
 
 
 ## Results
