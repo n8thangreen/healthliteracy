@@ -115,28 +115,29 @@ model_dat <-
     LiteracyScoreA_1 = unclass(LiteracyScoreA_1),
     NumeracyScoreA_1 = unclass(NumeracyScoreA_1)) |>
   transmute(
-    workingstatus = factor(WORKINGSTATUS2, levels = 0:1, labels = c("No", "Yes")),
+    workingstatus = factor(WORKINGSTATUS2, levels = 1:0, labels = c("Yes","No")),
     gross_income =
       ifelse(GROSS_ANNUAL_INCOME_OLDBANDS %in% 1:2,
              "<10000",
              ifelse(GROSS_ANNUAL_INCOME_OLDBANDS %in% 3:6,
                     ">=10000", "other")) |>
-      as.factor(),
+      factor(levels = c(">=10000", "<10000")),
     uk_born = factor(BUK, levels = 1:2, labels = c("Yes", "No")),
     sex = factor(Sex1, levels = c(2,1), c("Female", "Male")),
-    own_home = ifelse(QxTenu1 == 1, "Yes", "No") |> as.factor(),
+    own_home = ifelse(QxTenu1 == 1, "Yes", "No") |>
+      factor(levels = c("Yes", "No")),
     age = ifelse(AGE1NET %in% 1:2, "16-44",
                  ifelse(AGE1NET == 3, ">=45", "other")) |>
-      as.factor(),
+      factor(levels = c("16-44", ">=45")),
     english_lang = factor(Sesol, levels = 1:2, labels = c("Yes", "No")),
     ethnicity = factor(ETHNICSIMPLE, levels = 1:2, labels = c("White", "BME")),
     qualification = ifelse(HIQUAL %in% 1:4, ">=level 2", "<=Level 1") |>
-      as.factor(),
+      factor(levels = c(">=level 2", "<=Level 1")),
     imd = factor(IMDSCOREB4),
     job_status = ifelse(NSSEC7 %in% 1:2, "higher",
                         ifelse(NSSEC7 == 3, "intermediate",
                                ifelse(NSSEC7 %in% 4:10, "lower", "other"))) |>
-      as.factor(),
+      factor(levels = c("intermediate", "lower", "higher")),
 
     lit_thresholdL1 =
       ifelse(LiteracyThresholdA_1 == 1, "below",
@@ -180,7 +181,7 @@ lit_dat$lit_thresholdL2 |> table() |> prop.table()
 #######################
 # logistic regressions
 
-rhs <- "1 + workingstatus + gross_income + uk_born + sex + own_home + age + english_lang + ethnicity + qualification + imd + job_status"
+rhs <- "1 + sex + age + ethnicity + uk_born + english_lang + qualification + workingstatus + job_status + gross_income + own_home + imd"
 
 # unweighted
 lit_glm <- glm(glue("lit_thresholdL2 ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
@@ -188,6 +189,7 @@ lit_glm <- glm(glue("lit_thresholdL2 ~ {rhs}"), data = lit_dat, family = binomia
 suppressWarnings({
   tbl_regression(lit_glm, exponentiate = TRUE)
 })
+# see Table 3 in Rowlands (2015)
 
 num_glm <- glm(glue("num_thresholdL1 ~ {rhs}"), data = num_dat, family = binomial(), weights = weights)
 # num_glm

@@ -1,0 +1,626 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={MRP\_analysis.R},
+  pdfauthor={n8than},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{MRP\_analysis.R}
+\author{n8than}
+\date{2024-06-19}
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# multilevel regression and post{-}stratification analysis}
+
+\FunctionTok{library}\NormalTok{(dplyr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'dplyr'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(glue)}
+\FunctionTok{library}\NormalTok{(gtsummary)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'gtsummary' was built under R version 4.3.3
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# \# load regression data}
+\CommentTok{\# \{}
+\CommentTok{\#   data \textless{}{-}}
+\CommentTok{\#     haven::read\_dta(}
+\CommentTok{\#       file = "C:/Users/Nathan/Documents/Newham Fellowship/data/Skills for Life Survey 2011/UKDA{-}7240{-}tab/stata9/2011\_skills\_for\_life\_datafile\_anonymised.dta")}
+\CommentTok{\#}
+\CommentTok{\#   save(data, file = "data/skills\_for\_life\_data.RData")}
+\CommentTok{\# \}}
+
+
+\FunctionTok{load}\NormalTok{(here}\SpecialCharTok{::}\FunctionTok{here}\NormalTok{(}\StringTok{"data/skills\_for\_life\_data.RData"}\NormalTok{))}
+
+\CommentTok{\# select variables}
+
+\NormalTok{data }\OtherTok{\textless{}{-}}
+\NormalTok{  data }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{select}\NormalTok{(}
+\NormalTok{    WORKINGSTATUS2,}
+\NormalTok{    GROSS\_ANNUAL\_INCOME\_OLDBANDS,}
+\NormalTok{    BUK,}
+\NormalTok{    QxTenu1,}
+\NormalTok{    Sex1,}
+\NormalTok{    AGE1NET,}
+\NormalTok{    Sesol,              }\CommentTok{\# is English first language}
+\NormalTok{    ETHNICSIMPLE,}
+\NormalTok{    HIQUAL,}
+\NormalTok{    CLITSPEAK,          }\CommentTok{\# ENFL everyday English skills (literacy and speaking)}
+\NormalTok{    IMDSCOREB4,         }\CommentTok{\# Index of Multiple Deprivation banded into deciles}
+\NormalTok{    NSSEC7,}
+    \CommentTok{\# outcomes}
+\NormalTok{    SUMMARYCOMP,        }\CommentTok{\# self{-}assessed computer skills (summary)}
+\NormalTok{    TSKILLA,            }\CommentTok{\# self{-}assessed computer skills (summary 2)}
+\NormalTok{    COMBLIT,            }\CommentTok{\# self{-}assessed reading a writing (summary)}
+\NormalTok{    LiteracyScoreA\_1,                  }\CommentTok{\# literacy level}
+    \FunctionTok{starts\_with}\NormalTok{(}\StringTok{"LiteracyThreshold"}\NormalTok{),  }\CommentTok{\# literacy threshold}
+\NormalTok{    NumeracyScoreA\_1,                  }\CommentTok{\# numeracy level}
+    \FunctionTok{starts\_with}\NormalTok{(}\StringTok{"NumeracyThreshold"}\NormalTok{),  }\CommentTok{\# numeracy threshold,}
+\NormalTok{    MultipleChoiceLevelA\_1,            }\CommentTok{\# ICT level}
+\NormalTok{    MultipleChoiceLevelA\_1Thres,       }\CommentTok{\# ICT threshold}
+    \CommentTok{\# weights}
+\NormalTok{    rimweight2003,}
+\NormalTok{    rimweightLIT2003,}
+\NormalTok{    rimweightNUM2003,}
+\NormalTok{    rimweightICT2003,}
+\NormalTok{    rimweightNUMICT2003,}
+\NormalTok{    rimweightLITICT2003,}
+\NormalTok{    rimweightLITNUM2003}
+\NormalTok{  )}
+
+
+\CommentTok{\# these are the S4L variables used in}
+\CommentTok{\# Rowlands (2015) British Journal of General Practice}
+\CommentTok{\#}
+\CommentTok{\# job status: National Statistics Socioeconomic Classification 3 bands (Managerial/professional, Intermediate, Routine/manual/ students/unemployed)}
+\CommentTok{\# employment status: employed, not employed}
+\CommentTok{\# gross income: \textgreater{}=10000, \textless{}10000}
+\CommentTok{\# place of birth: UK, non UK}
+\CommentTok{\# home ownership: Owns or part{-}owns home, does not own home}
+\CommentTok{\# sex: male, female}
+\CommentTok{\# age: 16{-}44, \textgreater{}=45}
+\CommentTok{\# first language: English, other}
+\CommentTok{\# ethnicity: white, black and minority ethnic}
+\CommentTok{\# qualification level: NQF \textgreater{}= level at age 16 (level 2), below level 2}
+\CommentTok{\# area deprivation: IMD quintiles}
+
+\CommentTok{\# matching with survey}
+
+\CommentTok{\# WORKINGSTATUS2: 0{-}No, 1{-}Yes}
+\CommentTok{\# GROSS\_ANNUAL\_INCOME\_OLDBANDS: \{\textless{}£5,000, £5,000 {-} £9,999\}, \{£10,000 {-} £14,999, £15,000 {-} £19,999, £20,000 {-} £29,999\}}
+\CommentTok{\# BUK: 1{-}Yes, 2{-}No}
+\CommentTok{\# QxTenu1: 1{-}Own home outright or with a mortgage or loan}
+\CommentTok{\# Sex1: 1{-}Male, 2{-}Female}
+\CommentTok{\# AGE1NET: \{16{-}24, 25{-}44\}, 45{-}65}
+\CommentTok{\# Sesol: 1{-}Yes, 2{-}No}
+\CommentTok{\# ETHNICSIMPLE: 1{-}White, 2{-}BME}
+\CommentTok{\# HIQUAL: \{1{-}4), \{5{-}Level 1 qualification or below\}}
+\CommentTok{\# IMDSCOREB4: 1,...,9}
+\CommentTok{\# NSSEC7: 1 Higher managerial and professional}
+\CommentTok{\# 2 Lower managerial and professional}
+\CommentTok{\# 3 Intermediate}
+\CommentTok{\# 4 Small employers and own account workers}
+\CommentTok{\# 5 Lower supervisory and technical}
+\CommentTok{\# 6 Semi{-}routine occupations}
+\CommentTok{\# 7 Routine occupations}
+\CommentTok{\# 8 Never worked/ long term unemployed}
+\CommentTok{\# 9 Full{-}time student}
+\CommentTok{\# 10    Not classifiable}
+
+\DocumentationTok{\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#}
+\CommentTok{\# data cleaning}
+
+\NormalTok{model\_dat }\OtherTok{\textless{}{-}}
+\NormalTok{  data }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{WORKINGSTATUS2 =} \FunctionTok{unclass}\NormalTok{(WORKINGSTATUS2),}
+    \AttributeTok{GROSS\_ANNUAL\_INCOME\_OLDBANDS =} \FunctionTok{unclass}\NormalTok{(GROSS\_ANNUAL\_INCOME\_OLDBANDS),}
+    \AttributeTok{BUK =} \FunctionTok{unclass}\NormalTok{(BUK),}
+    \AttributeTok{QxTenu1 =} \FunctionTok{unclass}\NormalTok{(QxTenu1),}
+    \AttributeTok{Sex1 =} \FunctionTok{unclass}\NormalTok{(Sex1),}
+    \AttributeTok{AGE1NET =} \FunctionTok{unclass}\NormalTok{(AGE1NET),}
+    \AttributeTok{Sesol =} \FunctionTok{unclass}\NormalTok{(Sesol),}
+    \AttributeTok{ETHNICSIMPLE =} \FunctionTok{unclass}\NormalTok{(ETHNICSIMPLE),}
+    \AttributeTok{HIQUAL =} \FunctionTok{unclass}\NormalTok{(HIQUAL),}
+    \AttributeTok{IMDSCOREB4 =} \FunctionTok{unclass}\NormalTok{(IMDSCOREB4),}
+    \AttributeTok{NSSEC7 =} \FunctionTok{unclass}\NormalTok{(NSSEC7),}
+    \AttributeTok{LiteracyThresholdA\_1 =} \FunctionTok{unclass}\NormalTok{(LiteracyThresholdA\_1),}
+    \AttributeTok{NumeracyThresholdA\_1 =} \FunctionTok{unclass}\NormalTok{(NumeracyThresholdA\_1),}
+    \AttributeTok{MultipleChoiceLevelA\_1Thres =} \FunctionTok{unclass}\NormalTok{(MultipleChoiceLevelA\_1Thres),}
+    \AttributeTok{LiteracyScoreA\_1 =} \FunctionTok{unclass}\NormalTok{(LiteracyScoreA\_1),}
+    \AttributeTok{NumeracyScoreA\_1 =} \FunctionTok{unclass}\NormalTok{(NumeracyScoreA\_1)) }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{transmute}\NormalTok{(}
+    \AttributeTok{workingstatus =} \FunctionTok{factor}\NormalTok{(WORKINGSTATUS2, }\AttributeTok{levels =} \DecValTok{1}\SpecialCharTok{:}\DecValTok{0}\NormalTok{, }\AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"Yes"}\NormalTok{,}\StringTok{"No"}\NormalTok{)),}
+    \AttributeTok{gross\_income =}
+      \FunctionTok{ifelse}\NormalTok{(GROSS\_ANNUAL\_INCOME\_OLDBANDS }\SpecialCharTok{\%in\%} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{,}
+             \StringTok{"\textless{}10000"}\NormalTok{,}
+             \FunctionTok{ifelse}\NormalTok{(GROSS\_ANNUAL\_INCOME\_OLDBANDS }\SpecialCharTok{\%in\%} \DecValTok{3}\SpecialCharTok{:}\DecValTok{6}\NormalTok{,}
+                    \StringTok{"\textgreater{}=10000"}\NormalTok{, }\StringTok{"other"}\NormalTok{)) }\SpecialCharTok{|\textgreater{}}
+      \FunctionTok{factor}\NormalTok{(}\AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"\textgreater{}=10000"}\NormalTok{, }\StringTok{"\textless{}10000"}\NormalTok{)),}
+    \AttributeTok{uk\_born =} \FunctionTok{factor}\NormalTok{(BUK, }\AttributeTok{levels =} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{, }\AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"Yes"}\NormalTok{, }\StringTok{"No"}\NormalTok{)),}
+    \AttributeTok{sex =} \FunctionTok{factor}\NormalTok{(Sex1, }\AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{), }\FunctionTok{c}\NormalTok{(}\StringTok{"Female"}\NormalTok{, }\StringTok{"Male"}\NormalTok{)),}
+    \AttributeTok{own\_home =} \FunctionTok{ifelse}\NormalTok{(QxTenu1 }\SpecialCharTok{==} \DecValTok{1}\NormalTok{, }\StringTok{"Yes"}\NormalTok{, }\StringTok{"No"}\NormalTok{) }\SpecialCharTok{|\textgreater{}}
+      \FunctionTok{factor}\NormalTok{(}\AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"Yes"}\NormalTok{, }\StringTok{"No"}\NormalTok{)),}
+    \AttributeTok{age =} \FunctionTok{ifelse}\NormalTok{(AGE1NET }\SpecialCharTok{\%in\%} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{, }\StringTok{"16{-}44"}\NormalTok{,}
+                 \FunctionTok{ifelse}\NormalTok{(AGE1NET }\SpecialCharTok{==} \DecValTok{3}\NormalTok{, }\StringTok{"\textgreater{}=45"}\NormalTok{, }\StringTok{"other"}\NormalTok{)) }\SpecialCharTok{|\textgreater{}}
+      \FunctionTok{factor}\NormalTok{(}\AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"16{-}44"}\NormalTok{, }\StringTok{"\textgreater{}=45"}\NormalTok{)),}
+    \AttributeTok{english\_lang =} \FunctionTok{factor}\NormalTok{(Sesol, }\AttributeTok{levels =} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{, }\AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"Yes"}\NormalTok{, }\StringTok{"No"}\NormalTok{)),}
+    \AttributeTok{ethnicity =} \FunctionTok{factor}\NormalTok{(ETHNICSIMPLE, }\AttributeTok{levels =} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{, }\AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"White"}\NormalTok{, }\StringTok{"BME"}\NormalTok{)),}
+    \AttributeTok{qualification =} \FunctionTok{ifelse}\NormalTok{(HIQUAL }\SpecialCharTok{\%in\%} \DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{, }\StringTok{"\textgreater{}=level 2"}\NormalTok{, }\StringTok{"\textless{}=Level 1"}\NormalTok{) }\SpecialCharTok{|\textgreater{}}
+      \FunctionTok{factor}\NormalTok{(}\AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"\textgreater{}=level 2"}\NormalTok{, }\StringTok{"\textless{}=Level 1"}\NormalTok{)),}
+    \AttributeTok{imd =} \FunctionTok{factor}\NormalTok{(IMDSCOREB4),}
+    \AttributeTok{job\_status =} \FunctionTok{ifelse}\NormalTok{(NSSEC7 }\SpecialCharTok{\%in\%} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{, }\StringTok{"higher"}\NormalTok{,}
+                        \FunctionTok{ifelse}\NormalTok{(NSSEC7 }\SpecialCharTok{==} \DecValTok{3}\NormalTok{, }\StringTok{"intermediate"}\NormalTok{,}
+                               \FunctionTok{ifelse}\NormalTok{(NSSEC7 }\SpecialCharTok{\%in\%} \DecValTok{4}\SpecialCharTok{:}\DecValTok{10}\NormalTok{, }\StringTok{"lower"}\NormalTok{, }\StringTok{"other"}\NormalTok{))) }\SpecialCharTok{|\textgreater{}}
+      \FunctionTok{factor}\NormalTok{(}\AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"intermediate"}\NormalTok{, }\StringTok{"lower"}\NormalTok{, }\StringTok{"higher"}\NormalTok{)),}
+
+    \AttributeTok{lit\_thresholdL1 =}
+      \FunctionTok{ifelse}\NormalTok{(LiteracyThresholdA\_1 }\SpecialCharTok{==} \DecValTok{1}\NormalTok{, }\StringTok{"below"}\NormalTok{,}
+             \FunctionTok{ifelse}\NormalTok{(LiteracyThresholdA\_1 }\SpecialCharTok{==} \DecValTok{2}\NormalTok{, }\StringTok{"above"}\NormalTok{, }\StringTok{"other"}\NormalTok{)),}
+    \AttributeTok{lit\_thresholdL2 =} \FunctionTok{ifelse}\NormalTok{(LiteracyScoreA\_1 }\SpecialCharTok{==} \DecValTok{5}\NormalTok{, }\StringTok{"above"}\NormalTok{,}
+                           \FunctionTok{ifelse}\NormalTok{(LiteracyScoreA\_1 }\SpecialCharTok{\%in\%} \DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{, }\StringTok{"below"}\NormalTok{, }\StringTok{"other"}\NormalTok{)),   }\CommentTok{\# \textgreater{}= L2}
+    \AttributeTok{num\_thresholdEL3 =}
+      \FunctionTok{ifelse}\NormalTok{(NumeracyThresholdA\_1 }\SpecialCharTok{==} \DecValTok{1}\NormalTok{, }\StringTok{"below"}\NormalTok{,}
+             \FunctionTok{ifelse}\NormalTok{(NumeracyThresholdA\_1 }\SpecialCharTok{==} \DecValTok{2}\NormalTok{, }\StringTok{"above"}\NormalTok{, }\StringTok{"other"}\NormalTok{)),}
+    \AttributeTok{num\_thresholdL1 =} \FunctionTok{ifelse}\NormalTok{(NumeracyScoreA\_1 }\SpecialCharTok{==} \DecValTok{4}\SpecialCharTok{:}\DecValTok{5}\NormalTok{, }\StringTok{"above"}\NormalTok{,}
+                           \FunctionTok{ifelse}\NormalTok{(NumeracyScoreA\_1 }\SpecialCharTok{\%in\%} \DecValTok{1}\SpecialCharTok{:}\DecValTok{3}\NormalTok{, }\StringTok{"below"}\NormalTok{, }\StringTok{"other"}\NormalTok{)),  }\CommentTok{\# \textgreater{}= L1}
+    \AttributeTok{ict\_thresholdEL3 =}
+      \FunctionTok{ifelse}\NormalTok{(MultipleChoiceLevelA\_1Thres }\SpecialCharTok{==} \DecValTok{1}\NormalTok{, }\StringTok{"below"}\NormalTok{,}
+             \FunctionTok{ifelse}\NormalTok{(MultipleChoiceLevelA\_1Thres }\SpecialCharTok{==} \DecValTok{2}\NormalTok{, }\StringTok{"above"}\NormalTok{, }\StringTok{"other"}\NormalTok{)),}
+    \AttributeTok{weights =} \FunctionTok{unclass}\NormalTok{(rimweight2003),}
+    \AttributeTok{lit\_weightsL1 =} \FunctionTok{unclass}\NormalTok{(rimweightLIT2003),}
+    \AttributeTok{num\_weightsEL3 =} \FunctionTok{unclass}\NormalTok{(rimweightNUM2003),}
+    \AttributeTok{ict\_weightsEL3 =} \FunctionTok{unclass}\NormalTok{(rimweightICT2003)}
+\NormalTok{  )}
+
+\FunctionTok{summary}\NormalTok{(model\_dat)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  workingstatus  gross_income  uk_born        sex       own_home      age      
+##  Yes:4911      >=10000:2829   Yes:6309   Female:4110   Yes:4258   16-44:3912  
+##  No :2319      <10000 : 979   No : 921   Male  :3120   No :2972   >=45 :3315  
+##                NA's   :3422                                       NA's :   3  
+##                                                                               
+##                                                                               
+##                                                                               
+##                                                                               
+##  english_lang ethnicity      qualification       imd              job_status  
+##  Yes:6620     White:6450   >=level 2:5006   2      :2364   intermediate: 736  
+##  No : 610     BME  : 776   <=Level 1:2224   1      :1520   lower       :3773  
+##               NA's :   4                    3      :1290   higher      :2721  
+##                                             4      : 892                      
+##                                             5      : 619                      
+##                                             6      : 306                      
+##                                             (Other): 239                      
+##  lit_thresholdL1    lit_thresholdL2    num_thresholdEL3   num_thresholdL1   
+##  Length:7230        Length:7230        Length:7230        Length:7230       
+##  Class :character   Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+##                                                                             
+##                                                                             
+##                                                                             
+##                                                                             
+##  ict_thresholdEL3      weights        lit_weightsL1     num_weightsEL3  
+##  Length:7230        Min.   : 0.3228   Min.   : 0.3276   Min.   :0.3085  
+##  Class :character   1st Qu.: 0.5511   1st Qu.: 0.5550   1st Qu.:0.5650  
+##  Mode  :character   Median : 0.9245   Median : 0.9265   Median :0.9235  
+##                     Mean   : 1.0000   Mean   : 1.0000   Mean   :1.0000  
+##                     3rd Qu.: 1.2172   3rd Qu.: 1.2141   3rd Qu.:1.2292  
+##                     Max.   :11.0320   Max.   :10.6931   Max.   :8.8591  
+##                                       NA's   :1181      NA's   :1177    
+##  ict_weightsEL3  
+##  Min.   : 0.347  
+##  1st Qu.: 0.541  
+##  Median : 0.903  
+##  Mean   : 1.000  
+##  3rd Qu.: 1.200  
+##  Max.   :11.744  
+##  NA's   :4872
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# test specific data sets}
+\NormalTok{lit\_dat }\OtherTok{\textless{}{-}}\NormalTok{ model\_dat }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{filter}\NormalTok{(lit\_thresholdL2 }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"above"}\NormalTok{, }\StringTok{"below"}\NormalTok{)) }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{lit\_thresholdL2 =} \FunctionTok{as.factor}\NormalTok{(lit\_thresholdL2))}
+
+\NormalTok{num\_dat }\OtherTok{\textless{}{-}}\NormalTok{ model\_dat }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{filter}\NormalTok{(num\_thresholdL1 }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"above"}\NormalTok{, }\StringTok{"below"}\NormalTok{)) }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{num\_thresholdL1 =} \FunctionTok{as.factor}\NormalTok{(num\_thresholdL1))}
+
+\NormalTok{ict\_dat }\OtherTok{\textless{}{-}}\NormalTok{ model\_dat }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{filter}\NormalTok{(ict\_thresholdEL3 }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"above"}\NormalTok{, }\StringTok{"below"}\NormalTok{)) }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{ict\_thresholdEL3 =} \FunctionTok{as.factor}\NormalTok{(ict\_thresholdEL3))}
+
+\DocumentationTok{\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#}
+\CommentTok{\# summary stats}
+
+\NormalTok{lit\_dat}\SpecialCharTok{$}\NormalTok{lit\_thresholdL2 }\SpecialCharTok{|\textgreater{}} \FunctionTok{table}\NormalTok{() }\SpecialCharTok{|\textgreater{}} \FunctionTok{prop.table}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##     above     below 
+## 0.5693681 0.4306319
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#}
+\CommentTok{\# logistic regressions}
+
+\NormalTok{rhs }\OtherTok{\textless{}{-}} \StringTok{"1 + sex + age + ethnicity + uk\_born + english\_lang + qualification + workingstatus + job\_status + gross\_income + own\_home + imd"}
+
+\CommentTok{\# unweighted}
+\NormalTok{lit\_glm }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(}\FunctionTok{glue}\NormalTok{(}\StringTok{"lit\_thresholdL2 \textasciitilde{} \{rhs\}"}\NormalTok{), }\AttributeTok{data =}\NormalTok{ lit\_dat, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(), }\AttributeTok{weights =}\NormalTok{ weights)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in eval(family$initialize): non-integer #successes in a binomial glm!
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# lit\_glm}
+\FunctionTok{suppressWarnings}\NormalTok{(\{}
+  \FunctionTok{tbl\_regression}\NormalTok{(lit\_glm, }\AttributeTok{exponentiate =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{\})}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Table printed with `knitr::kable()`, not {gt}. Learn why at
+## https://www.danieldsjoberg.com/gtsummary/articles/rmarkdown.html
+## To suppress this message, include `message = FALSE` in code chunk header.
+\end{verbatim}
+
+\begin{longtable}[]{@{}lccc@{}}
+\toprule\noalign{}
+\textbf{Characteristic} & \textbf{OR} & \textbf{95\% CI} &
+\textbf{p-value} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+sex & & & \\
+Female & --- & --- & \\
+Male & 1.24 & 1.05, 1.46 & 0.012 \\
+age & & & \\
+16-44 & --- & --- & \\
+\textgreater=45 & 1.29 & 1.08, 1.53 & 0.004 \\
+ethnicity & & & \\
+White & --- & --- & \\
+BME & 1.30 & 0.97, 1.74 & 0.078 \\
+uk\_born & & & \\
+Yes & --- & --- & \\
+No & 0.95 & 0.66, 1.36 & 0.8 \\
+english\_lang & & & \\
+Yes & --- & --- & \\
+No & 2.45 & 1.64, 3.68 & \textless0.001 \\
+qualification & & & \\
+\textgreater=level 2 & --- & --- & \\
+\textless=Level 1 & 2.46 & 2.02, 2.98 & \textless0.001 \\
+workingstatus & & & \\
+Yes & --- & --- & \\
+No & 1.49 & 0.80, 2.83 & 0.2 \\
+job\_status & & & \\
+intermediate & --- & --- & \\
+lower & 1.73 & 1.31, 2.28 & \textless0.001 \\
+higher & 0.74 & 0.56, 0.98 & 0.034 \\
+gross\_income & & & \\
+\textgreater=10000 & --- & --- & \\
+\textless10000 & 1.04 & 0.86, 1.26 & 0.7 \\
+own\_home & & & \\
+Yes & --- & --- & \\
+No & 1.39 & 1.16, 1.65 & \textless0.001 \\
+imd & & & \\
+1 & --- & --- & \\
+2 & 1.26 & 1.02, 1.56 & 0.037 \\
+3 & 1.29 & 1.00, 1.67 & 0.046 \\
+4 & 1.57 & 1.18, 2.07 & 0.002 \\
+5 & 1.83 & 1.32, 2.52 & \textless0.001 \\
+6 & 3.47 & 1.98, 6.19 & \textless0.001 \\
+7 & 1.63 & 0.87, 3.04 & 0.13 \\
+8 & 1.55 & 0.46, 5.25 & 0.5 \\
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# see Table 3 in Rowlands (2015)}
+
+\NormalTok{num\_glm }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(}\FunctionTok{glue}\NormalTok{(}\StringTok{"num\_thresholdL1 \textasciitilde{} \{rhs\}"}\NormalTok{), }\AttributeTok{data =}\NormalTok{ num\_dat, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(), }\AttributeTok{weights =}\NormalTok{ weights)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in eval(family$initialize): non-integer #successes in a binomial glm!
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# num\_glm}
+\FunctionTok{suppressWarnings}\NormalTok{(\{}
+  \FunctionTok{tbl\_regression}\NormalTok{(num\_glm, }\AttributeTok{exponentiate =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{\})}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Table printed with `knitr::kable()`, not {gt}. Learn why at
+## https://www.danieldsjoberg.com/gtsummary/articles/rmarkdown.html
+## To suppress this message, include `message = FALSE` in code chunk header.
+\end{verbatim}
+
+\begin{longtable}[]{@{}lccc@{}}
+\toprule\noalign{}
+\textbf{Characteristic} & \textbf{OR} & \textbf{95\% CI} &
+\textbf{p-value} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+sex & & & \\
+Female & --- & --- & \\
+Male & 0.47 & 0.39, 0.57 & \textless0.001 \\
+age & & & \\
+16-44 & --- & --- & \\
+\textgreater=45 & 1.32 & 1.08, 1.63 & 0.007 \\
+ethnicity & & & \\
+White & --- & --- & \\
+BME & 2.92 & 2.05, 4.19 & \textless0.001 \\
+uk\_born & & & \\
+Yes & --- & --- & \\
+No & 0.99 & 0.66, 1.50 & \textgreater0.9 \\
+english\_lang & & & \\
+Yes & --- & --- & \\
+No & 0.67 & 0.41, 1.09 & 0.10 \\
+qualification & & & \\
+\textgreater=level 2 & --- & --- & \\
+\textless=Level 1 & 2.86 & 2.24, 3.67 & \textless0.001 \\
+workingstatus & & & \\
+Yes & --- & --- & \\
+No & 0.68 & 0.31, 1.55 & 0.3 \\
+job\_status & & & \\
+intermediate & --- & --- & \\
+lower & 1.59 & 1.15, 2.20 & 0.005 \\
+higher & 0.62 & 0.45, 0.85 & 0.003 \\
+gross\_income & & & \\
+\textgreater=10000 & --- & --- & \\
+\textless10000 & 1.18 & 0.94, 1.49 & 0.2 \\
+own\_home & & & \\
+Yes & --- & --- & \\
+No & 1.58 & 1.28, 1.94 & \textless0.001 \\
+imd & & & \\
+1 & --- & --- & \\
+2 & 0.99 & 0.78, 1.27 & \textgreater0.9 \\
+3 & 1.47 & 1.10, 1.96 & 0.009 \\
+4 & 1.69 & 1.21, 2.38 & 0.002 \\
+5 & 2.13 & 1.45, 3.14 & \textless0.001 \\
+6 & 2.72 & 1.40, 5.65 & 0.005 \\
+7 & 3.31 & 1.46, 8.44 & 0.007 \\
+8 & 1.53 & 0.37, 7.83 & 0.6 \\
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ict\_glm }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(}\FunctionTok{glue}\NormalTok{(}\StringTok{"ict\_thresholdEL3 \textasciitilde{} \{rhs\}"}\NormalTok{), }\AttributeTok{data =}\NormalTok{ ict\_dat, }\AttributeTok{family =} \FunctionTok{binomial}\NormalTok{(), }\AttributeTok{weights =}\NormalTok{ weights)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in eval(family$initialize): non-integer #successes in a binomial glm!
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# ict\_glm}
+\FunctionTok{suppressWarnings}\NormalTok{(\{}
+  \FunctionTok{tbl\_regression}\NormalTok{(num\_glm, }\AttributeTok{exponentiate =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{\})}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Table printed with `knitr::kable()`, not {gt}. Learn why at
+## https://www.danieldsjoberg.com/gtsummary/articles/rmarkdown.html
+## To suppress this message, include `message = FALSE` in code chunk header.
+\end{verbatim}
+
+\begin{longtable}[]{@{}lccc@{}}
+\toprule\noalign{}
+\textbf{Characteristic} & \textbf{OR} & \textbf{95\% CI} &
+\textbf{p-value} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+sex & & & \\
+Female & --- & --- & \\
+Male & 0.47 & 0.39, 0.57 & \textless0.001 \\
+age & & & \\
+16-44 & --- & --- & \\
+\textgreater=45 & 1.32 & 1.08, 1.63 & 0.007 \\
+ethnicity & & & \\
+White & --- & --- & \\
+BME & 2.92 & 2.05, 4.19 & \textless0.001 \\
+uk\_born & & & \\
+Yes & --- & --- & \\
+No & 0.99 & 0.66, 1.50 & \textgreater0.9 \\
+english\_lang & & & \\
+Yes & --- & --- & \\
+No & 0.67 & 0.41, 1.09 & 0.10 \\
+qualification & & & \\
+\textgreater=level 2 & --- & --- & \\
+\textless=Level 1 & 2.86 & 2.24, 3.67 & \textless0.001 \\
+workingstatus & & & \\
+Yes & --- & --- & \\
+No & 0.68 & 0.31, 1.55 & 0.3 \\
+job\_status & & & \\
+intermediate & --- & --- & \\
+lower & 1.59 & 1.15, 2.20 & 0.005 \\
+higher & 0.62 & 0.45, 0.85 & 0.003 \\
+gross\_income & & & \\
+\textgreater=10000 & --- & --- & \\
+\textless10000 & 1.18 & 0.94, 1.49 & 0.2 \\
+own\_home & & & \\
+Yes & --- & --- & \\
+No & 1.58 & 1.28, 1.94 & \textless0.001 \\
+imd & & & \\
+1 & --- & --- & \\
+2 & 0.99 & 0.78, 1.27 & \textgreater0.9 \\
+3 & 1.47 & 1.10, 1.96 & 0.009 \\
+4 & 1.69 & 1.21, 2.38 & 0.002 \\
+5 & 2.13 & 1.45, 3.14 & \textless0.001 \\
+6 & 2.72 & 1.40, 5.65 & 0.005 \\
+7 & 3.31 & 1.46, 8.44 & 0.007 \\
+8 & 1.53 & 0.37, 7.83 & 0.6 \\
+\end{longtable}
+
+\end{document}
