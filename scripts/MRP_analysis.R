@@ -13,7 +13,7 @@ library(dplyr)
 # }
 
 
-load("data/skills_for_life_data.RData")
+load(here::here("data/skills_for_life_data.RData"))
 
 # select variables
 
@@ -94,7 +94,7 @@ data <-
 # data cleaning
 
 model_dat <-
-  data |>
+  data
 
 
 
