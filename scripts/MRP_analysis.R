@@ -2,7 +2,7 @@
 
 library(dplyr)
 library(glue)
-
+library(gtsummary)
 
 # # load regression data
 # {
@@ -37,10 +37,10 @@ data <-
     SUMMARYCOMP,        # self-assessed computer skills (summary)
     TSKILLA,            # self-assessed computer skills (summary 2)
     COMBLIT,            # self-assessed reading a writing (summary)
-    starts_with("LiteracyScore"),      # literacy level
+    LiteracyScoreA_1,                  # literacy level
     starts_with("LiteracyThreshold"),  # literacy threshold
-    starts_with("NumeracyScore"),      # literacy level
-    starts_with("NumeracyThreshold"),  # literacy threshold,
+    NumeracyScoreA_1,                  # numeracy level
+    starts_with("NumeracyThreshold"),  # numeracy threshold,
     MultipleChoiceLevelA_1,            # ICT level
     MultipleChoiceLevelA_1Thres,       # ICT threshold
     # weights
@@ -111,7 +111,9 @@ model_dat <-
     NSSEC7 = unclass(NSSEC7),
     LiteracyThresholdA_1 = unclass(LiteracyThresholdA_1),
     NumeracyThresholdA_1 = unclass(NumeracyThresholdA_1),
-    MultipleChoiceLevelA_1Thres = unclass(MultipleChoiceLevelA_1Thres)) |>
+    MultipleChoiceLevelA_1Thres = unclass(MultipleChoiceLevelA_1Thres),
+    LiteracyScoreA_1 = unclass(LiteracyScoreA_1),
+    NumeracyScoreA_1 = unclass(NumeracyScoreA_1)) |>
   transmute(
     workingstatus = factor(WORKINGSTATUS2, levels = 0:1, labels = c("No", "Yes")),
     gross_income =
@@ -121,7 +123,7 @@ model_dat <-
                     ">=10000", "other")) |>
       as.factor(),
     uk_born = factor(BUK, levels = 1:2, labels = c("Yes", "No")),
-    sex = factor(Sex1, levels = 1:2, c("Male", "Female")),
+    sex = factor(Sex1, levels = c(2,1), c("Female", "Male")),
     own_home = ifelse(QxTenu1 == 1, "Yes", "No") |> as.factor(),
     age = ifelse(AGE1NET %in% 1:2, "16-44",
                  ifelse(AGE1NET == 3, ">=45", "other")) |>
@@ -135,48 +137,67 @@ model_dat <-
                         ifelse(NSSEC7 == 3, "intermediate",
                                ifelse(NSSEC7 %in% 4:10, "lower", "other"))) |>
       as.factor(),
-    literacy_threshold =
+
+    lit_thresholdL1 =
       ifelse(LiteracyThresholdA_1 == 1, "below",
              ifelse(LiteracyThresholdA_1 == 2, "above", "other")),
-    numeracy_threshold =
+    lit_thresholdL2 = ifelse(LiteracyScoreA_1 == 5, "above",
+                           ifelse(LiteracyScoreA_1 %in% 1:4, "below", "other")),   # >= L2
+    num_thresholdEL3 =
       ifelse(NumeracyThresholdA_1 == 1, "below",
              ifelse(NumeracyThresholdA_1 == 2, "above", "other")),
-    ict_threshold =
+    num_thresholdL1 = ifelse(NumeracyScoreA_1 == 4:5, "above",
+                           ifelse(NumeracyScoreA_1 %in% 1:3, "below", "other")),  # >= L1
+    ict_thresholdEL3 =
       ifelse(MultipleChoiceLevelA_1Thres == 1, "below",
              ifelse(MultipleChoiceLevelA_1Thres == 2, "above", "other")),
-    lit_weights = unclass(rimweightLIT2003),
-    num_weights = unclass(rimweightNUM2003),
-    ict_weights = unclass(rimweightICT2003)
+    weights = unclass(rimweight2003),
+    lit_weightsL1 = unclass(rimweightLIT2003),
+    num_weightsEL3 = unclass(rimweightNUM2003),
+    ict_weightsEL3 = unclass(rimweightICT2003)
   )
 
 summary(model_dat)
 
-
+# test specific data sets
 lit_dat <- model_dat |>
-  filter(literacy_threshold %in% c("above", "below")) |>
-  mutate(literacy_threshold = as.factor(literacy_threshold))
+  filter(lit_thresholdL2 %in% c("above", "below")) |>
+  mutate(lit_thresholdL2 = as.factor(lit_thresholdL2))
 
 num_dat <- model_dat |>
-  filter(numeracy_threshold %in% c("above", "below")) |>
-  mutate(numeracy_threshold = as.factor(numeracy_threshold))
+  filter(num_thresholdL1 %in% c("above", "below")) |>
+  mutate(num_thresholdL1 = as.factor(num_thresholdL1))
 
 ict_dat <- model_dat |>
-  filter(ict_threshold %in% c("above", "below")) |>
-  mutate(ict_threshold = as.factor(ict_threshold))
+  filter(ict_thresholdEL3 %in% c("above", "below")) |>
+  mutate(ict_thresholdEL3 = as.factor(ict_thresholdEL3))
+
+################
+# summary stats
+
+lit_dat$lit_thresholdL2 |> table() |> prop.table()
 
 #######################
 # logistic regressions
 
-rhs <- "1 + workingstatus + gross_income + english_lang + ethnicity + qualification + imd + job_status"
+rhs <- "1 + workingstatus + gross_income + uk_born + sex + own_home + age + english_lang + ethnicity + qualification + imd + job_status"
 
 # unweighted
-lit_glm <- glm(glue("literacy_threshold ~ {rhs}"), data = lit_dat, family = binomial(), weights = lit_weights)
-lit_glm
+lit_glm <- glm(glue("lit_thresholdL2 ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
+# lit_glm
+suppressWarnings({
+  tbl_regression(lit_glm, exponentiate = TRUE)
+})
 
-num_glm <- glm(glue("numeracy_threshold ~ {rhs}"), data = num_dat, family = binomial(), weights = num_weights)
-num_glm
+num_glm <- glm(glue("num_thresholdL1 ~ {rhs}"), data = num_dat, family = binomial(), weights = weights)
+# num_glm
+suppressWarnings({
+  tbl_regression(num_glm, exponentiate = TRUE)
+})
 
-ict_glm <- glm(glue("ict_threshold ~ {rhs}"), data = ict_dat, family = binomial(), weights = ict_weights)
-ict_glm
-
+ict_glm <- glm(glue("ict_thresholdEL3 ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights)
+# ict_glm
+suppressWarnings({
+  tbl_regression(num_glm, exponentiate = TRUE)
+})
 
