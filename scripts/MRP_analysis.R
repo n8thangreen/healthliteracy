@@ -1,4 +1,6 @@
 # multilevel regression and post-stratification analysis
+# with skills for life survey data and
+# Newham resident survey data
 
 library(dplyr)
 library(glue)
@@ -15,6 +17,10 @@ library(gtsummary)
 
 
 load(here::here("data/skills_for_life_data.RData"))
+
+
+################
+# data cleaning
 
 # select variables
 
@@ -91,9 +97,6 @@ data <-
 # 8	Never worked/ long term unemployed
 # 9	Full-time student
 # 10	Not classifiable
-
-################
-# data cleaning
 
 model_dat <-
   data |>
@@ -202,4 +205,48 @@ ict_glm <- glm(glue("ict_thresholdEL3 ~ {rhs}"), data = ict_dat, family = binomi
 suppressWarnings({
   tbl_regression(num_glm, exponentiate = TRUE)
 })
+
+# partical pooling?
+
+
+#################
+# stratification
+
+# CRAN package, including  newer methods from ML:
+#   https://cran.r-project.org/web/packages/autoMrP/vignettes/autoMrP_vignette.pdf
+#
+# This is the Stan vignette:
+#   https://mc-stan.org/rstanarm/articles/mrp.html
+#
+# Some interesting extensions:
+#   https://bookdown.org/jl5522/MRP-case-studies/
+
+
+psframe$predicted_probability <-predict(model, psframe, type ='response')
+
+poststratified_estimates <-psframe %>%group_by(abb) %>%summarize(estimate =weighted.mean(predicted_probability, n))
+
+# compare estimates
+
+
+# synthetic post-stratification
+# Leemann and Wasserfallen (2017)
+# if we dont have full joint distribution
+# merge the marginal distributions together
+synthetic_psframe <-
+  psframe %>%
+  left_join(marginal_pew_religimp, by = 'abb') %>%
+  left_join(marginal_homeowner, by = 'abb') %>%
+  left_join(marginal_urban, by =
+              'abb') %>%
+  left_join(marginal_parent, by = 'abb') %>%
+  left_join(marginal_military_household, by = 'abb') %>%
+# and multiply
+  mutate(
+    prob = prob * marginal_pew_religimp * marginal_homeowner * marginal_urban *
+      marginal_parent * marginal_military_household
+  )
+
+# Stacked Regression and Poststratification (SRP)?
+# (Breiman, 1996)
 
