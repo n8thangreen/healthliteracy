@@ -270,29 +270,7 @@ combs_df <- expand.grid(
 
 combs_df$predicted_prob_lit <- predict(lit_glm, combs_df, type ='response')
 
-## Newham resident survey data
-
-# NSSEC7: 1	Higher managerial and professional
-#         2	Lower managerial and professional
-#         3	Intermediate
-#         4	Small employers and own account workers
-#         5	Lower supervisory and technical
-#         6	Semi-routine occupations
-#         7	Routine occupations
-#         8	Never worked/ long term unemployed
-#         9	Full-time student
-#         10 Not classifiable
-# WORKINGSTATUS2: 0-No, 1-Yes
-# GROSS_ANNUAL_INCOME_OLDBANDS: {<£5,000, £5,000 - £9,999},
-# {£10,000 - £14,999, £15,000 - £19,999, £20,000 - £29,999}
-# BUK: 1-Yes, 2-No
-# QxTenu1: 1-Own home outright or with a mortgage or loan
-# Sex1: 1-Male, 2-Female
-# AGE1NET: {16-24, 25-44}, 45-65
-# Sesol: 1-Yes, 2-No
-# ETHNICSIMPLE: 1-White, 2-BME
-# HIQUAL: {1-4), {5-Level 1 qualification or below}
-# IMDSCOREB4: 1,...,9
+## target population data
 
 # from resident survey report summary tables
 # unless otherwise indicated
