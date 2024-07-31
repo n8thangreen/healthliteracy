@@ -63,7 +63,8 @@ data <-
 # these are the S4L variables used in
 # Rowlands (2015) British Journal of General Practice
 #
-# job status: National Statistics Socioeconomic Classification 3 bands (Managerial/professional, Intermediate, Routine/manual/ students/unemployed)
+# job status: National Statistics Socioeconomic Classification 3 bands
+# (Managerial/professional, Intermediate, Routine/manual/ students/unemployed)
 # employment status: employed, not employed
 # gross income: >=10000, <10000
 # place of birth: UK, non UK
@@ -75,10 +76,21 @@ data <-
 # qualification level: NQF >= level at age 16 (level 2), below level 2
 # area deprivation: IMD quintiles
 
-# matching with survey
+# matching with original survey
 
+# NSSEC7: 1	Higher managerial and professional
+#         2	Lower managerial and professional
+#         3	Intermediate
+#         4	Small employers and own account workers
+#         5	Lower supervisory and technical
+#         6	Semi-routine occupations
+#         7	Routine occupations
+#         8	Never worked/ long term unemployed
+#         9	Full-time student
+#         10 Not classifiable
 # WORKINGSTATUS2: 0-No, 1-Yes
-# GROSS_ANNUAL_INCOME_OLDBANDS: {<£5,000, £5,000 - £9,999}, {£10,000 - £14,999, £15,000 - £19,999, £20,000 - £29,999}
+# GROSS_ANNUAL_INCOME_OLDBANDS: {<£5,000, £5,000 - £9,999},
+# {£10,000 - £14,999, £15,000 - £19,999, £20,000 - £29,999}
 # BUK: 1-Yes, 2-No
 # QxTenu1: 1-Own home outright or with a mortgage or loan
 # Sex1: 1-Male, 2-Female
@@ -87,19 +99,10 @@ data <-
 # ETHNICSIMPLE: 1-White, 2-BME
 # HIQUAL: {1-4), {5-Level 1 qualification or below}
 # IMDSCOREB4: 1,...,9
-# NSSEC7: 1	Higher managerial and professional
-# 2	Lower managerial and professional
-# 3	Intermediate
-# 4	Small employers and own account workers
-# 5	Lower supervisory and technical
-# 6	Semi-routine occupations
-# 7	Routine occupations
-# 8	Never worked/ long term unemployed
-# 9	Full-time student
-# 10	Not classifiable
 
 model_dat <-
   data |>
+  # remove class
   mutate(
     WORKINGSTATUS2 = unclass(WORKINGSTATUS2),
     GROSS_ANNUAL_INCOME_OLDBANDS = unclass(GROSS_ANNUAL_INCOME_OLDBANDS),
@@ -117,6 +120,7 @@ model_dat <-
     MultipleChoiceLevelA_1Thres = unclass(MultipleChoiceLevelA_1Thres),
     LiteracyScoreA_1 = unclass(LiteracyScoreA_1),
     NumeracyScoreA_1 = unclass(NumeracyScoreA_1)) |>
+  # relabel and order levels
   transmute(
     workingstatus = factor(WORKINGSTATUS2, levels = 1:0, labels = c("Yes","No")),
     gross_income =
@@ -124,7 +128,7 @@ model_dat <-
              "<10000",
              ifelse(GROSS_ANNUAL_INCOME_OLDBANDS %in% 3:6,
                     ">=10000", "other")) |>
-      factor(levels = c(">=10000", "<10000")),
+      factor(levels = c(">=10000", "<10000", "other")),
     uk_born = factor(BUK, levels = 1:2, labels = c("Yes", "No")),
     sex = factor(Sex1, levels = c(2,1), c("Female", "Male")),
     own_home = ifelse(QxTenu1 == 1, "Yes", "No") |>
@@ -141,7 +145,6 @@ model_dat <-
                         ifelse(NSSEC7 == 3, "intermediate",
                                ifelse(NSSEC7 %in% 4:10, "lower", "other"))) |>
       factor(levels = c("intermediate", "lower", "higher")),
-
     lit_thresholdL1 =
       ifelse(LiteracyThresholdA_1 == 1, "below",
              ifelse(LiteracyThresholdA_1 == 2, "above", "other")),
@@ -159,22 +162,32 @@ model_dat <-
     lit_weightsL1 = unclass(rimweightLIT2003),
     num_weightsEL3 = unclass(rimweightNUM2003),
     ict_weightsEL3 = unclass(rimweightICT2003)
-  )
+  ) |>
+  filter(!is.na(age),
+         !is.na(ethnicity))
 
 summary(model_dat)
 
 # test specific data sets
+# where have answered question
+
 lit_dat <- model_dat |>
   filter(lit_thresholdL2 %in% c("above", "below")) |>
-  mutate(lit_thresholdL2 = as.factor(lit_thresholdL2))
+  mutate(lit_thresholdL2 = as.factor(lit_thresholdL2),
+         lit_thresholdL2_bin = as.integer(lit_thresholdL2) - 1L) |>
+  select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3, -num_thresholdEL3, -num_thresholdL1, -ict_thresholdEL3)
 
 num_dat <- model_dat |>
   filter(num_thresholdL1 %in% c("above", "below")) |>
-  mutate(num_thresholdL1 = as.factor(num_thresholdL1))
+  mutate(num_thresholdL1 = as.factor(num_thresholdL1),
+         num_thresholdL1_bin = as.integer(num_thresholdL1) - 1L) |>
+  select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3, -num_thresholdEL3, -lit_thresholdL2, -ict_thresholdEL3)
 
 ict_dat <- model_dat |>
   filter(ict_thresholdEL3 %in% c("above", "below")) |>
-  mutate(ict_thresholdEL3 = as.factor(ict_thresholdEL3))
+  mutate(ict_thresholdEL3 = as.factor(ict_thresholdEL3),
+         ict_thresholdEL3_bin = as.integer(ict_thresholdEL3) - 1L) |>
+  select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3, -num_thresholdEL3, -num_thresholdL1, -lit_thresholdL2)
 
 ################
 # summary stats
@@ -187,32 +200,33 @@ lit_dat$lit_thresholdL2 |> table() |> prop.table()
 rhs <- "1 + sex + age + ethnicity + uk_born + english_lang + qualification + workingstatus + job_status + gross_income + own_home + imd"
 
 # unweighted
-lit_glm <- glm(glue("lit_thresholdL2 ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
+lit_glm <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
+
 # lit_glm
 suppressWarnings({
   tbl_regression(lit_glm, exponentiate = TRUE)
 })
 # see Table 3 in Rowlands (2015)
 
-num_glm <- glm(glue("num_thresholdL1 ~ {rhs}"), data = num_dat, family = binomial(), weights = weights)
+num_glm <- glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(), weights = weights)
 # num_glm
 suppressWarnings({
   tbl_regression(num_glm, exponentiate = TRUE)
 })
 
-ict_glm <- glm(glue("ict_thresholdEL3 ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights)
+ict_glm <- glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights)
 # ict_glm
 suppressWarnings({
   tbl_regression(num_glm, exponentiate = TRUE)
 })
 
-# partical pooling?
+# partial pooling?
 
 
-#################
-# stratification
+######################
+# post-stratification
 
-# CRAN package, including  newer methods from ML:
+# CRAN package, including newer methods from ML:
 #   https://cran.r-project.org/web/packages/autoMrP/vignettes/autoMrP_vignette.pdf
 #
 # This is the Stan vignette:
@@ -220,33 +234,149 @@ suppressWarnings({
 #
 # Some interesting extensions:
 #   https://bookdown.org/jl5522/MRP-case-studies/
+#
+# Stacked Regression and Poststratification (SRP)?
+# (Breiman, 1996)
 
 
-psframe$predicted_probability <-predict(model, psframe, type ='response')
+## prediction
 
-poststratified_estimates <-psframe %>%group_by(abb) %>%summarize(estimate =weighted.mean(predicted_probability, n))
+unique_workingstatus <- unique(lit_dat$workingstatus)
+unique_gross_income <- unique(lit_dat$gross_income)
+unique_uk_born <- unique(lit_dat$uk_born)
+unique_sex <- unique(lit_dat$sex)
+unique_own_home <- unique(lit_dat$own_home)
+unique_age <- unique(lit_dat$age)
+unique_english_lang <- unique(lit_dat$english_lang)
+unique_ethnicity <- unique(lit_dat$ethnicity)
+unique_qualification <- unique(lit_dat$qualification)
+unique_imd <- unique(lit_dat$imd)
+unique_job_status <- unique(lit_dat$job_status)
+
+# generate all combinations
+combs_df <- expand.grid(
+  workingstatus = unique_workingstatus,
+  gross_income = unique_gross_income,
+  uk_born = unique_uk_born,
+  sex = unique_sex,
+  own_home = unique_own_home,
+  age = unique_age,
+  english_lang = unique_english_lang,
+  ethnicity = unique_ethnicity,
+  qualification = unique_qualification,
+  imd = unique_imd,
+  job_status = unique_job_status
+) |> as_tibble()
+
+combs_df$predicted_prob_lit <- predict(lit_glm, combs_df, type ='response')
+
+## Newham resident survey data
+
+# NSSEC7: 1	Higher managerial and professional
+#         2	Lower managerial and professional
+#         3	Intermediate
+#         4	Small employers and own account workers
+#         5	Lower supervisory and technical
+#         6	Semi-routine occupations
+#         7	Routine occupations
+#         8	Never worked/ long term unemployed
+#         9	Full-time student
+#         10 Not classifiable
+# WORKINGSTATUS2: 0-No, 1-Yes
+# GROSS_ANNUAL_INCOME_OLDBANDS: {<£5,000, £5,000 - £9,999},
+# {£10,000 - £14,999, £15,000 - £19,999, £20,000 - £29,999}
+# BUK: 1-Yes, 2-No
+# QxTenu1: 1-Own home outright or with a mortgage or loan
+# Sex1: 1-Male, 2-Female
+# AGE1NET: {16-24, 25-44}, 45-65
+# Sesol: 1-Yes, 2-No
+# ETHNICSIMPLE: 1-White, 2-BME
+# HIQUAL: {1-4), {5-Level 1 qualification or below}
+# IMDSCOREB4: 1,...,9
+
+# from resident survey report summary tables
+# unless otherwise indicated
+
+tribble(~age, ~prop,
+        "16-44", 0.15 + 0.27 + 0.22,
+        ">=45", 0.15 + 0.11 + 0.1)
+
+tribble(~sex, ~prop,
+        "male", 0.54,
+        "female", 0.46)
+
+tribble(~ethnicity, ~prop,
+        "white", 0.30,
+        "BME", 0.70)
+
+tribble(~workingstatus, ~prop,
+        "Yes", 0.65,
+        "No", 0.35)
+
+tribble(~own_home, ~prop,
+        "Yes", 0.35,
+        "No", 0.65)
+
+tribble(~area_cna, ~prop,
+        "beckton", 0.05,
+        "custom_house_and_canning_town", 0.14,
+        "east_ham", 0.1,
+        "forest_gate", 0.12,
+        "green_street", 0.13,
+        "manor_park", 0.12,
+        "plaistow", 0.14,
+        "royal_docks", 0.07,
+        "stratford_and_west_ham", 0.13)
+
+# ONS census 2021 Highest level of qualification
+tribble(~qualification, ~prop,
+        ">=level 2", 0.57,
+        "<=Level 1", 0.43)
+
+# Q61: household gross income before tax
+# Q70: Are you the main or joint householder? e.g.responsible for bills such as rent, mortgage and utilities
+# this would be good but its mostly 'not answered'!
+# Q54	What is your average monthly pay?
+
+##TODO: break down by LSOA and map to CNA
+##  read from Newham tab
+tribble(~gross_income, ~prop,
+        ">=10000",
+        "<10000", )
+
+# census 2021 usual resident population
+tribble(~uk_born, ~prop,
+        "Yes", 0.455 + 0.001 + 0.004 + 0.003,
+        "No", 0.553)
+
+# Q77	How well can you speak English?
+# 1	Very well
+# 2	Well
+# 3	Not well
+
+# ONS census 2021 English as main language
+tribble(~english_lang, ~prop,
+        "Yes", 0.6537,
+        "No", 0.3463)
+
+##TODO: from where?..
+tribble(~job_status, ~prop,
+        "Yes", ,
+        "No", )
+
+##TODO: break down by LSOA and map to CNA
+##  read from Newham tab
+tribble(~imd, ~prop,
+        "avg", 0.169)
+
+
+## stratification
+poststratified_estimates <-
+  psframe |>
+  # group_by(area) |>
+  summarize(estimate = weighted.mean(predicted_prob, n))
 
 # compare estimates
 
 
-# synthetic post-stratification
-# Leemann and Wasserfallen (2017)
-# if we dont have full joint distribution
-# merge the marginal distributions together
-synthetic_psframe <-
-  psframe %>%
-  left_join(marginal_pew_religimp, by = 'abb') %>%
-  left_join(marginal_homeowner, by = 'abb') %>%
-  left_join(marginal_urban, by =
-              'abb') %>%
-  left_join(marginal_parent, by = 'abb') %>%
-  left_join(marginal_military_household, by = 'abb') %>%
-# and multiply
-  mutate(
-    prob = prob * marginal_pew_religimp * marginal_homeowner * marginal_urban *
-      marginal_parent * marginal_military_household
-  )
-
-# Stacked Regression and Poststratification (SRP)?
-# (Breiman, 1996)
 
