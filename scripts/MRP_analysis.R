@@ -394,6 +394,8 @@ poststratified_estimates <-
   # group_by(area) |>
   summarize(estimate = weighted.mean(predicted_prob, product_p))
 
+poststratified_estimates
+
 # compare estimates
 
 
