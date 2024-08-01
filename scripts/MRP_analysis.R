@@ -166,8 +166,6 @@ model_dat <-
   filter(!is.na(age),
          !is.na(ethnicity))
 
-summary(model_dat)
-
 # test specific data sets
 # where have answered question
 
@@ -268,7 +266,7 @@ combs_df <- expand.grid(
   job_status = unique_job_status
 ) |> as_tibble()
 
-combs_df$predicted_prob_lit <- predict(lit_glm, combs_df, type ='response')
+combs_df$predicted_prob_lit <- predict(lit_glm, combs_df, type = 'response')
 
 ## target population data
 
@@ -317,10 +315,10 @@ tribble(~qualification, ~prop,
 # Q54	What is your average monthly pay?
 
 ##TODO: break down by LSOA and map to CNA
-##  read from Newham tab
+##  read from Newham tab in saiefy1920finalqaddownload280923.xlsx
 tribble(~gross_income, ~prop,
-        ">=10000",
-        "<10000", )
+        ">=10000", 0.9,
+        "<10000", 0.1)
 
 # census 2021 usual resident population
 tribble(~uk_born, ~prop,
@@ -337,13 +335,24 @@ tribble(~english_lang, ~prop,
         "Yes", 0.6537,
         "No", 0.3463)
 
-##TODO: from where?..
+# AB: higher and intermediate managerial, administrative and professional occupations
+# C1: supervisory, clerical and junior managerial, administrative and professional occupations
+# C2: skilled manual occupations
+# DE: semi-skilled and unskilled manual and lowest grade occupations
+
+tribble(~job_status_ASG, ~job_status, ~prop,
+        "AB", "higher", 0.167,
+        "C1", "intermediate", 0.276,
+        "C2", "lower", 0.234,
+        "DE", "lower", 0.323)
+
 tribble(~job_status, ~prop,
-        "Yes", ,
-        "No", )
+        "higher", 0.167,
+        "intermediate", 0.276,
+        "lower", 0.234 + 0.323)
 
 ##TODO: break down by LSOA and map to CNA
-##  read from Newham tab
+##  read from Newham tab in localincomedeprivationdata.xlsx
 tribble(~imd, ~prop,
         "avg", 0.169)
 
