@@ -396,7 +396,22 @@ poststratified_estimates <-
 
 poststratified_estimates
 
-# compare estimates
 
+# adjusted coefficient effect sizes
 
+# this use distribution inside of each stratification
+conditional_effects <-
+  lapply(names(combs_df), function(x) {
+    total_dat %>%
+      group_by(!!sym(x)) %>%
+      summarize(estimate = weighted.mean(predicted_prob, product_p))
+  })
 
+# set everyone to same level
+fac_levels <- levels(total_dat$workingstatus)
+appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate(workingstatus = .x))
+appended_df$predicted_prob <- predict(lit_glm, appended_df, type = 'response')
+
+appended_df %>%
+  group_by(workingstatus) %>%
+  summarize(estimate = weighted.mean(predicted_prob, product_p))
