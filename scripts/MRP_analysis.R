@@ -1,4 +1,4 @@
-# multilevel regression and post-stratification analysis
+1# multilevel regression and post-stratification analysis
 # with skills for life survey data and
 # Newham resident survey data
 
@@ -149,12 +149,12 @@ model_dat <-
       ifelse(LiteracyThresholdA_1 == 1, "below",
              ifelse(LiteracyThresholdA_1 == 2, "above", "other")),
     lit_thresholdL2 = ifelse(LiteracyScoreA_1 == 5, "above",
-                           ifelse(LiteracyScoreA_1 %in% 1:4, "below", "other")),   # >= L2
+                             ifelse(LiteracyScoreA_1 %in% 1:4, "below", "other")),   # >= L2
     num_thresholdEL3 =
       ifelse(NumeracyThresholdA_1 == 1, "below",
              ifelse(NumeracyThresholdA_1 == 2, "above", "other")),
     num_thresholdL1 = ifelse(NumeracyScoreA_1 == 4:5, "above",
-                           ifelse(NumeracyScoreA_1 %in% 1:3, "below", "other")),  # >= L1
+                             ifelse(NumeracyScoreA_1 %in% 1:3, "below", "other")),  # >= L1
     ict_thresholdEL3 =
       ifelse(MultipleChoiceLevelA_1Thres == 1, "below",
              ifelse(MultipleChoiceLevelA_1Thres == 2, "above", "other")),
@@ -309,12 +309,12 @@ total_dat <-
             "Female", 0.46)) |>
   merge(
     tribble(~ethnicity, ~p_ethn,
-          "White", 0.30,
-          "BME", 0.70)) |>
+            "White", 0.30,
+            "BME", 0.70)) |>
   merge(
     tribble(~workingstatus, ~p_workstatus,
-        "Yes", 0.65,
-        "No", 0.35)) |>
+            "Yes", 0.65,
+            "No", 0.35)) |>
   merge(
     tribble(~own_home, ~p_own_home,
             "Yes", 0.35,
@@ -322,8 +322,8 @@ total_dat <-
   # ONS census 2021 Highest level of qualification
   merge(
     tribble(~qualification, ~p_qual,
-          ">=level 2", 0.57,
-          "<=Level 1", 0.43)) |>
+            ">=level 2", 0.57,
+            "<=Level 1", 0.43)) |>
   # Q61: household gross income before tax
   # Q70: Are you the main or joint householder? e.g.responsible for bills such as rent, mortgage and utilities
   # this would be good but its mostly 'not answered'!
@@ -333,13 +333,13 @@ total_dat <-
   ##  read from Newham tab in saiefy1920finalqaddownload280923.xlsx
   merge(
     tribble(~gross_income, ~p_income,
-          ">=10000", 0.9,
-          "<10000", 0.1)) |>
+            ">=10000", 0.9,
+            "<10000", 0.1)) |>
   # census 2021 usual resident population
   merge(
     tribble(~uk_born, ~p_uk,
-          "Yes", 0.455 + 0.001 + 0.004 + 0.003,
-          "No", 0.553)) |>
+            "Yes", 0.455 + 0.001 + 0.004 + 0.003,
+            "No", 0.553)) |>
   # Q77	How well can you speak English?
   # 1	Very well
   # 2	Well
@@ -348,8 +348,8 @@ total_dat <-
   # ONS census 2021 English as main language
   merge(
     tribble(~english_lang, ~p_english,
-          "Yes", 0.6537,
-          "No", 0.3463)) |>
+            "Yes", 0.6537,
+            "No", 0.3463)) |>
   # AB: higher and intermediate managerial, administrative and professional occupations
   # C1: supervisory, clerical and junior managerial, administrative and professional occupations
   # C2: skilled manual occupations
@@ -362,9 +362,9 @@ total_dat <-
   #         "DE", "lower", 0.323)
   merge(
     tribble(~job_status, ~p_job,
-          "higher", 0.167,
-          "intermediate", 0.276,
-          "lower", 0.234 + 0.323)) |>
+            "higher", 0.167,
+            "intermediate", 0.276,
+            "lower", 0.234 + 0.323)) |>
   merge(imd_lookup) |>
   # calculate product of probabilities, assuming independence
   rowwise() |>
@@ -412,6 +412,29 @@ fac_levels <- levels(total_dat$workingstatus)
 appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate(workingstatus = .x))
 appended_df$predicted_prob <- predict(lit_glm, appended_df, type = 'response')
 
-appended_df %>%
+ps_workingstatus <-
+  appended_df %>%
   group_by(workingstatus) %>%
   summarize(estimate = weighted.mean(predicted_prob, product_p))
+
+# average treatment effect vs current profile
+ps_workingstatus$ate <- ps_workingstatus$estimate - poststratified_estimates$estimate
+
+
+# for all variables
+
+names_vars <- names(combs_df)[-12]
+
+for (i in names_vars) {
+  fac_levels <- levels(total_dat[[i]])
+  appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate(i = .x))
+  appended_df$predicted_prob <- predict(lit_glm, appended_df, type = 'response')
+
+  ps_var[[i]] <-
+    appended_df %>%
+    group_by(!!sym(i)) %>%
+    summarize(estimate = weighted.mean(predicted_prob, product_p))
+
+  ps_var[[i]]$ate <- ps_var[[i]]$estimate - poststratified_estimates$estimate
+}
+
