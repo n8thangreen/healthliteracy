@@ -266,6 +266,7 @@ combs_df <- expand.grid(
   job_status = unique_job_status
 ) |> as_tibble()
 
+names_vars <- names(combs_df)
 combs_df$predicted_prob <- predict(lit_glm, combs_df, type = 'response')
 
 
@@ -397,9 +398,10 @@ poststratified_estimates <-
 poststratified_estimates
 
 
-# adjusted coefficient effect sizes
+################################
+# average marginal effect (AME)
 
-# this use distribution inside of each stratification
+# within levels
 conditional_effects <-
   lapply(names(combs_df), function(x) {
     total_dat %>%
@@ -417,13 +419,13 @@ ps_workingstatus <-
   group_by(workingstatus) %>%
   summarize(estimate = weighted.mean(predicted_prob, product_p))
 
-# average treatment effect vs current profile
-ps_workingstatus$ate <- ps_workingstatus$estimate - poststratified_estimates$estimate
+# average marginal effect vs current profile
+ps_workingstatus$ame <- ps_workingstatus$estimate - poststratified_estimates$estimate
 
 
-# for all variables
+# for _all_ variables
 
-names_vars <- names(combs_df)[-12]
+ps_var <- list()
 
 for (i in names_vars) {
   fac_levels <- levels(total_dat[[i]])
@@ -435,6 +437,7 @@ for (i in names_vars) {
     group_by(!!sym(i)) %>%
     summarize(estimate = weighted.mean(predicted_prob, product_p))
 
-  ps_var[[i]]$ate <- ps_var[[i]]$estimate - poststratified_estimates$estimate
+  ps_var[[i]]$ame <- ps_var[[i]]$estimate - poststratified_estimates$estimate
+  ps_var[[i]] <- ps_var[[i]] |> mutate(ame_base = estimate - first(estimate))
 }
 
