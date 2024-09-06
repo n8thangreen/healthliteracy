@@ -441,9 +441,31 @@ for (i in names_vars) {
   ps_var[[i]] <- ps_var[[i]] |> mutate(ame_base = estimate - first(estimate))
 
   # common first column name
-  ps_var[[i]] <- rename()
+  names(ps_var[[i]])[1] <- "name"
 }
 
 # plots
 
-plot_dat <- bind_rows(ps_var)
+library(ggplot2)
+
+plot_dat <- bind_rows(ps_var, .id = "vars")
+
+plot_dat |>
+  ggplot(aes(x = vars, y = ame, fill = name)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Average Marginal Effect",
+       x = "Variable",
+       y = "AME") +
+  theme(legend.position = "none")
+
+plot_dat |>
+  ggplot(aes(x = vars, y = ame_base, fill = name)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Average Marginal Effect againt baseline",
+       x = "Variable",
+       y = "AME") +
+  theme(legend.position = "none")
