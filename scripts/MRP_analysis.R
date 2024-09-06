@@ -199,6 +199,7 @@ rhs <- "1 + sex + age + ethnicity + uk_born + english_lang + qualification + wor
 
 # unweighted
 lit_glm <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
+lit_glm_stan <- rstanarm::stan_glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
 
 # lit_glm
 suppressWarnings({
@@ -425,12 +426,14 @@ ps_workingstatus$ame <- ps_workingstatus$estimate - poststratified_estimates$est
 
 # for _all_ variables
 
+# frequentist
+
 ps_var <- list()
 
 for (i in names_vars) {
   fac_levels <- levels(total_dat[[i]])
   appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate(i = .x))
-  appended_df$predicted_prob <- predict(lit_glm, appended_df, type = 'response')
+  appended_df$predicted_prob <- predict(lit_glm, newdata = appended_df, type = 'response')
 
   ps_var[[i]] <-
     appended_df %>%
@@ -444,6 +447,29 @@ for (i in names_vars) {
   names(ps_var[[i]])[1] <- "name"
 }
 
+# Bayesian
+
+ps_var <- list()
+
+for (i in names_vars) {
+  fac_levels <- levels(total_dat[[i]])
+  appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate(i = .x))
+  posterior_draws <- rstanarm::posterior_epred(lit_glm_stan, newdata = appended_df)
+
+  ##TODO:
+  # ps_var[[i]] <-
+  #   appended_df %>%
+  #   group_by(!!sym(i)) %>%
+  #   summarize(estimate = weighted.mean(predicted_prob, product_p))
+  #
+  # ps_var[[i]]$ame <- ps_var[[i]]$estimate - poststratified_estimates$estimate
+  # ps_var[[i]] <- ps_var[[i]] |> mutate(ame_base = estimate - first(estimate))
+  #
+  # # common first column name
+  # names(ps_var[[i]])[1] <- "name"
+}
+
+########
 # plots
 
 library(ggplot2)
@@ -451,21 +477,14 @@ library(ggplot2)
 plot_dat <- bind_rows(ps_var, .id = "vars")
 
 plot_dat |>
-  ggplot(aes(x = vars, y = ame, fill = name)) +
+  ggplot(aes(x = vars, y = ame_base, fill = name)) +
   geom_bar(stat = "identity") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title = "Average Marginal Effect",
        x = "Variable",
        y = "AME") +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  coord_flip()
 
-plot_dat |>
-  ggplot(aes(x = vars, y = ame_base, fill = name)) +
-  geom_bar(stat = "identity") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Average Marginal Effect againt baseline",
-       x = "Variable",
-       y = "AME") +
-  theme(legend.position = "none")
+
