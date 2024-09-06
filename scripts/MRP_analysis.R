@@ -439,5 +439,11 @@ for (i in names_vars) {
 
   ps_var[[i]]$ame <- ps_var[[i]]$estimate - poststratified_estimates$estimate
   ps_var[[i]] <- ps_var[[i]] |> mutate(ame_base = estimate - first(estimate))
+
+  # common first column name
+  ps_var[[i]] <- rename()
 }
 
+# plots
+
+plot_dat <- bind_rows(ps_var)
