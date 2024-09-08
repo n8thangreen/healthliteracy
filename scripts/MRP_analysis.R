@@ -368,6 +368,7 @@ total_dat <-
             "intermediate", 0.276,
             "lower", 0.234 + 0.323)) |>
   merge(imd_lookup) |>
+  #####################
   # calculate product of probabilities, assuming independence
   rowwise() |>
   mutate(product_p = prod(c_across(starts_with("p_")))) |>
@@ -388,15 +389,22 @@ write.csv(total_dat, here::here("data/total_dat.csv"))
 #           "royal_docks", 0.07,
 #           "stratford_and_west_ham", 0.13))
 
-
+#################
 # stratification
 
 poststratified_estimates <-
   total_dat |>
-  # group_by(area) |>
   summarize(estimate = weighted.mean(predicted_prob, product_p))
 
 poststratified_estimates
+
+# Bayesian
+
+posterior_draws <- rstanarm::posterior_epred(lit_glm_stan, newdata = total_dat)
+poststrat_estimates_stan <- posterior_draws %*% total_dat$product_p
+
+hist(poststrat_estimates_stan, breaks = 20, main = "")
+abline(v = poststratified_estimates, col = "red", lwd = 2)
 
 
 ################################
@@ -449,24 +457,31 @@ for (i in names_vars) {
 
 # Bayesian
 
+library(tidyr)
+
 ps_var <- list()
 
 for (i in names_vars) {
   fac_levels <- levels(total_dat[[i]])
   appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate(i = .x))
   posterior_draws <- rstanarm::posterior_epred(lit_glm_stan, newdata = appended_df)
+  post_draws <- cbind(t(posterior_draws)[, 1:20]) |> as_tibble(.name_repair = "universal")
+  names(post_draws) <- gsub(pattern = "...", replacement = "draws_", x = names(post_draws))
 
-  ##TODO:
-  # ps_var[[i]] <-
-  #   appended_df %>%
-  #   group_by(!!sym(i)) %>%
-  #   summarize(estimate = weighted.mean(predicted_prob, product_p))
-  #
-  # ps_var[[i]]$ame <- ps_var[[i]]$estimate - poststratified_estimates$estimate
-  # ps_var[[i]] <- ps_var[[i]] |> mutate(ame_base = estimate - first(estimate))
-  #
-  # # common first column name
-  # names(ps_var[[i]])[1] <- "name"
+  ps_var[[i]] <-
+    appended_df %>%
+    cbind(post_draws) %>%
+    group_by(!!sym(i)) %>%
+    summarize_at(vars(starts_with('draws')),
+                 list(~ weighted.mean(., w = product_p)))
+
+  # common first column name
+  names(ps_var[[i]])[1] <- "name"
+
+  ps_var[[i]] <-
+    reshape2::melt(ps_var[[i]]) |>
+    group_by(variable) |>
+    mutate(ame_base = value - first(value))
 }
 
 ########
@@ -486,5 +501,36 @@ plot_dat |>
        y = "AME") +
   theme(legend.position = "none") +
   coord_flip()
+
+# scatter plot by levels
+
+plot_ls <- list()
+
+for (i in names_vars) {
+plot_ls[[i]] <-
+  ps_var[[i]] |>
+  ggplot(aes(x = name, y = value)) +
+  geom_point() +
+  xlab(i) +
+  ylim(0.4, 0.75) +
+  theme_minimal()
+}
+
+gridExtra::grid.arrange(grobs = plot_ls, ncol = 3)
+
+# histograms of AME
+##TODO:
+# ps_var[[i]] |>
+#   ggplot(aes(x = name, y = ame_base)) +
+#   geom_histogram() +
+#   xlab(i) +
+#   theme_minimal()
+
+
+# bivariate scatter plots
+
+
+# regression-type table
+
 
 
