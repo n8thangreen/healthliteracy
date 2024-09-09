@@ -199,7 +199,8 @@ rhs <- "1 + sex + age + ethnicity + uk_born + english_lang + qualification + wor
 
 # unweighted
 lit_glm <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
-lit_glm_stan <- rstanarm::stan_glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
+lit_glm_stan <- rstanarm::stan_glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(),
+                                   weights = weights, chains = 2, iter = 2000)
 
 # lit_glm
 suppressWarnings({
@@ -369,8 +370,8 @@ total_dat <-
             "lower", 0.234 + 0.323)) |>
   merge(imd_lookup) |>
   #####################
-  # calculate product of probabilities, assuming independence
-  rowwise() |>
+# calculate product of probabilities, assuming independence
+rowwise() |>
   mutate(product_p = prod(c_across(starts_with("p_")))) |>
   ungroup()
 
@@ -542,17 +543,32 @@ for (i in names_vars) {
 
 gridExtra::grid.arrange(grobs = plot_ls, ncol = 3)
 
-# histograms of AME
-##TODO:
-# ps_var[[i]] |>
-#   ggplot(aes(x = name, y = ame_base)) +
-#   geom_histogram() +
-#   xlab(i) +
-#   theme_minimal()
+# AME forest plot
+ame_dat_ls <- list()
 
+for (i in names_vars) {
+  ame_dat_ls[[i]] <-
+    ps_var[[i]] |>
+    group_by(name) |>
+    summarise(mean_value = mean(ame_base, na.rm = TRUE),
+              upper = quantile(ame_base, 0.975),
+              lower = quantile(ame_base, 0.025)) |>
+    mutate(variable = i,
+           var_name = paste0(variable, "_", name)) |>
+    filter(mean_value != 0)
+}
 
-# bivariate scatter plots
+ame_plot_dat <- do.call(rbind, ame_dat_ls)
 
+ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = variable)) +
+  geom_point(size = 2) +
+  geom_errorbar(aes(ymin = lower, ymax = upper)) +
+  coord_flip() +
+  ylab("Average marginal effect") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme_minimal()
+
+ggasve(filename = here::here("plots/ame_plot.png")))
 
 # regression-type table
 
