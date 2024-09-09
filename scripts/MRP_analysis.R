@@ -464,10 +464,19 @@ ps_var <- list()
 for (i in names_vars) {
   fac_levels <- levels(total_dat[[i]])
   appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate(i = .x))
-  posterior_draws <- rstanarm::posterior_epred(lit_glm_stan, newdata = appended_df)
-  post_draws <- cbind(t(posterior_draws)[, 1:20]) |> as_tibble(.name_repair = "universal")
-  names(post_draws) <- gsub(pattern = "...", replacement = "draws_", x = names(post_draws))
+  posterior_draws <-
+    rstanarm::posterior_epred(
+      lit_glm_stan,
+      newdata = appended_df,
+      draws = 20)
 
+  post_draws <-
+    cbind(t(posterior_draws)) |>
+    as_tibble(.name_repair = "universal")
+
+  names(post_draws) <- gsub(pattern = "...",
+                            replacement = "draws_",
+                            x = names(post_draws))
   ps_var[[i]] <-
     appended_df %>%
     cbind(post_draws) %>%
@@ -507,13 +516,28 @@ plot_dat |>
 plot_ls <- list()
 
 for (i in names_vars) {
-plot_ls[[i]] <-
-  ps_var[[i]] |>
-  ggplot(aes(x = name, y = value)) +
-  geom_point() +
-  xlab(i) +
-  ylim(0.4, 0.75) +
-  theme_minimal()
+  # Calculate means for each level of 'name'
+  means_df <- ps_var[[i]] %>%
+    group_by(name) %>%
+    summarise(mean_value = mean(value, na.rm = TRUE)) |>
+    mutate(lead_name = lead(name),
+           lead_mean_value = lead(mean_value)) %>%
+    filter(!is.na(lead_name) & !is.na(lead_mean_value))
+
+  plot_ls[[i]] <-
+    ps_var[[i]] |>
+    ggplot(aes(x = name, y = value)) +
+    # add jitter to points
+    geom_jitter(width = 0.1, height = 0) +
+    # draw gradient line connecting the means
+    geom_segment(data = means_df,
+                 aes(x = name, xend = lead_name,
+                     y = mean_value, yend = lead_mean_value),
+                 col = "red") +
+    ylab("P(not health literate)") +
+    xlab(tools::toTitleCase(stringr::str_replace_all(i, "_", " "))) +
+    ylim(0.4, 0.75) +
+    theme_minimal()
 }
 
 gridExtra::grid.arrange(grobs = plot_ls, ncol = 3)
