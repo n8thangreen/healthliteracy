@@ -1,10 +1,12 @@
-1# multilevel regression and post-stratification analysis
+# multilevel regression and post-stratification analysis
 # with skills for life survey data and
 # Newham resident survey data
 
 library(dplyr)
 library(glue)
 library(gtsummary)
+library(tidyr)
+library(ggplot2)
 
 # # load regression data
 # {
@@ -209,18 +211,23 @@ suppressWarnings({
 # see Table 3 in Rowlands (2015)
 
 num_glm <- glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(), weights = weights)
+num_glm_stan <- rstanarm::stan_glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(),
+                                   weights = weights, chains = 2, iter = 2000)
 # num_glm
 suppressWarnings({
   tbl_regression(num_glm, exponentiate = TRUE)
 })
 
 ict_glm <- glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights)
+ict_glm_stan <- rstanarm::stan_glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(),
+                                   weights = weights, chains = 2, iter = 2000)
 # ict_glm
 suppressWarnings({
   tbl_regression(num_glm, exponentiate = TRUE)
 })
 
-# partial pooling?
+# save stan fits
+save(lit_glm_stan, num_glm_stan, ict_glm_stan, file = here::here("data/stan_fits.RData"))
 
 
 ######################
@@ -269,7 +276,11 @@ combs_df <- expand.grid(
 ) |> as_tibble()
 
 names_vars <- names(combs_df)
-combs_df$predicted_prob <- predict(lit_glm, combs_df, type = 'response')
+
+## select
+# combs_df$predicted_prob <- predict(lit_glm, combs_df, type = 'response')
+combs_df$predicted_prob <- predict(num_glm, combs_df, type = 'response')
+# combs_df$predicted_prob <- predict(ict_glm, combs_df, type = 'response')
 
 
 ###################################
@@ -401,7 +412,10 @@ poststratified_estimates
 
 # Bayesian
 
-posterior_draws <- rstanarm::posterior_epred(lit_glm_stan, newdata = total_dat)
+## select
+posterior_draws <- rstanarm::posterior_epred(num_glm_stan, newdata = total_dat)
+# posterior_draws <- rstanarm::posterior_epred(lit_glm_stan, newdata = total_dat)
+
 poststrat_estimates_stan <- posterior_draws %*% total_dat$product_p
 
 hist(poststrat_estimates_stan, breaks = 20, main = "")
@@ -437,37 +451,35 @@ ps_workingstatus$ame <- ps_workingstatus$estimate - poststratified_estimates$est
 
 # frequentist
 
-ps_var <- list()
+ps_freq <- list()
 
 for (i in names_vars) {
   fac_levels <- levels(total_dat[[i]])
-  appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate(i = .x))
-  appended_df$predicted_prob <- predict(lit_glm, newdata = appended_df, type = 'response')
+  appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate({{i}} := .x))
+  appended_df$predicted_prob <- predict(lit_glm, newdata = appended_df, type = 'response')  # fit
 
-  ps_var[[i]] <-
+  ps_freq[[i]] <-
     appended_df %>%
     group_by(!!sym(i)) %>%
     summarize(estimate = weighted.mean(predicted_prob, product_p))
 
-  ps_var[[i]]$ame <- ps_var[[i]]$estimate - poststratified_estimates$estimate
-  ps_var[[i]] <- ps_var[[i]] |> mutate(ame_base = estimate - first(estimate))
+  ps_freq[[i]]$ame <- ps_freq[[i]]$estimate - poststratified_estimates$estimate
+  ps_freq[[i]] <- ps_freq[[i]] |> mutate(ame_base = estimate - first(estimate))
 
   # common first column name
-  names(ps_var[[i]])[1] <- "name"
+  names(ps_freq[[i]])[1] <- "name"
 }
 
 # Bayesian
-
-library(tidyr)
 
 ps_var <- list()
 
 for (i in names_vars) {
   fac_levels <- levels(total_dat[[i]])
-  appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate(i = .x))
+  appended_df <- purrr::map_dfr(fac_levels, ~total_dat %>% mutate({{i}} := .x))
   posterior_draws <-
     rstanarm::posterior_epred(
-      lit_glm_stan,
+      lit_glm_stan,                  # fit
       newdata = appended_df,
       draws = 20)
 
@@ -496,13 +508,15 @@ for (i in names_vars) {
 
 ########
 # plots
+########
 
-library(ggplot2)
-
-plot_dat <- bind_rows(ps_var, .id = "vars")
+plot_dat <-
+  bind_rows(ps_var, .id = "vars") |>
+  group_by(vars, name) |>
+  summarise(mean = mean(ame_base, na.rm = TRUE))
 
 plot_dat |>
-  ggplot(aes(x = vars, y = ame_base, fill = name)) +
+  ggplot(aes(x = vars, y = mean, fill = name)) +
   geom_bar(stat = "identity") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
@@ -544,6 +558,7 @@ for (i in names_vars) {
 gridExtra::grid.arrange(grobs = plot_ls, ncol = 3)
 
 # AME forest plot
+
 ame_dat_ls <- list()
 
 for (i in names_vars) {
@@ -561,16 +576,74 @@ for (i in names_vars) {
 ame_plot_dat <- do.call(rbind, ame_dat_ls)
 
 ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = variable)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = lower, ymax = upper)) +
+  geom_point(size = 4) +
+  geom_linerange(aes(ymin = lower, ymax = upper), size = 1.3) +
+  # geom_errorbar(aes(ymin = lower, ymax = upper)) +
   coord_flip() +
   ylab("Average marginal effect") +
   geom_hline(yintercept = 0, linetype = "dashed") +
   theme_minimal()
 
-ggasve(filename = here::here("plots/ame_plot.png")))
+ggsave(filename = here::here("plots/ame_plot.png"),
+       width = 10, height = 6, dpi = 300, bg = "white")
 
 # regression-type table
+##TODO
+
+
+##################################
+# marginal effect at representative values (MER)
+#
+# fix a second variable at different levels
+# all average over the rest as before
+
+# frequentist
+
+# stratify by workingstatus
+# interaction in regression
+rhs <- "1 + workingstatus * (sex + age + ethnicity + uk_born + english_lang + qualification + job_status + gross_income + own_home + imd)"
+lit_glm <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
+
+ps_freq <- list()
+ps_strat <- list()
+
+for (i in names_vars) {
+  for (j in levels(total_dat$workingstatus)) {
+
+    strat_dat <- filter(total_dat, workingstatus == j)
+    strat_dat$predicted_prob <- predict(lit_glm, strat_dat, type = 'response')
+
+    # total
+    poststratified_estimates <-
+      strat_dat |>
+      summarize(estimate = weighted.mean(predicted_prob, product_p))
+
+    # marginal
+    fac_levels <- levels(strat_dat[[i]])
+    appended_df <- purrr::map_dfr(fac_levels, ~strat_dat %>% mutate({{i}} := .x))
+    appended_df$predicted_prob <- predict(lit_glm, newdata = appended_df, type = 'response')  # fit
+
+    ps_strat[[j]] <-
+      appended_df %>%
+      group_by(!!sym(i)) %>%
+      summarize(estimate = weighted.mean(predicted_prob, product_p)) |>
+      mutate(level = j)
+  }
+
+  ps_freq[[i]] <- bind_rows(ps_strat)
+  ps_freq[[i]]$ame <- ps_freq[[i]]$estimate - poststratified_estimates
+
+  ps_freq[[i]] <-
+    ps_freq[[i]] |>
+    group_by(level) |>
+    mutate(ame_base = estimate - first(estimate))
+
+  # common first column name
+  names(ps_freq[[i]])[1] <- "name"
+}
+
+
+
 
 
 
