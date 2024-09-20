@@ -510,6 +510,8 @@ for (i in names_vars) {
 # plots
 ########
 
+# bar plot
+
 plot_dat <-
   bind_rows(ps_var, .id = "vars") |>
   group_by(vars, name) |>
