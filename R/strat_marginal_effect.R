@@ -1,23 +1,33 @@
 
 #' @title Stratified Marginal Effect
 #'
-strat_marginal_effect <- function(fit, data) {
-
-  rhs <- "1 + workingstatus * (sex + age + ethnicity + uk_born + english_lang +
-              qualification + job_status + gross_income + own_home + imd)"
-
-  fit <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat,
-             family = binomial(), weights = weights)
+#' @param fit glm or stan model output
+#' @param data data frame
+#' @param interaction Name of the interaction term
+#' @return List
+#'
+strat_marginal_effect <- function(fit, data, interaction = "workingstatus") {
 
   names_vars <- all.vars(terms(fit)[[3]])
+
+  response <- all.vars(terms(fit_freq[[1]]))[1]
+
+  main_vars <- names_vars[names_vars != interaction]
+  main_term <- paste(main_vars, collapse = " + ")
+
+  # formula with interaction term
+  rhs <- glue::glue("1 + {interaction} * ({main_term})")
+
+  fit <- glm(glue("{response} ~ {rhs}"), data = data,
+             family = binomial(), weights = weights)
 
   ame_dat <- list()
   ps_strat <- list()
 
   for (i in names_vars) {
-    for (j in levels(data$workingstatus)) {
+    for (j in levels(data[[interaction]])) {
 
-      strat_dat <- filter(data, workingstatus == j)
+      strat_dat <- filter(data, {{interaction}} == j)
       strat_dat$predicted_prob <- predict(fit, strat_dat, type = 'response')
 
       # total
@@ -30,7 +40,7 @@ strat_marginal_effect <- function(fit, data) {
       appended_df <- purrr::map_dfr(fac_levels, ~strat_dat %>% mutate({{i}} := .x))
 
       appended_df$predicted_prob <-
-        predict(lit_glm, newdata = appended_df, type = 'response')
+        predict(fit, newdata = appended_df, type = 'response')
 
       ps_strat[[j]] <-
         appended_df %>%
