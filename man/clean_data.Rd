@@ -4,10 +4,12 @@
 \alias{clean_data}
 \title{Clean survey data}
 \usage{
-clean_data(data)
+clean_data(data, save = FALSE)
 }
 \arguments{
 \item{data}{Survey data at individual level i.e. Skills for Life data}
+
+\item{save}{Logical indicating whether to save the cleaned data sets}
 }
 \value{
 List of cleaned data sets

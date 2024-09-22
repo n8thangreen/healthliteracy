@@ -1,6 +1,7 @@
 
-#
-marginal_effect_at_value <- function(fit, data) {
+#' @title Stratified Marginal Effect
+#'
+strat_marginal_effect <- function(fit, data) {
 
   rhs <- "1 + workingstatus * (sex + age + ethnicity + uk_born + english_lang +
               qualification + job_status + gross_income + own_home + imd)"

@@ -1,7 +1,7 @@
 
-#' @title Stratified Average Marginal Effect
+#' @title Average Marginal Effect
 #'
-strat_marginal_effect <- function(fit, data) {
+average_marginal_effect <- function(fit, data) {
 
   poststrat_est <-
     poststratification(fit, data)

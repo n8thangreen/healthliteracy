@@ -4,12 +4,14 @@
 \alias{fit_models}
 \title{Fit health literacy, numeracy and ICT models}
 \usage{
-fit_models(survey_data, stan = TRUE, ...)
+fit_models(survey_data, stan = TRUE, save = FALSE, ...)
 }
 \arguments{
 \item{survey_data}{List of data frames containing the cleaned survey data}
 
 \item{stan}{Logical indicating whether to use Stan or not}
+
+\item{save}{Logical indicating whether to save the fitted models}
 
 \item{...}{Additional arguments to pass to the Stan model}
 }
