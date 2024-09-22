@@ -16,6 +16,8 @@ mrp_data <-
       ~create_covariate_data(.x) |>
         create_target_pop_data())
 
+save(mrp_data, file = here::here("data/mrp_data.RData"))
+
 poststratification(fit_freq$lit_glm,
                    mrp_data$lit_dat)
 

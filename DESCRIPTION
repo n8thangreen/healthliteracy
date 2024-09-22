@@ -1,9 +1,12 @@
 Package: healthliteracy
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Health Literacy Analysis for Newham
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
+Authors@R: c(
+    person("Nathan", "Green",
+            email = "n.green@ucl.ac.uk",
+            role = c("aut", "cre"),
+            comment = c(ORCID = "0000-0003-2745-1736")))
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: What license is it under?

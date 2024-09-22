@@ -2,10 +2,11 @@
 #' @title Clean survey data
 #'
 #' @param data Survey data at individual level i.e. Skills for Life data
+#' @param save Logical indicating whether to save the cleaned data sets
 #' @return List of cleaned data sets
 #' @import dplyr
 #'
-clean_data <- function(data) {
+clean_data <- function(data, save = FALSE) {
 
   # select variables
   model_dat <-
@@ -135,15 +136,18 @@ clean_data <- function(data) {
 #'
 #' @param survey_data List of data frames containing the cleaned survey data
 #' @param stan Logical indicating whether to use Stan or not
+#' @param save Logical indicating whether to save the fitted models
 #' @param ... Additional arguments to pass to the Stan model
 #' @return List of fitted models
 #' @import glue
 #'
-fit_models <- function(survey_data, stan = TRUE, ...) {
+fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
 
   lit_dat <- survey_data$lit_dat
   num_dat <- survey_data$num_dat
   ict_dat <- survey_data$ict_dat
+
+  model <- if (stan) "stan" else "freq"
 
   rhs <- "1 + sex + age + ethnicity + uk_born + english_lang + qualification + workingstatus + job_status + gross_income + own_home + imd"
 
@@ -160,7 +164,9 @@ fit_models <- function(survey_data, stan = TRUE, ...) {
                                   weights = weights, chains = 2, iter = 2000, ...)
   }
 
-  # save(lit_glm_stan, num_glm_stan, ict_glm_stan, file = here::here("data/stan_fits.RData"))
+  if (save) {
+    save(lit_glm_stan, num_glm_stan, ict_glm_stan, file = here::here(glue::glue("data/{model}_fits.RData")))
+  }
 
   tibble::lst(lit_glm, num_glm, ict_glm)
 }
