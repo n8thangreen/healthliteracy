@@ -228,6 +228,8 @@ suppressWarnings({
 
 # save stan fits
 save(lit_glm_stan, num_glm_stan, ict_glm_stan, file = here::here("data/stan_fits.RData"))
+save(lit_glm, num_glm, ict_glm, file = here::here("data/glm_fits.RData"))
+
 
 
 ######################
@@ -278,8 +280,8 @@ combs_df <- expand.grid(
 names_vars <- names(combs_df)
 
 ## select
-# combs_df$predicted_prob <- predict(lit_glm, combs_df, type = 'response')
-combs_df$predicted_prob <- predict(num_glm, combs_df, type = 'response')
+combs_df$predicted_prob <- predict(lit_glm, combs_df, type = 'response')
+# combs_df$predicted_prob <- predict(num_glm, combs_df, type = 'response')
 # combs_df$predicted_prob <- predict(ict_glm, combs_df, type = 'response')
 
 
@@ -386,7 +388,8 @@ rowwise() |>
   mutate(product_p = prod(c_across(starts_with("p_")))) |>
   ungroup()
 
-write.csv(total_dat, here::here("data/total_dat.csv"))
+# # save
+# write.csv(total_dat, here::here("data/total_dat.csv"))
 
 ##TODO:
 # merge(
@@ -413,8 +416,8 @@ poststratified_estimates
 # Bayesian
 
 ## select
-posterior_draws <- rstanarm::posterior_epred(num_glm_stan, newdata = total_dat)
-# posterior_draws <- rstanarm::posterior_epred(lit_glm_stan, newdata = total_dat)
+# posterior_draws <- rstanarm::posterior_epred(num_glm_stan, newdata = total_dat)
+posterior_draws <- rstanarm::posterior_epred(lit_glm_stan, newdata = total_dat)
 
 poststrat_estimates_stan <- posterior_draws %*% total_dat$product_p
 
@@ -591,6 +594,36 @@ ggsave(filename = here::here("plots/ame_plot.png"),
 
 # regression-type table
 ##TODO
+
+
+# rank plot
+
+xx <- bind_rows(ps_var, .id = "vars") |>
+  filter(ame_base != 0) |>
+  select(vars, name, variable, ame_base) |>
+  group_by(vars, name) |>
+  reshape2::dcast(variable ~ vars + name, value.var = "ame_base")
+
+row_ranks <- t(apply(xx[, -1], 1, rank))
+row_ranks <- apply(row_ranks, 2, \(x) table(factor(x, levels = 1:ncol(row_ranks))))
+
+rank_dat <- row_ranks |>
+  as_tibble() |>
+  mutate(rank = 1:n()) |>
+  gather(key = "name", value = "count", -rank) |>
+  mutate(rank = as.integer(rank))
+
+
+rank_dat |>
+  filter(count > 0,
+         rank <= 10) |>
+  ggplot(aes(x = rank, y = count, fill = name)) +
+  geom_bar(stat = "identity") +
+  xlim(0, 10) +
+  theme_minimal() +
+  scale_x_discrete(limits = 1:10,
+                   labels = 1:10)
+  # coord_flip()
 
 
 ##################################
