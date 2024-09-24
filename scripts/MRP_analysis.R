@@ -230,6 +230,8 @@ suppressWarnings({
 save(lit_glm_stan, num_glm_stan, ict_glm_stan, file = here::here("data/stan_fits.RData"))
 save(lit_glm, num_glm, ict_glm, file = here::here("data/glm_fits.RData"))
 
+# load(here::here("data/stan_fits.RData"))
+# load(here::here("data/glm_fits.RData"))
 
 
 ######################
@@ -596,24 +598,30 @@ ggsave(filename = here::here("plots/ame_plot.png"),
 ##TODO
 
 
-# rank plot
+#############
+# rank plots
 
-xx <- bind_rows(ps_var, .id = "vars") |>
+xx <-
+  bind_rows(ps_var, .id = "vars") |>
   filter(ame_base != 0) |>
   select(vars, name, variable, ame_base) |>
   group_by(vars, name) |>
-  reshape2::dcast(variable ~ vars + name, value.var = "ame_base")
+  reshape2::dcast(variable ~ vars + name,
+                  value.var = "ame_base")
+row_ranks <-
+  xx[, -1] |>
+  apply(1, rank) |>
+  t() |>
+  apply(2, \(x) table(factor(x, levels = 1:(ncol(xx) - 1))))
 
-row_ranks <- t(apply(xx[, -1], 1, rank))
-row_ranks <- apply(row_ranks, 2, \(x) table(factor(x, levels = 1:ncol(row_ranks))))
-
-rank_dat <- row_ranks |>
+rank_dat <-
+  row_ranks |>
   as_tibble() |>
   mutate(rank = 1:n()) |>
   gather(key = "name", value = "count", -rank) |>
   mutate(rank = as.integer(rank))
 
-
+# bar plot
 rank_dat |>
   filter(count > 0,
          rank <= 10) |>
@@ -621,10 +629,32 @@ rank_dat |>
   geom_bar(stat = "identity") +
   xlim(0, 10) +
   theme_minimal() +
-  scale_x_discrete(limits = 1:10,
+  scale_x_discrete(limits = factor(1:10),
                    labels = 1:10)
-  # coord_flip()
 
+# cumulative rank (SUCRA)
+
+max_rank <- 10
+
+sucra <-
+  rank_dat |>
+  group_by(name) |>
+  mutate(sucra = cumsum(count),
+         sucra = sucra / max(sucra))
+
+sucra |>
+  group_by(name) |>
+  filter(rank <= max_rank) |>
+  filter(!all(sucra == 0)) |>
+  mutate(name = as.factor(name),
+         name = droplevels(name)) |>
+  ggplot(aes(x = rank, y = sucra, colour = name)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  ylab("Probability ranking or higher") +
+  theme_minimal() +
+  scale_x_discrete(limits = factor(1:max_rank),
+                   labels = 1:max_rank)
 
 ##################################
 # marginal effect at representative values (MER)
