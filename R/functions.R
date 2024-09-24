@@ -108,28 +108,28 @@ clean_data <- function(data, save = FALSE) {
   # health literacy assessment specific data sets
   # where have answered question
 
-  lit_dat <- model_dat |>
+  lit <- model_dat |>
     filter(lit_thresholdL2 %in% c("above", "below")) |>
     mutate(lit_thresholdL2 = as.factor(lit_thresholdL2),
            lit_thresholdL2_bin = as.integer(lit_thresholdL2) - 1L) |>
     select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3,
            -num_thresholdEL3, -num_thresholdL1, -ict_thresholdEL3)
 
-  num_dat <- model_dat |>
+  num <- model_dat |>
     filter(num_thresholdL1 %in% c("above", "below")) |>
     mutate(num_thresholdL1 = as.factor(num_thresholdL1),
            num_thresholdL1_bin = as.integer(num_thresholdL1) - 1L) |>
     select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3,
            -num_thresholdEL3, -lit_thresholdL2, -ict_thresholdEL3)
 
-  ict_dat <- model_dat |>
+  ict <- model_dat |>
     filter(ict_thresholdEL3 %in% c("above", "below")) |>
     mutate(ict_thresholdEL3 = as.factor(ict_thresholdEL3),
            ict_thresholdEL3_bin = as.integer(ict_thresholdEL3) - 1L) |>
     select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3,
            -num_thresholdEL3, -num_thresholdL1, -lit_thresholdL2)
 
-  tibble::lst(lit_dat, num_dat, ict_dat)
+  tibble::lst(lit, num, ict)
 }
 
 #' @title Fit health literacy, numeracy and ICT models
@@ -143,43 +143,49 @@ clean_data <- function(data, save = FALSE) {
 #'
 fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
 
-  lit_dat <- survey_data$lit_dat
-  num_dat <- survey_data$num_dat
-  ict_dat <- survey_data$ict_dat
+  lit_dat <- survey_data$lit
+  num_dat <- survey_data$num
+  ict_dat <- survey_data$ict
 
   model <- if (stan) "stan" else "freq"
 
   rhs <- "1 + sex + age + ethnicity + uk_born + english_lang + qualification + workingstatus + job_status + gross_income + own_home + imd"
 
   if (!stan) {
-    lit_glm <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights, ...)
-    num_glm <- glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(), weights = weights, ...)
-    ict_glm <- glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights, ...)
+    lit <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights, ...)
+    num <- glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(), weights = weights, ...)
+    ict <- glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights, ...)
   } else {
-    lit_glm <- rstanarm::stan_glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(),
-                                  weights = weights, chains = 2, iter = 2000, ...)
-    num_glm <- rstanarm::stan_glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(),
-                                  weights = weights, chains = 2, iter = 2000, ...)
-    ict_glm <- rstanarm::stan_glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(),
-                                  weights = weights, chains = 2, iter = 2000, ...)
+    lit <- rstanarm::stan_glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(),
+                              weights = weights, chains = 2, iter = 2000, ...)
+    num <- rstanarm::stan_glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(),
+                              weights = weights, chains = 2, iter = 2000, ...)
+    ict <- rstanarm::stan_glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(),
+                              weights = weights, chains = 2, iter = 2000, ...)
   }
 
   if (save) {
-    save(lit_glm_stan, num_glm_stan, ict_glm_stan, file = here::here(glue::glue("data/{model}_fits.RData")))
+    save(lit, num, ict, file = here::here(glue::glue("data/{model}_fits.RData")))
   }
 
-  tibble::lst(lit_glm, num_glm, ict_glm)
+  tibble::lst(lit, num, ict)
 }
 
 #' @title Post-stratification
 #'
 poststratification <- function(fit, data) {
 
-  data$predicted_prob <- predict(fit, data, type = 'response')
+  is_stan <- inherits(fit, "stanreg")
 
-  poststrat_estimates <-
-    data |>
-    summarize(estimate = weighted.mean(predicted_prob, product_p))
+  if (is_stan) {
+    posterior_draws <- rstanarm::posterior_epred(fit, newdata = total_dat)
+    poststrat_est <- posterior_draws %*% total_dat$product_p
+  } else {
+    data$predicted_prob <- predict(fit, data, type = 'response')
+    poststrat_est <-
+      data |>
+      summarize(estimate = weighted.mean(predicted_prob, product_p))
+  }
 
-  poststrat_estimates
+  poststrat_est
 }

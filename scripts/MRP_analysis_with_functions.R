@@ -8,8 +8,10 @@ load(here::here("data/skills_for_life_data.RData"))
 
 survey_data <- clean_data(data)
 
-# fit_stan <- fit_models(survey_data, stan = TRUE)
-fit_freq <- fit_models(survey_data, stan = FALSE)
+use_stan <- TRUE
+out <- "lit"
+
+fit <- fit_models(survey_data, stan = use_stan)
 
 mrp_data <-
   map(survey_data,
@@ -18,27 +20,16 @@ mrp_data <-
 
 save(mrp_data, file = here::here("data/mrp_data.RData"))
 
-poststratification(fit_freq$lit_glm,
-                   mrp_data$lit_dat)
+poststratification(fit[[out]],
+                   mrp_data[[out]])
 
 ame_data <-
-  average_marginal_effect(fit_freq$lit_glm,
-                          mrp_data$lit_dat)
+  average_marginal_effect(fit[[out]],
+                          mrp_data[[out]],
+                          save = TRUE)
 
-save(ame_data, file = here::here("data/ame_data.RData"))
-
-# stratified average marginal effect
-
-names_vars <- all.vars(terms(fit_freq[[1]])[[3]])
-stat_ame_data <- list()
-
-##TODO: fix error for gross_income
-for (i in names_vars) {
-  stat_ame_data[[i]] <-
-    strat_marginal_effect(fit_freq$lit_glm,
-                          survey_data$lit_dat,
-                          mrp_data$lit_dat,
-                          interaction = i)
-}
-
-save(stat_ame_data, file = here::here("data/stat_ame_data.RData"))
+strat_ame_data <-
+  all_strat_ame(fit[[out]],
+                survey_data[[out]],
+                mrp_data[[out]],
+                save = TRUE)
