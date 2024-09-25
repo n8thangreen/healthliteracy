@@ -64,6 +64,9 @@ calc_ame <- function(fit, data, var) {
     # assign everyone the same level
     appended_df <- purrr::map_dfr(fac_levels,
                                   ~data %>% mutate({{var}} := .x))
+
+    if (nrow(appended_df) == 0) return(data.frame())
+
     posterior_draws <-
       rstanarm::posterior_epred(
         fit,
