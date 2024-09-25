@@ -2,10 +2,10 @@
 % Please edit documentation in R/average_marginal_effect.R
 \name{average_marginal_effect}
 \alias{average_marginal_effect}
-\title{Average Marginal Effect}
+\title{Average Marginal Effect For All Variables}
 \usage{
-average_marginal_effect(fit, data)
+average_marginal_effect(fit, data, save = FALSE)
 }
 \description{
-Average Marginal Effect
+Average Marginal Effect For All Variables
 }

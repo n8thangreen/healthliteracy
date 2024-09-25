@@ -4,7 +4,17 @@
 \alias{strat_marginal_effect}
 \title{Stratified Marginal Effect}
 \usage{
-strat_marginal_effect(fit, data)
+strat_marginal_effect(fit, survey_dat, mrp_dat, interaction = "workingstatus")
+}
+\arguments{
+\item{fit}{glm or stan model output}
+
+\item{survey_dat}{data frame}
+
+\item{interaction}{Name of the interaction term}
+}
+\value{
+List
 }
 \description{
 Stratified Marginal Effect

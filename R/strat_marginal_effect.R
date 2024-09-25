@@ -6,7 +6,9 @@
 #' @param interaction Name of the interaction term
 #' @return List
 #'
-strat_marginal_effect <- function(fit, survey_dat, mrp_dat,
+strat_marginal_effect <- function(fit,
+                                  survey_dat,
+                                  mrp_dat,
                                   interaction = "workingstatus") {
   ndraws <- 20
 
