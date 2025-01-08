@@ -3,10 +3,12 @@
 # Newham resident survey data
 
 library(dplyr)
+library(ggplot2)
 library(glue)
 library(gtsummary)
+library(tibble)
 library(tidyr)
-library(ggplot2)
+
 
 # # load regression data
 # {
@@ -193,13 +195,14 @@ ict_dat <- model_dat |>
 # summary stats
 
 lit_dat$lit_thresholdL2 |> table() |> prop.table()
+num_dat$num_thresholdL1 |> table() |> prop.table()
+ict_dat$ict_thresholdEL3 |> table() |> prop.table()
 
 #######################
 # logistic regressions
 
 rhs <- "1 + sex + age + ethnicity + uk_born + english_lang + qualification + workingstatus + job_status + gross_income + own_home + imd"
 
-# unweighted
 lit_glm <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights)
 lit_glm_stan <- rstanarm::stan_glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(),
                                    weights = weights, chains = 2, iter = 2000)
@@ -236,6 +239,7 @@ save(lit_glm, num_glm, ict_glm, file = here::here("data/glm_fits.RData"))
 
 ######################
 # post-stratification
+######################
 
 # CRAN package, including newer methods from ML:
 #   https://cran.r-project.org/web/packages/autoMrP/vignettes/autoMrP_vignette.pdf
@@ -281,112 +285,128 @@ combs_df <- expand.grid(
 
 names_vars <- names(combs_df)
 
-## select
-combs_df$predicted_prob <- predict(lit_glm, combs_df, type = 'response')
-# combs_df$predicted_prob <- predict(num_glm, combs_df, type = 'response')
-# combs_df$predicted_prob <- predict(ict_glm, combs_df, type = 'response')
+combs_df_lit <- data.frame(combs_df,
+                           predicted_prob = predict(lit_glm, combs_df, type = 'response'))
+combs_df_num <- data.frame(combs_df,
+                           predicted_prob = predict(num_glm, combs_df, type = 'response'))
+combs_df_ict <- data.frame(combs_df,
+                           predicted_prob = predict(ict_glm, combs_df, type = 'response'))
 
 
-###################################
 # join with target population data
+#
+merge_with_demographics <- function(df) {
+  # IMD is at LSOA level
+  ward_lookup <- read.csv(here::here("raw_data/Ward - neighbourhood - quadrant 2024.csv"))
 
-# IMD is at LSOA level
-ward_lookup <- read.csv(here::here("raw_data/Ward - neighbourhood - quadrant 2024.csv"))
+  imd_dat <- read.csv(here::here("raw_data/localincomedeprivationdata_Newham.csv")) |>
+    rename(LSOA11CD = "LSOA.code..2011.",
+           imd = "Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.",
+           pop = "Total.population..mid.2015..excluding.prisoners.") |>
+    select(LSOA11CD, imd, pop)
 
-imd_dat <- read.csv(here::here("raw_data/localincomedeprivationdata_Newham.csv")) |>
-  rename(LSOA11CD = "LSOA.code..2011.",
-         imd = "Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.",
-         pop = "Total.population..mid.2015..excluding.prisoners.") |>
-  select(LSOA11CD, imd, pop)
+  LSOA_lookup <-
+    read.csv(here::here("raw_data/Lower_Layer_Super_Output_Area_(2011)_to_Ward_(2015)_Lookup_in_England_and_Wales.csv")) |>
+    filter(LAD15NM == "Newham")
 
-LSOA_lookup <-
-  read.csv(here::here("raw_data/Lower_Layer_Super_Output_Area_(2011)_to_Ward_(2015)_Lookup_in_England_and_Wales.csv")) |>
-  filter(LAD15NM == "Newham")
+  imd_lookup <-
+    LSOA_lookup |>
+    merge(ward_lookup, by.x = "WD15NM", by.y = "Ward") |>
+    merge(imd_dat) |>
+    group_by(imd) |>
+    summarize(pop = sum(pop)) |>
+    mutate(p_imd = pop / sum(pop)) |>
+    select(-pop)
 
-imd_lookup <-
-  LSOA_lookup |>
-  merge(ward_lookup, by.x = "WD15NM", by.y = "Ward") |>
-  merge(imd_dat) |>
-  group_by(imd) |>
-  summarize(pop = sum(pop)) |>
-  mutate(p_imd = pop / sum(pop)) |>
-  select(-pop)
+  # from resident survey report summary tables
+  # unless otherwise indicated
 
-# from resident survey report summary tables
-# unless otherwise indicated
+  df %>%
+    merge(
+      tribble(~age, ~p_age,
+              "16-44", 0.15 + 0.27 + 0.22,
+              ">=45", 0.15 + 0.11 + 0.1)) %>%
+    merge(
+      tribble(~sex, ~p_sex,
+              "Male", 0.54,
+              "Female", 0.46)) %>%
+    merge(
+      tribble(~ethnicity, ~p_ethn,
+              "White", 0.30,
+              "BME", 0.70)) %>%
+    merge(
+      tribble(~workingstatus, ~p_workstatus,
+              "Yes", 0.65,
+              "No", 0.35)) %>%
+    merge(
+      tribble(~own_home, ~p_own_home,
+              "Yes", 0.35,
+              "No", 0.65)) %>%
+    merge(
+      tribble(~qualification, ~p_qual,
+              ">=level 2", 0.57,
+              "<=Level 1", 0.43)) %>%
+    merge(
+      tribble(~gross_income, ~p_income,
+              ">=10000", 0.9,
+              "<10000", 0.1)) |>
+    # census 2021 usual resident population
+    merge(
+      tribble(~uk_born, ~p_uk,
+              "Yes", 0.455 + 0.001 + 0.004 + 0.003,
+              "No", 0.553)) |>
+    # Q77	How well can you speak English?
+    # 1	Very well
+    # 2	Well
+    # 3	Not well
+    #
+    # ONS census 2021 English as main language
+    merge(
+      tribble(~english_lang, ~p_english,
+              "Yes", 0.6537,
+              "No", 0.3463)) |>
+    # AB: higher and intermediate managerial, administrative and professional occupations
+    # C1: supervisory, clerical and junior managerial, administrative and professional occupations
+    # C2: skilled manual occupations
+    # DE: semi-skilled and unskilled manual and lowest grade occupations
+    #
+    # tribble(~job_status_ASG, ~job_status, ~prop,
+    #         "AB", "higher", 0.167,
+    #         "C1", "intermediate", 0.276,
+    #         "C2", "lower", 0.234,
+    #         "DE", "lower", 0.323)
+    merge(
+      tribble(~job_status, ~p_job,
+              "higher", 0.167,
+              "intermediate", 0.276,
+              "lower", 0.234 + 0.323)) |>
+    merge(imd_lookup)
+}
 
-total_dat <-
-  combs_df |>
-  merge(
-    tribble(~age, ~p_age,
-            "16-44", 0.15 + 0.27 + 0.22,
-            ">=45", 0.15 + 0.11 + 0.1)) |>
-  merge(
-    tribble(~sex, ~p_sex,
-            "Male", 0.54,
-            "Female", 0.46)) |>
-  merge(
-    tribble(~ethnicity, ~p_ethn,
-            "White", 0.30,
-            "BME", 0.70)) |>
-  merge(
-    tribble(~workingstatus, ~p_workstatus,
-            "Yes", 0.65,
-            "No", 0.35)) |>
-  merge(
-    tribble(~own_home, ~p_own_home,
-            "Yes", 0.35,
-            "No", 0.65)) |>
-  # ONS census 2021 Highest level of qualification
-  merge(
-    tribble(~qualification, ~p_qual,
-            ">=level 2", 0.57,
-            "<=Level 1", 0.43)) |>
-  # Q61: household gross income before tax
-  # Q70: Are you the main or joint householder? e.g.responsible for bills such as rent, mortgage and utilities
-  # this would be good but its mostly 'not answered'!
-  # Q54	What is your average monthly pay?
-  #
-  ##TODO: break down by LSOA and map to CNA
-  ##  read from Newham tab in saiefy1920finalqaddownload280923.xlsx
-  merge(
-    tribble(~gross_income, ~p_income,
-            ">=10000", 0.9,
-            "<10000", 0.1)) |>
-  # census 2021 usual resident population
-  merge(
-    tribble(~uk_born, ~p_uk,
-            "Yes", 0.455 + 0.001 + 0.004 + 0.003,
-            "No", 0.553)) |>
-  # Q77	How well can you speak English?
-  # 1	Very well
-  # 2	Well
-  # 3	Not well
-  #
-  # ONS census 2021 English as main language
-  merge(
-    tribble(~english_lang, ~p_english,
-            "Yes", 0.6537,
-            "No", 0.3463)) |>
-  # AB: higher and intermediate managerial, administrative and professional occupations
-  # C1: supervisory, clerical and junior managerial, administrative and professional occupations
-  # C2: skilled manual occupations
-  # DE: semi-skilled and unskilled manual and lowest grade occupations
-  #
-  # tribble(~job_status_ASG, ~job_status, ~prop,
-  #         "AB", "higher", 0.167,
-  #         "C1", "intermediate", 0.276,
-  #         "C2", "lower", 0.234,
-  #         "DE", "lower", 0.323)
-  merge(
-    tribble(~job_status, ~p_job,
-            "higher", 0.167,
-            "intermediate", 0.276,
-            "lower", 0.234 + 0.323)) |>
-  merge(imd_lookup) |>
-  #####################
+
+total_dat_lit <- merge_with_demographics(combs_df_lit)
+total_dat_num <- merge_with_demographics(combs_df_num)
+total_dat_ict <- merge_with_demographics(combs_df_ict)
+
+
+#####################
 # calculate product of probabilities, assuming independence
-rowwise() |>
+
+total_dat_lit <-
+  total_dat_lit |>
+  rowwise() |>
+  mutate(product_p = prod(c_across(starts_with("p_")))) |>
+  ungroup()
+
+total_dat_num <-
+  total_dat_num |>
+  rowwise() |>
+  mutate(product_p = prod(c_across(starts_with("p_")))) |>
+  ungroup()
+
+total_dat_ict <-
+  total_dat_ict |>
+  rowwise() |>
   mutate(product_p = prod(c_across(starts_with("p_")))) |>
   ungroup()
 
@@ -409,26 +429,49 @@ rowwise() |>
 #################
 # stratification
 
-poststratified_estimates <-
-  total_dat |>
+poststratified_estimates_lit <-
+  total_dat_lit |>
   summarize(estimate = weighted.mean(predicted_prob, product_p))
 
-poststratified_estimates
+poststratified_estimates_lit
 
+poststratified_estimates_num <-
+  total_dat_num |>
+  summarize(estimate = weighted.mean(predicted_prob, product_p))
+
+poststratified_estimates_num
+
+poststratified_estimates_ict <-
+  total_dat_ict |>
+  summarize(estimate = weighted.mean(predicted_prob, product_p))
+
+poststratified_estimates_ict
+
+###########
 # Bayesian
+###########
 
-## select
-# posterior_draws <- rstanarm::posterior_epred(num_glm_stan, newdata = total_dat)
-posterior_draws <- rstanarm::posterior_epred(lit_glm_stan, newdata = total_dat)
+posterior_draws_lit <- rstanarm::posterior_epred(lit_glm_stan, newdata = total_dat_lit)
+posterior_draws_num <- rstanarm::posterior_epred(num_glm_stan, newdata = total_dat_num)
+posterior_draws_ict <- rstanarm::posterior_epred(ict_glm_stan, newdata = total_dat_ict)
 
-poststrat_estimates_stan <- posterior_draws %*% total_dat$product_p
+poststrat_estimates_stan_lit <- posterior_draws_lit %*% total_dat_lit$product_p
+poststrat_estimates_stan_num <- posterior_draws_num %*% total_dat_num$product_p
+poststrat_estimates_stan_ict <- posterior_draws_ict %*% total_dat_ict$product_p
 
-hist(poststrat_estimates_stan, breaks = 20, main = "")
-abline(v = poststratified_estimates, col = "red", lwd = 2)
+hist(poststrat_estimates_stan_lit, breaks = 20, main = "")
+abline(v = poststratified_estimates_lit, col = "red", lwd = 2)
+
+hist(poststrat_estimates_stan_num, breaks = 20, main = "")
+abline(v = poststratified_estimates_num, col = "red", lwd = 2)
+
+hist(poststrat_estimates_stan_ict, breaks = 20, main = "")
+abline(v = poststratified_estimates_ict, col = "red", lwd = 2)
 
 
 ################################
 # average marginal effect (AME)
+################################
 
 # within levels
 conditional_effects <-
@@ -454,6 +497,7 @@ ps_workingstatus$ame <- ps_workingstatus$estimate - poststratified_estimates$est
 
 # for _all_ variables
 
+##############
 # frequentist
 
 ps_freq <- list()
@@ -475,6 +519,7 @@ for (i in names_vars) {
   names(ps_freq[[i]])[1] <- "name"
 }
 
+###########
 # Bayesian
 
 ps_var <- list()
