@@ -178,13 +178,13 @@ poststratification <- function(fit, data) {
   is_stan <- inherits(fit, "stanreg")
 
   if (is_stan) {
-    posterior_draws <- rstanarm::posterior_epred(fit, newdata = total_dat)
-    poststrat_est <- posterior_draws %*% total_dat$product_p
+    posterior_draws <- rstanarm::posterior_epred(fit, newdata = data)
+    poststrat_est <- posterior_draws %*% data$product_p
   } else {
     data$predicted_prob <- predict(fit, data, type = 'response')
     poststrat_est <-
       data |>
-      summarize(estimate = weighted.mean(predicted_prob, product_p))
+      dplyr::summarize(estimate = weighted.mean(predicted_prob, product_p))
   }
 
   poststrat_est
