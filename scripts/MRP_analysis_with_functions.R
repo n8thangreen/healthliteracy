@@ -14,7 +14,7 @@ fit <- fit_models(survey_data, stan = use_stan)
 
 mrp_data <-
   map(survey_data,
-      ~create_covariate_data(.x) |>
+      ~ create_covariate_data(.x) |>
         create_target_pop_data())
 
 save(mrp_data, file = here::here("data/mrp_data.RData"))
@@ -53,3 +53,53 @@ save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
 ########
 # plots
 ########
+
+library(ggplot2)
+library(gridExtra)
+
+load(here::here("data/all_poststrat.RData"))
+load(here::here("data/all_ame_data.RData"))
+load(here::here("data/all_strat_ame_data.RData"))
+
+# bar plots
+
+out <- list()
+for (i in names(ame_data)) {
+  out[[i]] <- bar_plot(ame_data[[i]], title = i)
+}
+gridout <- gridExtra::grid.arrange(grobs = out, ncol = 1)
+
+ggsave(gridout, filename = here::here("plots/all_bar_plots.png"),
+       width = 5, height = 6, dpi = 300, bg = "white")
+
+# scatter plots
+
+for (i in names(ame_data)) {
+  scatter_plot(ame_data[[i]], title = i, save = TRUE)
+}
+
+# AME forest plot
+
+for (i in names(ame_data)) {
+  ame_forest_plot(ame_data[[i]], title = i, save = TRUE)
+}
+
+ame_forest_group_plot(ame_data, save = TRUE)
+
+# rank plot
+
+for (i in names(ame_data)) {
+  rank_plot(ps_var = ame_data[[i]], title = i, save = TRUE)
+}
+
+rank_group_plot(ame_data, max_rank = 3, save = TRUE)
+
+# sucra plot
+
+for (i in names(ame_data)) {
+  sucra_plot(ps_var = ame_data[[i]], title = i, save = TRUE)
+}
+
+sucra_group_plot(ame_data, max_rank = 3, save = TRUE)
+
+
