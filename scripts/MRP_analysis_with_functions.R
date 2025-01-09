@@ -90,6 +90,7 @@ ame_forest_group_plot(ame_data, save = TRUE)
 
 for (i in names(ame_data)) {
   rank_plot(ps_var = ame_data[[i]], title = i, save = TRUE)
+  rank_plot_by_var(ps_var = ame_data[[i]], title = i, save = TRUE)
 }
 
 rank_group_plot(ame_data, max_rank = 3, save = TRUE)
@@ -101,5 +102,13 @@ for (i in names(ame_data)) {
 }
 
 sucra_group_plot(ame_data, max_rank = 3, save = TRUE)
+
+
+#########
+# tables
+#########
+
+tab <- ame_table(ame_data)
+write.csv(tab, here::here("tables/ame_table.csv"), row.names = FALSE)
 
 

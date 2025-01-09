@@ -272,6 +272,55 @@ rank_group_plot <- function(ame_data,
   res
 }
 
+#
+rank_plot_by_var <- function(ps_var,
+                             max_rank = 5,
+                             title = "",
+                             save = FALSE) {
+  # process data
+  xx <-
+    bind_rows(ps_var, .id = "vars") |>
+    filter(ame_base != 0) |>
+    select(vars, name, variable, ame_base) |>
+    group_by(vars, name) |>
+    reshape2::dcast(variable ~ vars + name,
+                    value.var = "ame_base")
+  row_ranks <-
+    xx[, -1] |>
+    apply(1, rank) |>
+    t() |>
+    apply(2, \(x) table(factor(x, levels = 1:(ncol(xx) - 1))))
+
+  rank_dat <-
+    row_ranks |>
+    as_tibble() |>
+    mutate(rank = 1:n()) |>
+    tidyr::gather(key = "name", value = "count", -rank) |>
+    mutate(rank = as.integer(rank))
+
+  res <-
+    rank_dat |>
+    filter(count > 0, rank <= max_rank) |>
+    ggplot(aes(x = name, y = count, fill = factor(rank))) +
+    geom_bar(stat = "identity") +
+    ggtitle(title) +
+    theme_minimal() +
+    scale_y_continuous(expand = c(0, 0)) +
+    scale_fill_viridis_d(name = "Rank", option = "mako") +  # discrete colour scale
+    xlab("Variable") +
+    ylab("Count") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) # rotate x-axis labels if needed
+
+  if (save) {
+    ggsave(filename = here::here(glue::glue("plots/rank_plot_by_var_{title}.png")),
+           width = 10, height = 6, dpi = 300, bg = "white")
+  }
+
+  res
+}
+
+
+
 # cumulative rank (SUCRA)
 #
 sucra_plot <- function(ps_var,

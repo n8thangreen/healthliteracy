@@ -639,10 +639,6 @@ ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = variable)) +
 ggsave(filename = here::here("plots/ame_plot.png"),
        width = 10, height = 6, dpi = 300, bg = "white")
 
-# regression-type table
-##TODO
-
-
 #############
 # rank plots
 
