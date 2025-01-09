@@ -9,7 +9,6 @@ load(here::here("data/skills_for_life_data.RData"))
 survey_data <- clean_data(data)
 
 use_stan <- TRUE
-out <- "lit"
 
 fit <- fit_models(survey_data, stan = use_stan)
 
@@ -20,16 +19,37 @@ mrp_data <-
 
 save(mrp_data, file = here::here("data/mrp_data.RData"))
 
-poststratification(fit[[out]],
-                   mrp_data[[out]])
+###########
+# outcomes
 
-ame_data <-
-  average_marginal_effect(fit[[out]],
-                          mrp_data[[out]],
-                          save = TRUE)
+out_name <- c("lit", "num", "ict")
 
-strat_ame_data <-
-  all_strat_ame(fit[[out]],
-                survey_data[[out]],
-                mrp_data[[out]],
-                save = TRUE)
+poststrat <- list()
+ame_data <- list()
+strat_ame_data <- list()
+
+for (i in out_name) {
+
+  poststat[[i]] <-
+    poststratification(fit[[i]],
+                       mrp_data[[i]])
+
+  ame_data[[i]] <-
+    average_marginal_effect(fit[[i]],
+                            mrp_data[[i]],
+                            save = TRUE)
+
+  strat_ame_data[[i]] <-
+    all_strat_ame(fit[[i]],
+                  survey_data[[i]],
+                  mrp_data[[i]],
+                  save = TRUE)
+}
+
+save(poststat, file = here::here("data/all_poststrat.RData"))
+save(ame_data, file = here::here("data/all_ame_data.RData"))
+save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
+
+########
+# plots
+########
