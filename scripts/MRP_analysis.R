@@ -707,10 +707,5 @@ for (i in names_vars) {
   names(ps_freq[[i]])[1] <- "name"
 }
 
-## Bayesian
-
-
-
-
 
 
