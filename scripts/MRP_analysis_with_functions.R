@@ -108,7 +108,26 @@ sucra_group_plot(ame_data, max_rank = 3, save = TRUE)
 # tables
 #########
 
+# ame table
+
 tab <- ame_table(ame_data)
 write.csv(tab, here::here("tables/ame_table.csv"), row.names = FALSE)
 
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(tidyr)
+
+tab %>%
+  mutate(across(everything(), ~ replace_na(.x, ""))) |>
+  kable(format = "latex", booktabs = TRUE, escape = FALSE,
+        col.names = c("Variable", "Literacy", "Numeracy", "ICT")) %>%
+  kable_styling(latex_options = c("hold_position")) %>%
+  row_spec(0, bold = TRUE)
+
+# sucra table
+
+tab <- sucra_table(ame_data)
+
+write.csv(tab, here::here("tables/sucra_table.csv"), row.names = FALSE)
 

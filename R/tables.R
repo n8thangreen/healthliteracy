@@ -71,3 +71,70 @@ ame_table <- function(ame_data) {
   table_wide
 }
 
+#
+sucra_table <- function(ame_data) {
+
+  ### duplicated from rank_group_plot
+  rank_dat_ls <- list()
+
+  for (plot_name in names(ame_data)) {
+    ps_var <- ame_data[[plot_name]]
+
+    xx <-
+      bind_rows(ps_var, .id = "vars") |>
+      filter(ame_base != 0) |>
+      select(vars, name, variable, ame_base) |>
+      group_by(vars, name) |>
+      reshape2::dcast(variable ~ vars + name,
+                      value.var = "ame_base")
+
+    row_ranks <-
+      xx[, -1] |>
+      apply(1, rank) |>
+      t() |>
+      apply(2, \(x) table(factor(x, levels = 1:(ncol(xx) - 1))))
+
+    rank_dat <-
+      row_ranks |>
+      as_tibble() |>
+      mutate(rank = 1:n()) |>
+      tidyr::gather(key = "name", value = "count", -rank) |>
+      mutate(rank = as.integer(rank),
+             group = plot_name) # Add group identifier
+
+    rank_dat_ls[[plot_name]] <- rank_dat
+  }
+
+  # combine all datasets into a single data frame
+  combined_rank_dat <- bind_rows(rank_dat_ls)
+  ###
+
+  sucra <-
+    combined_rank_dat |>
+    group_by(name, group) |>
+    mutate(sucra = cumsum(count),
+           sucra = sucra / max(sucra))
+
+  sucra_table <- sucra %>%
+    filter(rank != max(rank)) |>
+    group_by(group, name) %>%
+    summarize(
+      SUCRA = round(sum(sucra) / (max(rank) - 1) * 100, 0),
+      .groups = "drop") |>
+    tidyr::pivot_wider(names_from = name, values_from = SUCRA)
+
+  final_table <- sucra %>%
+    mutate(p = count/max(rank)) |>
+    select(-count, -sucra) |>
+    pivot_wider(names_from = name, values_from = p) %>%
+    bind_rows(sucra_table)
+
+  grouped_tables <- sucra %>%
+    mutate(p = count / max(rank)) %>%
+    select(-count, -sucra) %>%
+    group_by(group) %>%
+    group_split() |>
+    purrr::map(~ pivot_wider(.x, names_from = name, values_from = p) %>%
+          bind_rows(sucra_table))
+}
+
