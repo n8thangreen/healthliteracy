@@ -42,24 +42,50 @@ scatter_plot <- function(ps_var, save = FALSE, title = "") {
   for (i in names_vars) {
     # Calculate means for each level of 'name'
     means_df <- ps_var[[i]] %>%
+      mutate(name = factor(name,
+                           levels = unique(name))) |>
       group_by(name) %>%
       summarise(mean_value = mean(value, na.rm = TRUE)) |>
       mutate(lead_name = lead(name),
              lead_mean_value = lead(mean_value)) %>%
       filter(!is.na(lead_name) & !is.na(lead_mean_value))
 
+    upp_low <- ps_var[[i]] %>%
+      group_by(name) %>%
+      summarise(mean_value = mean(value, na.rm = TRUE),
+                l95 = quantile(value, probs = 0.025),
+                u95 = quantile(value, probs = 0.975),
+                l50 = quantile(value, probs = 0.25),
+                u50 = quantile(value, probs = 0.75))
+
+    upp_low$name <- factor(upp_low$name, levels = unique(upp_low$name))
+    ps_var[[i]]$name <- factor(ps_var[[i]]$name, levels = unique(ps_var[[i]]$name))
+
+    upp_low$name_numeric <- as.numeric(upp_low$name)
+    ps_var[[i]]$name_numeric <- as.numeric(ps_var[[i]]$name)
+
     plot_ls[[i]] <-
       ps_var[[i]] |>
-      ggplot(aes(x = name, y = value)) +
+      ggplot() +
       # add jitter to points
-      geom_jitter(width = 0.1, height = 0) +
-      # draw gradient line connecting the means
+      geom_jitter(data = ps_var[[i]], aes(x = name_numeric, y = value),
+                  width = 0.1, height = 0) +
+      # # draw gradient line connecting the means
       geom_segment(data = means_df,
-                   aes(x = name, xend = lead_name,
+                   aes(x = as.numeric(name), xend = as.numeric(lead_name),
                        y = mean_value, yend = lead_mean_value),
-                   col = "red") +
+                   col = "red", inherit.aes = FALSE, linewidth = 1.2) +
+      # draw ribbon for the 95% CI
+      geom_ribbon(data = upp_low,
+                  aes(x = name_numeric, ymin = l95, ymax = u95),
+                  fill = "firebrick", alpha = 0.2, inherit.aes = FALSE) +
+      geom_ribbon(data = upp_low,
+                  aes(x = name_numeric, ymin = l50, ymax = u50),
+                  fill = "firebrick4", alpha = 0.2, inherit.aes = FALSE) +
+      scale_x_continuous(breaks = seq_along(levels(upp_low$name)), labels = levels(upp_low$name)) +
       ylab("P(not health literate)") +
       xlab(tools::toTitleCase(stringr::str_replace_all(i, "_", " "))) +
+      # expand_limits(y = 0) +
       # ylim(0.4, 0.75) +
       theme_minimal()
   }

@@ -161,5 +161,5 @@ full_table |>
         align = c("l", "l", "r", "r", "r"),
         escape = FALSE,
         booktabs = TRUE) |>
-  kable_styling(latex_options = c()) |> # No addlinespace
+  kable_styling(latex_options = c()) |> # drop addlinespace?
   add_header_above(c(" " = 2, "Lit" = 2, "Num" = 2, "ICT" = 2, "Newham" = 1))
