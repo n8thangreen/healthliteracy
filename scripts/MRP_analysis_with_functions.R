@@ -101,7 +101,7 @@ for (i in names(ame_data)) {
   sucra_plot(ps_var = ame_data[[i]], title = i, save = TRUE)
 }
 
-sucra_group_plot(ame_data, max_rank = 3, save = TRUE)
+sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = TRUE)
 
 
 #########

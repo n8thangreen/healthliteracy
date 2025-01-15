@@ -168,7 +168,7 @@ rank_plot <- function(ps_var,
                       max_rank = 5,
                       title = "",
                       save = FALSE) {
-  xx <-
+  ame_wide <-
     bind_rows(ps_var, .id = "vars") |>
     filter(ame_base != 0) |>
     select(vars, name, variable, ame_base) |>
@@ -176,10 +176,10 @@ rank_plot <- function(ps_var,
     reshape2::dcast(variable ~ vars + name,
                     value.var = "ame_base")
   row_ranks <-
-    xx[, -1] |>
+    ame_wide[, -1] |>
     apply(1, rank) |>
     t() |>
-    apply(2, \(x) table(factor(x, levels = 1:(ncol(xx) - 1))))
+    apply(2, \(x) table(factor(x, levels = 1:(ncol(ame_wide) - 1))))
 
   rank_dat <-
     row_ranks |>
@@ -209,11 +209,14 @@ rank_plot <- function(ps_var,
   res
 }
 
-# all outcomes on a single rank plot
-#
+#' all outcomes on a single rank stacked bar plot
+#'
+#' @param abs logical, if TRUE, use marginal effect absolute values
+#'
 rank_group_plot <- function(ame_data,
-                            max_rank = 5,
+                            max_rank = 3,
                             title = "",
+                            abs_val = TRUE,
                             save = FALSE) {
 
   # process each dataset and add a 'group' column
@@ -222,8 +225,9 @@ rank_group_plot <- function(ame_data,
   for (plot_name in names(ame_data)) {
     ps_var <- ame_data[[plot_name]]
 
-    xx <-
-      bind_rows(ps_var, .id = "vars") |>
+    ame_wide <-
+      bind_rows(ps_var, .id = "vars") %>%
+      mutate(ame_base = if (abs_val) abs(ame_base) else ame_base) |>
       filter(ame_base != 0) |>
       select(vars, name, variable, ame_base) |>
       group_by(vars, name) |>
@@ -231,10 +235,10 @@ rank_group_plot <- function(ame_data,
                       value.var = "ame_base")
 
     row_ranks <-
-      xx[, -1] |>
+      ame_wide[, -1] |>  # remove draw id column
       apply(1, rank) |>
       t() |>
-      apply(2, \(x) table(factor(x, levels = 1:(ncol(xx) - 1))))
+      apply(2, \(x) table(factor(x, levels = 1:(ncol(ame_wide) - 1))))
 
     rank_dat <-
       row_ranks |>
@@ -272,13 +276,14 @@ rank_group_plot <- function(ame_data,
   res
 }
 
-#
+#' stacked bar chart with variable on the x-axis
+#'
 rank_plot_by_var <- function(ps_var,
                              max_rank = 5,
                              title = "",
                              save = FALSE) {
   # process data
-  xx <-
+  ame_wide <-
     bind_rows(ps_var, .id = "vars") |>
     filter(ame_base != 0) |>
     select(vars, name, variable, ame_base) |>
@@ -286,10 +291,10 @@ rank_plot_by_var <- function(ps_var,
     reshape2::dcast(variable ~ vars + name,
                     value.var = "ame_base")
   row_ranks <-
-    xx[, -1] |>
+    ame_wide[, -1] |>
     apply(1, rank) |>
     t() |>
-    apply(2, \(x) table(factor(x, levels = 1:(ncol(xx) - 1))))
+    apply(2, \(x) table(factor(x, levels = 1:(ncol(ame_wide) - 1))))
 
   rank_dat <-
     row_ranks |>
@@ -328,7 +333,7 @@ sucra_plot <- function(ps_var,
                        title = "",
                        save = FALSE) {
   # this is duplication of rank_plot
-  xx <-
+  ame_wide <-
     bind_rows(ps_var, .id = "vars") |>
     filter(ame_base != 0) |>
     select(vars, name, variable, ame_base) |>
@@ -336,10 +341,10 @@ sucra_plot <- function(ps_var,
     reshape2::dcast(variable ~ vars + name,
                     value.var = "ame_base")
   row_ranks <-
-    xx[, -1] |>
+    ame_wide[, -1] |>
     apply(1, rank) |>
     t() |>
-    apply(2, \(x) table(factor(x, levels = 1:(ncol(xx) - 1))))
+    apply(2, \(x) table(factor(x, levels = 1:(ncol(ame_wide) - 1))))
 
   rank_dat <-
     row_ranks |>
@@ -379,11 +384,14 @@ sucra_plot <- function(ps_var,
   res
 }
 
-# all outcomes on a single surcra plot
+# all outcomes on a single cumulative sucra plot
 #
 sucra_group_plot <- function(ame_data,
-                             max_rank = 5,
+                             max_rank = 3,
                              title = "",
+                             threshold = 0.5,
+                             neg_ame = FALSE,
+                             abs_val = FALSE,
                              save = FALSE) {
 
   ### duplicated from rank_group_plot
@@ -392,19 +400,20 @@ sucra_group_plot <- function(ame_data,
   for (plot_name in names(ame_data)) {
     ps_var <- ame_data[[plot_name]]
 
-    xx <-
-      bind_rows(ps_var, .id = "vars") |>
+    ame_wide <-
+      bind_rows(ps_var, .id = "vars") %>%
+      mutate(ame_base = if (neg_ame) -ame_base else ame_base,
+             ame_base = if (abs_val) -abs(ame_base) else ame_base) |>  # ranks the largest first
       filter(ame_base != 0) |>
       select(vars, name, variable, ame_base) |>
       group_by(vars, name) |>
       reshape2::dcast(variable ~ vars + name,
                       value.var = "ame_base")
-
     row_ranks <-
-      xx[, -1] |>
+      ame_wide[, -1] |>
       apply(1, rank) |>
       t() |>
-      apply(2, \(x) table(factor(x, levels = 1:(ncol(xx) - 1))))
+      apply(2, \(x) table(factor(x, levels = 1:(ncol(ame_wide) - 1))))
 
     rank_dat <-
       row_ranks |>
@@ -431,7 +440,7 @@ sucra_group_plot <- function(ame_data,
     sucra |>
     group_by(name, group) |>
     filter(rank <= max_rank) |>
-    filter(!all(sucra == 0)) |>
+    filter(!all(sucra <= threshold)) |>
     mutate(name = as.factor(name),
            name = droplevels(name)) |>
     ggplot(aes(x = rank, y = sucra, colour = name)) +
@@ -451,4 +460,5 @@ sucra_group_plot <- function(ame_data,
 
   res
 }
+
 
