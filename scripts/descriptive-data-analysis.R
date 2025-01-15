@@ -40,7 +40,7 @@ summarize_data <- function(data) {
            # start with capital letter
            Variable = str_to_title(Variable),
            Category = str_to_title(Category),
-           Category = gsub("level", "Level", Category),
+           Variable = gsub("Bme", "BME", Variable),
            Variable = gsub("Uk", "UK", Variable),
            Variable = gsub("Imd", "IMD", Variable))
 }
@@ -150,8 +150,8 @@ newham_props <- tribble(
          # start with capital letter
          Variable = ifelse(str_starts(Variable, "\\$"), Variable, str_to_title(Variable)),
          Category = ifelse(str_starts(Category, "\\$"), Category, str_to_title(Category)),
-         Category = gsub("level", "Level", Category),
          Variable = gsub("Uk", "UK", Variable),
+         Variable = gsub("Bme", "BME", Variable),
          Variable = gsub("Imd", "IMD", Variable))
 
 full_table <- plyr::join(summary_results, newham_props, by = c("Variable", "Category"))
