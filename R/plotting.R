@@ -159,7 +159,11 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE) {
                   upper = quantile(ame_base, 0.975),
                   lower = quantile(ame_base, 0.025)) |>
         mutate(variable = i,
-               var_name = paste0(variable, "_", name),
+               var_name = paste0(variable, " ", name),
+               var_name = gsub(var_name, pattern = "_", replacement = " "),
+               var_name = gsub("^(.)", "\\U\\1", tolower(var_name), perl = TRUE),
+               var_name = gsub(var_name, pattern = "Imd", replacement = "IMD"),
+               var_name = gsub(var_name, pattern = "Uk", replacement = "UK"),
                group = plot_name) |>
         filter(mean_value != 0)
     }
@@ -179,12 +183,21 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE) {
     # ggtitle(title) +
     geom_hline(yintercept = 0, linetype = "dashed") +
     theme_minimal() +
-    theme(legend.position = "top")
+    theme(legend.position = "top") +
+    scale_x_discrete(expand = expansion(add = 2)) +    # add extra space
+    annotate("segment", x = 0, xend = 0, y = -0.1, yend = -0.3,
+             arrow = arrow(type = "open", length = unit(0.2, "cm")), color = "black") +
+    annotate("text", x = -0.5, y = -0.2, label = "Better", hjust = 0.5, color = "black") +
+    annotate("segment", x = 0, xend = 0, y = 0.1, yend = 0.3,
+             arrow = arrow(type = "open", length = unit(0.2, "cm")), color = "black") +
+    annotate("text", x = -0.5, y = 0.2, label = "Worse", hjust = 0.5, color = "black")
 
   if (save) {
     ggsave(plot = res, filename = here::here(glue::glue("plots/ame_forest_group_plot.png")),
            width = 9, height = 7, dpi = 300, bg = "white")
   }
+
+  res
 }
 
 
