@@ -80,7 +80,7 @@ clean_data <- function(data, save = FALSE) {
       ethnicity = factor(ETHNICSIMPLE, levels = 1:2, labels = c("White", "BME")),
       qualification = ifelse(HIQUAL %in% 1:4, ">=level 2", "<=Level 1") |>
         factor(levels = c(">=level 2", "<=Level 1")),
-      imd = factor(IMDSCOREB4),
+      imd = factor(10 - IMDSCOREB4),           # for some reason (?) these are the wrong way round. why?...
       job_status = ifelse(NSSEC7 %in% 1:2, "higher",
                           ifelse(NSSEC7 == 3, "intermediate",
                                  ifelse(NSSEC7 %in% 4:10, "lower", "other"))) |>
