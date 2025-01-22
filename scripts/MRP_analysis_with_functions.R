@@ -30,7 +30,7 @@ strat_ame_data <- list()
 
 for (i in out_name) {
 
-  poststat[[i]] <-
+  poststrat[[i]] <-
     poststratification(fit[[i]],
                        mrp_data[[i]])
 
@@ -46,7 +46,7 @@ for (i in out_name) {
                   save = TRUE)
 }
 
-save(poststat, file = here::here("data/all_poststrat.RData"))
+save(poststrat, file = here::here("data/all_poststrat.RData"))
 save(ame_data, file = here::here("data/all_ame_data.RData"))
 save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
 
