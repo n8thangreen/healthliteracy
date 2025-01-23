@@ -46,18 +46,25 @@ for (i in out_name) {
       fit[[i]],
       mrp_data[[i]],
       save = TRUE)
-#
-#   strat_ame_data[[i]] <-
-#     all_strat_ame(fit[[i]],
-#                   survey_data[[i]],
-#                   mrp_data[[i]],
-#                   save = TRUE)
+
+  swate_data[[i]] <-
+    subpop_weighted_average_effect(
+      att_data[[i]],
+      mrp_data[[i]],
+      save = TRUE)
+  #
+  #   strat_ame_data[[i]] <-
+  #     all_cate(fit[[i]],
+  #               survey_data[[i]],
+  #               mrp_data[[i]],
+  #               save = TRUE)
 }
 
 save(poststrat, file = here::here("data/all_poststrat.RData"))
 save(ame_data, file = here::here("data/all_ame_data.RData"))
 save(att_data, file = here::here("data/all_att_data.RData"))
 save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
+# save(cate_data, file = here::here("data/all_cate_data.RData"))
 
 ########
 # plots
@@ -68,7 +75,9 @@ library(gridExtra)
 
 load(here::here("data/all_poststrat.RData"))
 load(here::here("data/all_ame_data.RData"))
+load(here::here("data/all_att_data.RData"))
 load(here::here("data/all_strat_ame_data.RData"))
+# load(here::here("data/all_cate_data.RData"))
 
 # bar plots
 
@@ -94,7 +103,8 @@ for (i in names(ame_data)) {
 }
 
 ame_forest_group_plot(ame_data, save = F)
-ame_forest_group_plot(att_data, save = TRUE, filename = "att_forest_group_plot.png")
+ame_forest_group_plot(att_data, save = F, filename = "att_forest_group_plot.png")
+ame_forest_group_plot(swate_data, save = F, filename = "swate_forest_group_plot.png")
 
 # rank plot
 
@@ -104,6 +114,7 @@ for (i in names(ame_data)) {
 }
 
 rank_group_plot(ame_data, max_rank = 3, save = TRUE)
+rank_group_plot(att_data, max_rank = 3, save = F)
 
 # sucra plot
 
@@ -112,21 +123,21 @@ for (i in names(ame_data)) {
 }
 
 sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = TRUE)
+sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F)
 
 
 #########
 # tables
 #########
 
-# ame table
-
-tab <- ame_table(ame_data)
-write.csv(tab, here::here("tables/ame_table.csv"), row.names = FALSE)
-
 library(knitr)
 library(kableExtra)
 library(dplyr)
 library(tidyr)
+
+# ame table
+tab <- ame_table(ame_data)
+write.csv(tab, here::here("tables/ame_table.csv"), row.names = FALSE)
 
 tab %>%
   mutate(across(everything(), ~ replace_na(.x, ""))) |>
@@ -137,7 +148,11 @@ tab %>%
 
 # sucra table
 
-tab <- sucra_table(ame_data)
+##TODO: subset
+##      add expected rank
+##      combine and transpose
+
+tab <- sucra_table(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
 
 write.csv(tab, here::here("tables/sucra_table.csv"), row.names = FALSE)
 

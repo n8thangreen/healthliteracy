@@ -72,7 +72,10 @@ ame_table <- function(ame_data) {
 }
 
 #
-sucra_table <- function(ame_data) {
+sucra_table <- function(ame_data,
+                        max_rank = 3,
+                        threshold = 0.2,
+                        abs_val = TRUE) {
 
   ### duplicated from rank_group_plot
   rank_dat_ls <- list()

@@ -27,7 +27,8 @@ cond_treatment_effect <- function(fit,
 
   if (inherits(fit, "stanreg")) {
     fit <- rstanarm::stan_glm(form, data = survey_dat,
-                              family = binomial(), weights = weights,
+                              family = binomial(),
+                              weights = weights,
                               chains = 1, iter = 1000)
     for (i in names_vars) {
       for (j in levels(mrp_dat[[interaction]])) {
