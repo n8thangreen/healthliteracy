@@ -27,34 +27,36 @@ out_name <- c("lit", "num", "ict")
 
 poststrat <- list()
 ame_data <- list()
+att_data <- list()
 strat_ame_data <- list()
 
 for (i in out_name) {
 
-  poststrat[[i]] <-
-    poststratification(fit[[i]],
-                       mrp_data[[i]])
-
-  ame_data[[i]] <-
-    average_marginal_effect(fit[[i]],
-                            mrp_data[[i]],
-                            save = TRUE)
+  # # poststrat[[i]] <-
+  # #   poststratification(fit[[i]],
+  # #                      mrp_data[[i]])
+  # #
+  # ame_data[[i]] <-
+  #   average_marginal_effect(fit[[i]],
+  #                           mrp_data[[i]],
+  #                           save = TRUE)
 
   att_data[[i]] <-
     average_effect_on_treatment(
       fit[[i]],
       mrp_data[[i]],
       save = TRUE)
-
-  strat_ame_data[[i]] <-
-    all_strat_ame(fit[[i]],
-                  survey_data[[i]],
-                  mrp_data[[i]],
-                  save = TRUE)
+#
+#   strat_ame_data[[i]] <-
+#     all_strat_ame(fit[[i]],
+#                   survey_data[[i]],
+#                   mrp_data[[i]],
+#                   save = TRUE)
 }
 
 save(poststrat, file = here::here("data/all_poststrat.RData"))
 save(ame_data, file = here::here("data/all_ame_data.RData"))
+save(att_data, file = here::here("data/all_att_data.RData"))
 save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
 
 ########
@@ -91,7 +93,8 @@ for (i in names(ame_data)) {
   ame_forest_plot(ame_data[[i]], title = i, save = TRUE)
 }
 
-ame_forest_group_plot(ame_data, save = TRUE)
+ame_forest_group_plot(ame_data, save = F)
+ame_forest_group_plot(att_data, save = TRUE, filename = "att_forest_group_plot.png")
 
 # rank plot
 

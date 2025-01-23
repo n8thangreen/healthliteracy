@@ -143,7 +143,8 @@ ame_forest_plot <- function(ps_var, title = "", save = FALSE) {
 
 # combined all outcomes on a single forest plot
 #
-ame_forest_group_plot <- function(ame_data, title = "", save = FALSE) {
+ame_forest_group_plot <- function(ame_data, title = "", save = FALSE,
+                                  filename = "ame_forest_group_plot.png") {
 
   # process each dataset
   ame_dat_ls <- list()
@@ -193,7 +194,7 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE) {
     annotate("text", x = -0.5, y = 0.2, label = "Worse", hjust = 0.5, color = "black")
 
   if (save) {
-    ggsave(plot = res, filename = here::here(glue::glue("plots/ame_forest_group_plot.png")),
+    ggsave(plot = res, filename = here::here(glue::glue("plots/{filename}")),
            width = 9, height = 7, dpi = 300, bg = "white")
   }
 

@@ -57,12 +57,16 @@ calc_att_stan <- function(fit, data, var) {
 
   for (i in fac_levels) {
 
+    # subpopulation data
     level_dat <- data |> filter(!!sym(var) == i)
 
     # append same population data with base level
-    level_data_base <- level_dat |> mutate(!!sym(var) := base_level)
+    level_dat_base <- level_dat |> mutate(!!sym(var) := base_level)
 
-    level_dat_lst[[i]] <- bind_rows(level_dat, level_data_base, .id = "level")
+    level_dat$level <- i
+    level_dat_base$level <- base_level
+
+    level_dat_lst[[i]] <- bind_rows(level_dat_base, level_dat, .id = "level_id")
   }
 
   appended_df <- bind_rows(level_dat_lst, .id = "comparator")
@@ -86,7 +90,7 @@ calc_att_stan <- function(fit, data, var) {
   att_dat_wide <-
     appended_df %>%
     cbind(post_draws) %>%
-    group_by(comparator, level) %>%
+    group_by(comparator, level, level_id) %>%
     # group_by(!!sym(var)) %>%
     summarize_at(vars(starts_with('draws')),
                  list(~ weighted.mean(., w = product_p)))
@@ -97,7 +101,9 @@ calc_att_stan <- function(fit, data, var) {
   att_dat <-
     reshape2::melt(att_dat_wide) |>
     group_by(variable, name) |>
-    mutate(ame_base = value - first(value))
+    mutate(ame_base = value - first(value)) |>
+    filter(name != base_level) |>
+    rename(pop = name, name = level)  # to match ame and use same plotting functions
 
   att_dat
 }
