@@ -1,12 +1,12 @@
 
-#' @title Stratified Marginal Effect
+#' @title Conditional Average Treatment Effect (CATE)
 #'
 #' @param fit glm or stan model output
 #' @param survey_dat data frame
 #' @param interaction Name of the interaction term
 #' @return List
 #'
-strat_marginal_effect <- function(fit,
+cond_treatment_effect <- function(fit,
                                   survey_dat,
                                   mrp_dat,
                                   interaction = "workingstatus") {
@@ -22,8 +22,8 @@ strat_marginal_effect <- function(fit,
   rhs <- glue::glue("1 + {interaction} * ({main_term})")
   form <- glue("{response} ~ {rhs}")
 
-  strat_ame_data <- list()
-  ps_strat <- list()
+  cate_data <- list()
+  ps_cate <- list()
 
   if (inherits(fit, "stanreg")) {
     fit <- rstanarm::stan_glm(form, data = survey_dat,
@@ -31,15 +31,15 @@ strat_marginal_effect <- function(fit,
                               chains = 1, iter = 1000)
     for (i in names_vars) {
       for (j in levels(mrp_dat[[interaction]])) {
-        # stratified data
-        strat_dat <- filter(mrp_dat, !!sym(interaction) == j)
+        # stratified / conditional data
+        cate_dat <- filter(mrp_dat, !!sym(interaction) == j)
 
-        ps_strat[[j]] <-
-          calc_ame(fit, strat_dat, i) |>
+        ps_cate[[j]] <-
+          calc_ame(fit, cate_dat, i) |>
           mutate(level = j)
       }
 
-      strat_ame_data[[i]] <- bind_rows(ps_strat)
+      cate_data[[i]] <- bind_rows(ps_cate)
     }
 
   } else {
@@ -48,45 +48,45 @@ strat_marginal_effect <- function(fit,
 
     for (i in names_vars) {
       for (j in levels(mrp_dat[[interaction]])) {
-        strat_dat <- filter(mrp_dat, !!sym(interaction) == j)
-        strat_dat$predicted_prob <- predict(fit, strat_dat, type = 'response')
+        cate_dat <- filter(mrp_dat, !!sym(interaction) == j)
+        cate_dat$predicted_prob <- predict(fit, cate_dat, type = 'response')
 
         # total
         poststrat_est <-
-          strat_dat |>
+          cate_dat |>
           summarize(estimate = weighted.mean(predicted_prob, product_p))
 
         # marginal
-        fac_levels <- levels(strat_dat[[i]])
+        fac_levels <- levels(cate_dat[[i]])
 
         # assign everyone the same level
         appended_df <- purrr::map_dfr(fac_levels,
-                                      ~strat_dat %>% mutate({{i}} := .x))
+                                      ~cate_dat %>% mutate({{i}} := .x))
 
         appended_df$predicted_prob <-
           predict(fit, newdata = appended_df, type = 'response')
 
         # post-stratification
-        ps_strat[[j]] <-
+        ps_cate[[j]] <-
           appended_df %>%
           group_by(!!sym(i)) %>%
           summarize(estimate = weighted.mean(predicted_prob, product_p)) |>
           mutate(level = j)
       }
 
-      strat_ame_data[[i]] <- bind_rows(ps_strat)
+      cate_data[[i]] <- bind_rows(ps_cate)
 
       # average marginal effect
-      strat_ame_data[[i]] <-
-        strat_ame_data[[i]] |>
+      cate_data[[i]] <-
+        cate_data[[i]] |>
         group_by(level) |>
         mutate(ame_base = estimate - first(estimate))
 
       # common first column name
-      names(strat_ame_data[[i]])[1] <- "name"
+      names(cate_data[[i]])[1] <- "name"
     }
   }
 
-  strat_ame_data
+  cate_data
 }
 
