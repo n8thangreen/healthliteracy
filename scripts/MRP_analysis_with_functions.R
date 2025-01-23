@@ -18,6 +18,7 @@ mrp_data <-
         create_target_pop_data())
 
 save(mrp_data, file = here::here("data/mrp_data.RData"))
+save(fit, file = here::here("data/fit.RData"))
 
 ###########
 # outcomes
@@ -38,6 +39,12 @@ for (i in out_name) {
     average_marginal_effect(fit[[i]],
                             mrp_data[[i]],
                             save = TRUE)
+
+  att_data[[i]] <-
+    average_effect_on_treatment(
+      fit[[i]],
+      mrp_data[[i]],
+      save = TRUE)
 
   strat_ame_data[[i]] <-
     all_strat_ame(fit[[i]],
