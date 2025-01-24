@@ -40,7 +40,7 @@ scatter_plot <- function(ps_var, save = FALSE, title = "") {
   plot_ls <- list()
 
   for (i in names_vars) {
-    # Calculate means for each level of 'name'
+    # calculate means for each level of 'name'
     means_df <- ps_var[[i]] %>%
       mutate(name = factor(name,
                            levels = unique(name))) |>
@@ -161,11 +161,8 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE,
                   lower = quantile(ame_base, 0.025)) |>
         mutate(variable = i,
                var_name = paste0(variable, " ", name),
-               var_name = gsub(var_name, pattern = "_", replacement = " "),
-               var_name = gsub("^(.)", "\\U\\1", tolower(var_name), perl = TRUE),
-               var_name = gsub(var_name, pattern = "Imd", replacement = "IMD"),
-               var_name = gsub(var_name, pattern = "Uk", replacement = "UK"),
                group = plot_name) |>
+        clean_names() |>
         filter(mean_value != 0)
     }
   }
@@ -226,7 +223,8 @@ rank_plot <- function(ps_var,
     as_tibble() |>
     mutate(rank = 1:n()) |>
     tidyr::gather(key = "name", value = "count", -rank) |>
-    mutate(rank = as.integer(rank))
+    mutate(rank = as.integer(rank)) |>
+    clean_names(col_name = "name")
 
   # bar plot
   res <-
@@ -286,7 +284,8 @@ rank_group_plot <- function(ame_data,
       mutate(rank = 1:n()) |>
       tidyr::gather(key = "name", value = "count", -rank) |>
       mutate(rank = as.integer(rank),
-             group = plot_name) # Add group identifier
+             group = plot_name) |>  # Add group identifier
+      clean_names(col_name = "name")
 
     rank_dat_ls[[plot_name]] <- rank_dat
   }
@@ -341,7 +340,8 @@ rank_plot_by_var <- function(ps_var,
     as_tibble() |>
     mutate(rank = 1:n()) |>
     tidyr::gather(key = "name", value = "count", -rank) |>
-    mutate(rank = as.integer(rank))
+    mutate(rank = as.integer(rank)) |>
+    clean_names(col_name = "name")
 
   res <-
     rank_dat |>
@@ -461,7 +461,8 @@ sucra_group_plot <- function(ame_data,
       mutate(rank = 1:n()) |>
       tidyr::gather(key = "name", value = "count", -rank) |>
       mutate(rank = as.integer(rank),
-             group = plot_name) # Add group identifier
+             group = plot_name) |> # add group identifier
+      clean_names(col_name = "name")
 
     rank_dat_ls[[plot_name]] <- rank_dat
   }

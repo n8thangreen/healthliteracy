@@ -93,7 +93,7 @@ ggsave(gridout, filename = here::here("plots/all_bar_plots.png"),
 # scatter plots
 
 for (i in names(ame_data)) {
-  scatter_plot(ame_data[[i]], title = i, save = TRUE)
+  scatter_plot(ame_data[[i]], title = i, save = F)
 }
 
 # AME forest plot
@@ -106,14 +106,14 @@ ame_forest_group_plot(ame_data, save = F)
 ame_forest_group_plot(att_data, save = F, filename = "att_forest_group_plot.png")
 ame_forest_group_plot(swate_data, save = F, filename = "swate_forest_group_plot.png")
 
-# rank plot
+# rank bar plot
 
 for (i in names(ame_data)) {
-  rank_plot(ps_var = ame_data[[i]], title = i, save = TRUE)
-  rank_plot_by_var(ps_var = ame_data[[i]], title = i, save = TRUE)
+  rank_plot(ps_var = ame_data[[i]], title = i, save = F)
+  rank_plot_by_var(ps_var = ame_data[[i]], title = i, save = F)
 }
 
-rank_group_plot(ame_data, max_rank = 3, save = TRUE)
+rank_group_plot(ame_data, max_rank = 3, save = F)
 rank_group_plot(att_data, max_rank = 3, save = F)
 
 # sucra plot
@@ -122,7 +122,7 @@ for (i in names(ame_data)) {
   sucra_plot(ps_var = ame_data[[i]], title = i, save = TRUE)
 }
 
-sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = TRUE)
+sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F)
 sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F)
 
 
