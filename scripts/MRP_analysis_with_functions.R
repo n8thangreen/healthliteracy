@@ -124,11 +124,12 @@ for (i in names(ame_data)) {
   sucra_plot(ps_var = ame_data[[i]], title = i, save = TRUE)
 }
 
-sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T)
-sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T, filename = "att_sucra_group_plot.png")
-sucra_group_plot(swate_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T, filename = "swate_sucra_group_plot.png")
+gg <- list()
+gg[[1]] <- sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T)
+gg[[2]] <- sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T, filename = "att_sucra_group_plot.png")
+gg[[3]] <- sucra_group_plot(swate_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T, filename = "swate_sucra_group_plot.png")
 
-# extract legend
+# extract common legend
 legend <- cowplot::get_legend(gg[[1]])
 
 # remove legends
@@ -145,7 +146,7 @@ gridout <- cowplot::plot_grid(
 )
 
 ggsave(gridout, filename = here::here("plots/all_sucra_group_plot.png"),
-       width = 5, height = 6, dpi = 300, bg = "white")
+       width = 10, height = 12, dpi = 300, bg = "white")
 
 
 #########

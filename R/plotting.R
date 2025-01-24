@@ -491,6 +491,7 @@ sucra_group_plot <- function(ame_data,
     geom_point(size = 3) +
     ggtitle(title) +
     ylab("Probability ranking or higher") +
+    ylim(0,1) +
     theme_minimal() +
     scale_x_discrete(limits = factor(1:max_rank),
                      labels = 1:max_rank)
