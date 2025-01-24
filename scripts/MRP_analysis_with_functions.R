@@ -28,6 +28,7 @@ out_name <- c("lit", "num", "ict")
 poststrat <- list()
 ame_data <- list()
 att_data <- list()
+swate_data <- list()
 strat_ame_data <- list()
 
 for (i in out_name) {
@@ -50,8 +51,7 @@ for (i in out_name) {
   swate_data[[i]] <-
     subpop_weighted_average_effect(
       att_data[[i]],
-      mrp_data[[i]],
-      save = TRUE)
+      mrp_data[[i]])
   #
   #   strat_ame_data[[i]] <-
   #     all_cate(fit[[i]],
@@ -63,6 +63,7 @@ for (i in out_name) {
 save(poststrat, file = here::here("data/all_poststrat.RData"))
 save(ame_data, file = here::here("data/all_ame_data.RData"))
 save(att_data, file = here::here("data/all_att_data.RData"))
+save(swate_data, file = here::here("data/all_swate_data.RData"))
 save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
 # save(cate_data, file = here::here("data/all_cate_data.RData"))
 
@@ -76,6 +77,7 @@ library(gridExtra)
 load(here::here("data/all_poststrat.RData"))
 load(here::here("data/all_ame_data.RData"))
 load(here::here("data/all_att_data.RData"))
+load(here::here("data/all_swate_data.RData"))
 load(here::here("data/all_strat_ame_data.RData"))
 # load(here::here("data/all_cate_data.RData"))
 
@@ -103,8 +105,8 @@ for (i in names(ame_data)) {
 }
 
 ame_forest_group_plot(ame_data, save = F)
-ame_forest_group_plot(att_data, save = F, filename = "att_forest_group_plot.png")
-ame_forest_group_plot(swate_data, save = F, filename = "swate_forest_group_plot.png")
+ame_forest_group_plot(att_data, save = T, filename = "att_forest_group_plot.png")
+ame_forest_group_plot(swate_data, save = T, filename = "swate_forest_group_plot.png")
 
 # rank bar plot
 
@@ -122,8 +124,28 @@ for (i in names(ame_data)) {
   sucra_plot(ps_var = ame_data[[i]], title = i, save = TRUE)
 }
 
-sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F)
-sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F)
+sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T)
+sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T, filename = "att_sucra_group_plot.png")
+sucra_group_plot(swate_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T, filename = "swate_sucra_group_plot.png")
+
+# extract legend
+legend <- cowplot::get_legend(gg[[1]])
+
+# remove legends
+p1_no_legend <- gg[[1]] + theme(legend.position = "none")
+p2_no_legend <- gg[[2]] + theme(legend.position = "none")
+p3_no_legend <- gg[[3]] + theme(legend.position = "none")
+
+# combine plots with a shared legend
+gridout <- cowplot::plot_grid(
+  plot_grid(p1_no_legend, p2_no_legend, p3_no_legend, ncol = 1, labels = c("a)", "b)", "c)")),
+  legend,
+  ncol = 2,
+  rel_widths = c(1, 0.2)
+)
+
+ggsave(gridout, filename = here::here("plots/all_sucra_group_plot.png"),
+       width = 5, height = 6, dpi = 300, bg = "white")
 
 
 #########

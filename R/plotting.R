@@ -432,7 +432,8 @@ sucra_group_plot <- function(ame_data,
                              threshold = 0.5,
                              neg_ame = FALSE,
                              abs_val = FALSE,
-                             save = FALSE) {
+                             save = FALSE,
+                             filename = "sucra_group_plot.png") {
 
   ### duplicated from rank_group_plot
   rank_dat_ls <- list()
@@ -495,7 +496,7 @@ sucra_group_plot <- function(ame_data,
                      labels = 1:max_rank)
 
   if (save) {
-    ggsave(plot = res, filename = here::here(glue::glue("plots/sucra_group_plot.png")),
+    ggsave(plot = res, filename = here::here(glue::glue("plots/{filename}")),
            width = 10, height = 6, dpi = 300, bg = "white")
   }
 
