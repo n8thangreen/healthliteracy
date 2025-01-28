@@ -6,8 +6,12 @@ library(dplyr)
 library(tidyr)
 library(knitr)
 library(kableExtra)
+library(stringr)
 
+
+##################
 # skills for life
+
 load(here::here("data/skills_for_life_data.RData"))
 
 survey_data <- clean_data(data)
@@ -40,9 +44,10 @@ summarize_data <- function(data) {
            # start with capital letter
            Variable = str_to_title(Variable),
            Category = str_to_title(Category),
-           Variable = gsub("Bme", "BME", Variable),
+           Category = gsub("Bme", "BME", Category),
            Variable = gsub("Uk", "UK", Variable),
-           Variable = gsub("Imd", "IMD", Variable))
+           Variable = gsub("Imd", "IMD", Variable),
+           Variable = gsub("Workingstatus", "Working Status", Variable))
 }
 
 summary_results <- summarize_data(survey_data$lit)
@@ -57,6 +62,8 @@ summary_results$Category <- gsub(">=", "$\\\\geq$", summary_results$Category)
 summary_results$Category <- gsub("<", "$<$", summary_results$Category)
 summary_results$Category <- gsub(">", "$>$", summary_results$Category)
 
+# latex table
+
 kable(summary_results,
       format = "latex",
       align = c("l", "l", "r", "r"), escape = FALSE,
@@ -65,7 +72,8 @@ kable(summary_results,
   add_header_above(c(" " = 2, "Lit" = 2, "Num" = 2, "ICT" = 2))
 
 
-# demographics
+#########
+# Newham
 
 # ONS census 2011 for Newham
 imd_dat <- read.csv(here::here("raw_data/localincomedeprivationdata_Newham.csv")) |>
@@ -109,8 +117,6 @@ imd_lookup <-
   mutate(p_imd = pop / sum(pop)) |>
   select(-pop)
 
-library(stringr)
-
 newham_props <- tribble(
   ~Variable, ~Category, ~ Newham,
   "age", "16-44", 0.15 + 0.27 + 0.22,
@@ -123,7 +129,7 @@ newham_props <- tribble(
   "workingstatus", "No", 0.35,
   "own_home", "Yes", 0.35,
   "own_home", "No", 0.65,
-  "qualification", "$\\geq$level 2", 0.57,
+  "qualification", "$\\geq$Level 2", 0.57,
   "qualification", "$\\leq$Level 1", 0.43,
   "gross_income", "$\\geq$10000", 0.9,
   "gross_income", "$<$10000", 0.1,
@@ -142,7 +148,8 @@ newham_props <- tribble(
       mutate(Category = as.character(imd)) |>
       select(Variable, Category, Newham)
   ) |>
-  mutate(Newham = round(Newham, 2)*100) |>
+  mutate(Newham = round(Newham, 2)*100,
+         Newham = ifelse(is.na(Newham), "-", Newham)) |>  ##TODO: doesnt work
   rename(`\\%` = Newham) |>
   # replace underscores with spaces
   mutate(Category = gsub("_", " ", Category),
@@ -151,15 +158,26 @@ newham_props <- tribble(
          Variable = ifelse(str_starts(Variable, "\\$"), Variable, str_to_title(Variable)),
          Category = ifelse(str_starts(Category, "\\$"), Category, str_to_title(Category)),
          Variable = gsub("Uk", "UK", Variable),
-         Variable = gsub("Bme", "BME", Variable),
-         Variable = gsub("Imd", "IMD", Variable))
+         Category = gsub("Bme", "BME", Category),
+         Variable = gsub("Imd", "IMD", Variable),
+         Variable = gsub("Workingstatus", "Working Status", Variable),
+         )
 
-full_table <- plyr::join(summary_results, newham_props, by = c("Variable", "Category"))
+full_table <- plyr::join(summary_results, newham_props,
+                         by = c("Variable", "Category"))
+
+full_table$Variable <-
+  if_else(duplicated(full_table$Variable), "", full_table$Variable)  # blank out repeated variable
+
+# latex table
 
 full_table |>
   kable(format = "latex",
         align = c("l", "l", "r", "r", "r"),
         escape = FALSE,
-        booktabs = TRUE) |>
+        booktabs = TRUE,
+        caption = "Demographic and health literacy data summary table. Lit, Num and ICT are taken from the Skills for Life Survey.
+        The Newham population proportions are taken from the Newham Resident Survey unless otherwise stated.
+        $\\dagger$ ONS Census 2021 data are used for English Lang, Job Status and Gross Income. \\label{tab:s4l-summary}") |>
   kable_styling(latex_options = c()) |> # drop addlinespace?
   add_header_above(c(" " = 2, "Lit" = 2, "Num" = 2, "ICT" = 2, "Newham" = 1))

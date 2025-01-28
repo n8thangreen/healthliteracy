@@ -1,9 +1,10 @@
 # tables
 
-#
+#' @title Average marginal effect table
+#'
 ame_table <- function(ame_data) {
 
-  # process each dataset
+  # process each data set
   ame_dat_ls <- list()
 
   for (plot_name in names(ame_data)) {
@@ -71,7 +72,8 @@ ame_table <- function(ame_data) {
   table_wide
 }
 
-#
+#' @title Cumulative ranks table
+#'
 sucra_table <- function(ame_data,
                         max_rank = 3,
                         threshold = 0.2,
