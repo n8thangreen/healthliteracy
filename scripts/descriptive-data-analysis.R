@@ -6,8 +6,12 @@ library(dplyr)
 library(tidyr)
 library(knitr)
 library(kableExtra)
+library(stringr)
 
+
+##################
 # skills for life
+
 load(here::here("data/skills_for_life_data.RData"))
 
 survey_data <- clean_data(data)
@@ -57,6 +61,8 @@ summary_results$Category <- gsub(">=", "$\\\\geq$", summary_results$Category)
 summary_results$Category <- gsub("<", "$<$", summary_results$Category)
 summary_results$Category <- gsub(">", "$>$", summary_results$Category)
 
+# latex table
+
 kable(summary_results,
       format = "latex",
       align = c("l", "l", "r", "r"), escape = FALSE,
@@ -65,7 +71,8 @@ kable(summary_results,
   add_header_above(c(" " = 2, "Lit" = 2, "Num" = 2, "ICT" = 2))
 
 
-# demographics
+#########
+# Newham
 
 # ONS census 2011 for Newham
 imd_dat <- read.csv(here::here("raw_data/localincomedeprivationdata_Newham.csv")) |>
@@ -108,8 +115,6 @@ imd_lookup <-
   summarize(pop = sum(pop_2021)) |>
   mutate(p_imd = pop / sum(pop)) |>
   select(-pop)
-
-library(stringr)
 
 newham_props <- tribble(
   ~Variable, ~Category, ~ Newham,
@@ -154,7 +159,10 @@ newham_props <- tribble(
          Variable = gsub("Bme", "BME", Variable),
          Variable = gsub("Imd", "IMD", Variable))
 
-full_table <- plyr::join(summary_results, newham_props, by = c("Variable", "Category"))
+full_table <- plyr::join(summary_results, newham_props,
+                         by = c("Variable", "Category"))
+
+# latex table
 
 full_table |>
   kable(format = "latex",

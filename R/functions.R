@@ -62,29 +62,29 @@ clean_data <- function(data, save = FALSE) {
       NumeracyScoreA_1 = unclass(NumeracyScoreA_1)) |>
     # relabel and order levels
     dplyr::transmute(
-      workingstatus = factor(WORKINGSTATUS2, levels = 1:0, labels = c("Yes","No")),
+      workingstatus = factor(WORKINGSTATUS2, levels = c(0,1), labels = c("No", "Yes")),
       gross_income =
         ifelse(GROSS_ANNUAL_INCOME_OLDBANDS %in% 1:2,
                "<10000",
                ifelse(GROSS_ANNUAL_INCOME_OLDBANDS %in% 3:6,
                       ">=10000", "other")) |>
-        factor(levels = c(">=10000", "<10000", "other")),
-      uk_born = factor(BUK, levels = 1:2, labels = c("Yes", "No")),
+        factor(levels = c("<10000", ">=10000", "other")),
+      uk_born = factor(BUK, levels = c(2,1), labels = c("No", "Yes")),
       sex = factor(Sex1, levels = c(2,1), c("Female", "Male")),
       own_home = ifelse(QxTenu1 == 1, "Yes", "No") |>
-        factor(levels = c("Yes", "No")),
+        factor(levels = c("No", "Yes")),
       age = ifelse(AGE1NET %in% 1:2, "16-44",
                    ifelse(AGE1NET == 3, ">=45", "other")) |>
         factor(levels = c("16-44", ">=45")),
-      english_lang = factor(Sesol, levels = 1:2, labels = c("Yes", "No")),
-      ethnicity = factor(ETHNICSIMPLE, levels = 1:2, labels = c("White", "BME")),
+      english_lang = factor(Sesol, levels = c(2,1), labels = c("No", "Yes")),
+      ethnicity = factor(ETHNICSIMPLE, levels = c(1,2), labels = c("White", "BME")),
       qualification = ifelse(HIQUAL %in% 1:4, ">=level 2", "<=Level 1") |>
-        factor(levels = c(">=level 2", "<=Level 1")),
+        factor(levels = c("<=Level 1", ">=level 2")),
       imd = factor(10 - IMDSCOREB4),           # for some reason (?) these are the wrong way round. why?...
       job_status = ifelse(NSSEC7 %in% 1:2, "higher",
                           ifelse(NSSEC7 == 3, "intermediate",
                                  ifelse(NSSEC7 %in% 4:10, "lower", "other"))) |>
-        factor(levels = c("intermediate", "lower", "higher")),
+        factor(levels = c("lower", "intermediate", "higher")),
       lit_thresholdL1 =
         ifelse(LiteracyThresholdA_1 == 1, "below",
                ifelse(LiteracyThresholdA_1 == 2, "above", "other")),
