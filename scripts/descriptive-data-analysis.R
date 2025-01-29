@@ -47,7 +47,13 @@ summarize_data <- function(data) {
            Category = gsub("Bme", "BME", Category),
            Variable = gsub("Uk", "UK", Variable),
            Variable = gsub("Imd", "IMD", Variable),
-           Variable = gsub("Workingstatus", "Working Status", Variable))
+           Variable = gsub("Workingstatus", "Working Status", Variable),
+           Variable = gsub("English Lang", "English Language", Variable),
+           # include units
+           Variable = gsub("Gross Income", "Gross Income (£)", Variable),
+           Variable = gsub("IMD", "IMD (decile)", Variable),
+           Variable = gsub("Age", "Age (years)", Variable)
+    )
 }
 
 summary_results <- summarize_data(survey_data$lit)
@@ -161,13 +167,22 @@ newham_props <- tribble(
          Category = gsub("Bme", "BME", Category),
          Variable = gsub("Imd", "IMD", Variable),
          Variable = gsub("Workingstatus", "Working Status", Variable),
-         )
+         Variable = gsub("English Lang", "English Language", Variable),
+         # include units
+         Variable = gsub("Gross Income", "Gross Income (£)", Variable),
+         Variable = gsub("IMD", "IMD (decile)", Variable),
+         Variable = gsub("Age", "Age (years)", Variable)
+  )
 
 full_table <- plyr::join(summary_results, newham_props,
                          by = c("Variable", "Category"))
 
 full_table$Variable <-
   if_else(duplicated(full_table$Variable), "", full_table$Variable)  # blank out repeated variable
+
+# maths type for totals
+table_names <- str_replace_all(names(full_table), "\\bn\\b", "$n$")
+full_table <- setNames(full_table, table_names)
 
 # latex table
 
@@ -178,6 +193,6 @@ full_table |>
         booktabs = TRUE,
         caption = "Demographic and health literacy data summary table. Lit, Num and ICT are taken from the Skills for Life Survey.
         The Newham population proportions are taken from the Newham Resident Survey unless otherwise stated.
-        $\\dagger$ ONS Census 2021 data are used for English Lang, Job Status and Gross Income. \\label{tab:s4l-summary}") |>
+        $\\dagger$ ONS Census 2021 data are used for English Language, Job Status and Gross Income. \\label{tab:s4l-summary}") |>
   kable_styling(latex_options = c()) |> # drop addlinespace?
-  add_header_above(c(" " = 2, "Lit" = 2, "Num" = 2, "ICT" = 2, "Newham" = 1))
+  add_header_above(c(" " = 2, "Literacy" = 2, "Numeracy" = 2, "ICT" = 2, "Newham" = 1))
