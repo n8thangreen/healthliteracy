@@ -1,4 +1,5 @@
-# tables
+# tables of model outputs
+
 
 #' @title Average marginal effect table
 #'
