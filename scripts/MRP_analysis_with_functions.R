@@ -169,13 +169,40 @@ tab %>%
   kable_styling(latex_options = c("hold_position")) %>%
   row_spec(0, bold = TRUE)
 
-# sucra table
+## sucra table
 
-##TODO: subset
-##      add expected rank
-##      combine and transpose
+tab_ame <- sucra_table(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
+tab_att <- sucra_table(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
+tab_swate <- sucra_table(swate_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
 
-tab <- sucra_table(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
+tab_ame |>
+  kable(format = "latex", booktabs = TRUE, escape = FALSE,
+      # align = c("l", "l", "r", "r", "r"),
+        caption = "SUCRA and expected rank using the average treatment effect for the health literacy
+outcomes ICT, literacy and numeracy. \\label{tab:sucra-ate}",
+        col.names = c("Variable", "Category", "ICT", "Literacy", "Numeracy", "ICT", "Literacy", "Numeracy")) |>
+  kable_styling(latex_options = c("hold_position")) |>
+  add_header_above(c(" " = 2, "SUCRA" = 3, "E[rank]" = 3)) |>
+  row_spec(0, bold = TRUE)
 
-write.csv(tab, here::here("tables/sucra_table.csv"), row.names = FALSE)
+tab_att |>
+  kable(format = "latex", booktabs = TRUE, escape = FALSE,
+      # align = c("l", "l", "r", "r", "r"),
+        caption = "SUCRA and expected rank using the average treatment on treated effect for the health literacy
+outcomes ICT, literacy and numeracy. \\label{tab:}",
+        col.names = c("Variable", "Category", "ICT", "Literacy", "Numeracy", "ICT", "Literacy", "Numeracy")) |>
+  kable_styling(latex_options = c("hold_position")) |>
+  add_header_above(c(" " = 2, "SUCRA" = 3, "E[rank]" = 3)) |>
+  row_spec(0, bold = TRUE)
+
+tab_swate |>
+  kable(format = "latex", booktabs = TRUE, escape = FALSE,
+      # align = c("l", "l", "r", "r", "r"),
+        caption = "SUCRA and expected rank using the subpopulation weighted average treatment effect for the health literacy
+outcomes ICT, literacy and numeracy. \\label{tab:}",
+        col.names = c("Variable", "Category", "ICT", "Literacy", "Numeracy", "ICT", "Literacy", "Numeracy")) |>
+  kable_styling(latex_options = c("hold_position")) |>
+  add_header_above(c(" " = 2, "SUCRA" = 3, "E[rank]" = 3)) |>
+  row_spec(0, bold = TRUE)
+
 

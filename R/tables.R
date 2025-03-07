@@ -73,13 +73,14 @@ ame_table <- function(ame_data) {
   table_wide
 }
 
-#' @title Cumulative ranks table
+#' @title Ranks summary table
+#'
+#' Includes cumulative rank, SUCRA and expected rank
 #'
 sucra_table <- function(ame_data,
                         max_rank = 3,
                         threshold = 0.2,
                         abs_val = TRUE) {
-
   ### duplicated from rank_group_plot
   rank_dat_ls <- list()
 
@@ -106,7 +107,7 @@ sucra_table <- function(ame_data,
       mutate(rank = 1:n()) |>
       tidyr::gather(key = "name", value = "count", -rank) |>
       mutate(rank = as.integer(rank),
-             group = plot_name) # Add group identifier
+             group = plot_name)  # group identifier
 
     rank_dat_ls[[plot_name]] <- rank_dat
   }
@@ -115,32 +116,54 @@ sucra_table <- function(ame_data,
   combined_rank_dat <- bind_rows(rank_dat_ls)
   ###
 
-  sucra <-
+  # calculate cumulative rank
+  cumrank_long <-
     combined_rank_dat |>
     group_by(name, group) |>
-    mutate(sucra = cumsum(count),
-           sucra = sucra / max(sucra))
+    mutate(cumrank = cumsum(count),
+           cumrank = cumrank / max(cumrank),
+           p = count/max(rank)) |>
+    select(-count)
 
-  sucra_table <- sucra %>%
+  # calculate SUCRA
+  sucra_long <- cumrank_long |>
     filter(rank != max(rank)) |>
-    group_by(group, name) %>%
+    group_by(group, name) |>
     summarize(
-      SUCRA = round(sum(sucra) / (max(rank) - 1) * 100, 0),
-      .groups = "drop") |>
-    tidyr::pivot_wider(names_from = name, values_from = SUCRA)
+      SUCRA = round(sum(cumrank) / max(rank) * 100, 0),
+      rank_hat = max(rank) - round(sum(cumrank)) + 1,
+      .groups = "drop")
 
-  final_table <- sucra %>%
-    mutate(p = count/max(rank)) |>
-    select(-count, -sucra) |>
-    pivot_wider(names_from = name, values_from = p) %>%
-    bind_rows(sucra_table)
+  final_table <- sucra_long |>
+    pivot_wider(names_from = group, values_from = c(SUCRA, rank_hat))
 
-  grouped_tables <- sucra %>%
-    mutate(p = count / max(rank)) %>%
-    select(-count, -sucra) %>%
-    group_by(group) %>%
-    group_split() |>
-    purrr::map(~ pivot_wider(.x, names_from = name, values_from = p) %>%
-          bind_rows(sucra_table))
+  # format names
+  # split by last underscore
+  final_table <- final_table |>
+    mutate(name = sub("_(?!.*_)", "@@", name, perl = TRUE)) %>%
+    separate(name, into = c("Variable", "Category"), sep = "@@") |>
+    select(Variable, Category, everything()) |>
+    # replace underscores with spaces
+    mutate(Category = gsub("_", " ", Category),
+           Variable = gsub("_", " ", Variable),
+           # start with capital letter
+           Variable = ifelse(stringr::str_starts(Variable, "\\$"), Variable, stringr::str_to_title(Variable)),
+           Category = ifelse(stringr::str_starts(Category, "\\$"), Category, stringr::str_to_title(Category)),
+           Variable = gsub("Uk", "UK", Variable),
+           Category = gsub("Bme", "BME", Category),
+           Variable = gsub("Imd", "IMD", Variable),
+           Variable = gsub("Workingstatus", "Working Status", Variable),
+           Variable = gsub("English Lang", "English Language", Variable),
+           # include units
+           Variable = gsub("Gross Income", "Gross Income (£)", Variable),
+           Variable = gsub("IMD", "IMD (decile)", Variable),
+           Variable = gsub("Age", "Age (years)", Variable),
+           Category = gsub("<=", "$\\\\leq$", Category),
+           Category = gsub(">=", "$\\\\geq$", Category),
+           Category = gsub("<", "$<$", Category),
+           Category = gsub(">", "$>$", Category),
+           Variable = if_else(duplicated(Variable), "", Variable))  # blank out repeated variable
+
+  final_table
 }
 
