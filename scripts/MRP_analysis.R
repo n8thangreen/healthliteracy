@@ -465,7 +465,7 @@ plot_dat |>
   geom_bar(stat = "identity") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Average Marginal Effect againt baseline",
+  labs(title = "Average Marginal Effect against baseline",
        x = "Variable",
        y = "AME") +
   theme(legend.position = "none")
