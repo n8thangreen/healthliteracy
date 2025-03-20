@@ -1,12 +1,24 @@
 Package: healthliteracy
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Health Literacy Analysis for Newham
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: c(
+    person("Nathan", "Green",
+            email = "n.green@ucl.ac.uk",
+            role = c("aut", "cre"),
+            comment = c(ORCID = "0000-0003-2745-1736")))
+Description: Health Literacy Analysis for Newham using multilevel regression and post-stratification
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
+Imports:
+    dplyr,
+    forcats,
+    ggplot2,
+    glue,
+    purrr,
+    readr,
+    stringr,
+    tibble,
+    tidyr
