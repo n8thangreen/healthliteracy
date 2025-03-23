@@ -4,9 +4,18 @@
 
 library(ggalt)
 
+# select
+output <- litaracy
+output <- numeracy
+output <- ICT
+
+colnum <- ifelse(
+  output == "literacy", 4,
+  ifelse(output == "numeracy", 6, 8))
+
 plot_dat <- data.frame(var = full_table$Variable,
                        cat = full_table$Category,
-                       sfl = as.numeric(full_table[, 4]),
+                       sfl = as.numeric(full_table[, colnum]),
                        pop = as.numeric(full_table[, 10]))
 
 plot_dat <- plot_dat |>
@@ -31,4 +40,4 @@ p <-
   ylab("") + xlab("") + theme_bw() + coord_flip() +
   facet_wrap(~ var, scales = "free_x")
 
-ggsave("plots/dumbbell_plot.png", p, width = 10, height = 10, units = "in", dpi = 300)
+ggsave(glue::glue("plots/dumbbell_plot_{output}.png"), p, width = 10, height = 10, units = "in", dpi = 300)
