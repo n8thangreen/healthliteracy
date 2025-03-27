@@ -747,6 +747,3 @@ for (i in names_vars) {
   # common first column name
   names(ps_freq[[i]])[1] <- "name"
 }
-
-
-

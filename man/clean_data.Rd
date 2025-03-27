@@ -2,18 +2,22 @@
 % Please edit documentation in R/functions.R
 \name{clean_data}
 \alias{clean_data}
-\title{Clean survey data}
+\title{Clean skills for life survey data
+
+Following Rowlands paper, we create derived variables and reorder}
 \usage{
 clean_data(data, save = FALSE)
 }
 \arguments{
-\item{data}{Survey data at individual level i.e. Skills for Life data}
+\item{data}{Survey data at individual level i.e. raw Skills for Life data}
 
 \item{save}{Logical indicating whether to save the cleaned data sets}
 }
 \value{
-List of cleaned data sets
+List of cleaned data sets for literacy, ict and numeracy
 }
 \description{
-Clean survey data
+Clean skills for life survey data
+
+Following Rowlands paper, we create derived variables and reorder
 }

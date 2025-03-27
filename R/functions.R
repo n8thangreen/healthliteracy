@@ -1,10 +1,14 @@
 
-#' @title Clean survey data
+#' @title Clean skills for life survey data
 #'
-#' @param data Survey data at individual level i.e. Skills for Life data
+#' Following Rowlands paper, we create derived variables and reorder
+#'
+#' @param data Survey data at individual level i.e. raw Skills for Life data
 #' @param save Logical indicating whether to save the cleaned data sets
-#' @return List of cleaned data sets
+#' @return List of cleaned data sets for literacy, ict and numeracy
+#'
 #' @import dplyr
+#' @importFrom tibble lst
 #'
 clean_data <- function(data, save = FALSE) {
 
@@ -62,7 +66,8 @@ clean_data <- function(data, save = FALSE) {
       NumeracyScoreA_1 = unclass(NumeracyScoreA_1)) |>
     # relabel and order levels
     dplyr::transmute(
-      workingstatus = factor(WORKINGSTATUS2, levels = c(0,1), labels = c("No", "Yes")),
+      workingstatus = factor(WORKINGSTATUS2,
+                             levels = c(0,1), labels = c("No", "Yes")),
       gross_income =
         ifelse(GROSS_ANNUAL_INCOME_OLDBANDS %in% 1:2,
                "<10000",
@@ -109,21 +114,21 @@ clean_data <- function(data, save = FALSE) {
   # where have answered question
 
   lit <- model_dat |>
-    filter(lit_thresholdL2 %in% c("above", "below")) |>
+    dplyr::filter(lit_thresholdL2 %in% c("above", "below")) |>
     mutate(lit_thresholdL2 = as.factor(lit_thresholdL2),
            lit_thresholdL2_bin = as.integer(lit_thresholdL2) - 1L) |>
     select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3,
            -num_thresholdEL3, -num_thresholdL1, -ict_thresholdEL3)
 
   num <- model_dat |>
-    filter(num_thresholdL1 %in% c("above", "below")) |>
+    dplyr::filter(num_thresholdL1 %in% c("above", "below")) |>
     mutate(num_thresholdL1 = as.factor(num_thresholdL1),
            num_thresholdL1_bin = as.integer(num_thresholdL1) - 1L) |>
     select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3,
            -num_thresholdEL3, -lit_thresholdL2, -ict_thresholdEL3)
 
   ict <- model_dat |>
-    filter(ict_thresholdEL3 %in% c("above", "below")) |>
+    dplyr::filter(ict_thresholdEL3 %in% c("above", "below")) |>
     mutate(ict_thresholdEL3 = as.factor(ict_thresholdEL3),
            ict_thresholdEL3_bin = as.integer(ict_thresholdEL3) - 1L) |>
     select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3,
@@ -139,7 +144,11 @@ clean_data <- function(data, save = FALSE) {
 #' @param save Logical indicating whether to save the fitted models
 #' @param ... Additional arguments to pass to the Stan model
 #' @return List of fitted models
-#' @import glue
+#'
+#' @importFrom glue glue
+#' @importFrom here here
+#' @importFrom rstanarm stan_glm
+#' @importFrom tibble lst
 #'
 fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
 
@@ -149,19 +158,37 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
 
   model <- if (stan) "stan" else "freq"
 
-  rhs <- "1 + sex + age + ethnicity + uk_born + english_lang + qualification + workingstatus + job_status + gross_income + own_home + imd"
+  varnames <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
+                "workingstatus", "job_status", "gross_income", "own_home", "imd")
+  rhs <- paste("1 +", paste(varnames, collapse = " + "))
+
+  ##TODO: multilevel regression with imd and msoa
 
   if (!stan) {
     lit <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights, ...)
     num <- glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(), weights = weights, ...)
     ict <- glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights, ...)
   } else {
-    lit <- rstanarm::stan_glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(),
-                              weights = weights, chains = 2, iter = 2000, ...)
-    num <- rstanarm::stan_glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(),
-                              weights = weights, chains = 2, iter = 2000, ...)
-    ict <- rstanarm::stan_glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(),
-                              weights = weights, chains = 2, iter = 2000, ...)
+    lit <- rstanarm::stan_glm(
+      glue("lit_thresholdL2_bin ~ {rhs}"),
+      data = lit_dat,
+      family = binomial(),
+      weights = weights,
+      chains = 2, iter = 2000, ...)
+
+    num <- rstanarm::stan_glm(
+      glue("num_thresholdL1_bin ~ {rhs}"),
+      data = num_dat,
+      family = binomial(),
+      weights = weights,
+      chains = 2, iter = 2000, ...)
+
+    ict <- rstanarm::stan_glm(
+      glue("ict_thresholdEL3_bin ~ {rhs}"),
+      data = ict_dat,
+      family = binomial(),
+      weights = weights,
+      chains = 2, iter = 2000, ...)
   }
 
   if (save) {
@@ -172,6 +199,8 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
 }
 
 #' @title Post-stratification
+#' @importFrom rstanarm posterior_epred
+#' @importFrom dplyr summarize
 #'
 poststratification <- function(fit, data) {
 

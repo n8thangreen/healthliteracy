@@ -1,9 +1,10 @@
 # MRP analysis using functions
-# simplified to use in the shiny app
+# refactored to use in the shiny app
 
 
 library(purrr)
 
+# raw data
 load(here::here("data/skills_for_life_data.RData"))
 
 survey_data <- clean_data(data)

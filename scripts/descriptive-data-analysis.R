@@ -1,5 +1,6 @@
 # descriptive data analysis
 # for health literacy analysis
+# output table
 
 
 library(dplyr)
@@ -81,7 +82,7 @@ kable(summary_results,
 #########
 # Newham
 
-# ONS census 2011 for Newham
+# ONS Census 2011 for Newham
 imd_dat <- read.csv(here::here("raw_data/localincomedeprivationdata_Newham.csv")) |>
   rename(LSOA11CD = "LSOA.code..2011.",
          imd = "Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.",
@@ -123,36 +124,38 @@ imd_lookup <-
   mutate(p_imd = pop / sum(pop)) |>
   select(-pop)
 
+##TODO: check these numbers with the original data set
 newham_props <- tribble(
-  ~Variable, ~Category, ~ Newham,
-  "age", "16-44", 0.15 + 0.27 + 0.22,
-  "age", "$\\geq$45", 0.15 + 0.11 + 0.1,
-  "sex", "Male", 0.54,
-  "sex", "Female", 0.46,
-  "ethnicity", "White", 0.30,
-  "ethnicity", "BME", 0.70,
-  "workingstatus", "Yes", 0.65,
-  "workingstatus", "No", 0.35,
-  "own_home", "Yes", 0.35,
-  "own_home", "No", 0.65,
-  "qualification", "$\\geq$Level 2", 0.57,
-  "qualification", "$\\leq$Level 1", 0.43,
-  "gross_income", "$\\geq$10000", 0.9,
-  "gross_income", "$<$10000", 0.1,
-  "uk_born", "Yes", 0.455 + 0.001 + 0.004 + 0.003,
-  "uk_born", "No", 0.553,
-  "english_lang", "Yes", 0.6537,
-  "english_lang", "No", 0.3463,
-  "job_status", "higher", 0.167,
-  "job_status", "intermediate", 0.276,
-  "job_status", "lower", 0.234 + 0.323
+  ~Variable, ~Category, ~n, ~Newham,
+  "age", "16-44", 145 + 523 + 567, 0.15 + 0.27 + 0.22,
+  "age", "$\\geq$45", 415 + 289 + 331, 0.15 + 0.11 + 0.1,
+  "sex", "Male", 1066, 0.54,
+  "sex", "Female", 1166, 0.46,
+  "ethnicity", "White", 627, 0.30,
+  "ethnicity", "BME", 2154 - 627, 0.70,
+  "workingstatus", "Yes", 1517, 0.65,
+  "workingstatus", "No", 276 + 399, 0.35,
+  "own_home", "Yes", 337 + 652, 0.35,
+  "own_home", "No", 524 + 616, 0.65,
+  "qualification", "$\\geq$Level 2", round(2270*0.57,0), 0.57,
+  "qualification", "$\\leq$Level 1", round(2270*0.43,0), 0.43,
+  "gross_income", "$\\geq$10000", NA, 0.9,
+  "gross_income", "$<$10000", NA, 0.1,
+  "uk_born", "Yes", round(2270*0.463,0), 0.455 + 0.001 + 0.004 + 0.003,
+  "uk_born", "No", round(2270*0.553,0), 0.553,
+  "english_lang", "Yes", NA, 0.6537,
+  "english_lang", "No", NA, 0.3463,
+  "job_status", "higher", NA, 0.167,
+  "job_status", "intermediate", NA, 0.276,
+  "job_status", "lower", NA, 0.234 + 0.323
 ) |>
   rbind(
     imd_lookup |>
       mutate(Variable = "imd") |>
       rename(Newham = p_imd) |>
-      mutate(Category = as.character(imd)) |>
-      select(Variable, Category, Newham)
+      mutate(Category = as.character(imd),
+             n = "") |>
+      select(Variable, Category, n, Newham)
   ) |>
   mutate(Newham = round(Newham, 2)*100,
          Newham = ifelse(is.na(Newham), "-", Newham)) |>  ##TODO: doesnt work
@@ -191,8 +194,9 @@ full_table |>
         align = c("l", "l", "r", "r", "r"),
         escape = FALSE,
         booktabs = TRUE,
-        caption = "Demographic and health literacy data summary table. Lit, Num and ICT are taken from the Skills for Life Survey.
-        The Newham population proportions are taken from the Newham Resident Survey unless otherwise stated.
-        $\\dagger$ ONS Census 2021 data are used for English Language, Job Status and Gross Income. \\label{tab:s4l-summary}") |>
+        caption = "Demographic and health literacy data summary table. Literacy, Numeracy and ICT are taken from the Skills for Life Survey 2011.
+        The Newham population proportions are taken from the Newham Resident Survey 2023, unless otherwise stated.
+        $\\dagger$ ONS Census 2021 data are used for English Language, Job Status and Gross Income.
+        The ONS local income deprivation data set for mid 2015 was used for IMD. \\label{tab:s4l-summary}") |>
   kable_styling(latex_options = c()) |> # drop addlinespace?
   add_header_above(c(" " = 2, "Literacy" = 2, "Numeracy" = 2, "ICT" = 2, "Newham" = 1))
