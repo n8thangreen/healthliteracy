@@ -101,7 +101,7 @@ for (i in names(ame_data)) {
 # AME forest plot
 
 for (i in names(ame_data)) {
-  ame_forest_plot(ame_data[[i]], title = i, save = TRUE)
+  ame_forest_plot(ame_data[[i]], title = i, save = F)
 }
 
 ame_forest_group_plot(ame_data, save = F)
@@ -139,7 +139,7 @@ p3_no_legend <- gg[[3]] + theme(legend.position = "none")
 
 # combine plots with a shared legend
 gridout <- cowplot::plot_grid(
-  plot_grid(p1_no_legend, p2_no_legend, p3_no_legend, ncol = 1, labels = c("a)", "b)", "c)")),
+  cowplot::plot_grid(p1_no_legend, p2_no_legend, p3_no_legend, ncol = 1, labels = c("a)", "b)", "c)")),
   legend,
   ncol = 2,
   rel_widths = c(1, 0.2)
