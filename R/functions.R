@@ -158,9 +158,15 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
 
   model <- if (stan) "stan" else "freq"
 
-  varnames <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
-                "workingstatus", "job_status", "gross_income", "own_home", "imd")
-  rhs <- paste("1 +", paste(varnames, collapse = " + "))
+  # construct formula object
+  fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
+                "workingstatus", "job_status", "gross_income", "own_home")
+  re_names <- c("imd", "msoa")
+
+  fe_form <- paste(fe_names, collapse = " + ")
+  re_form <- paste0("(1|", re_names, ")", collapse = " + ")
+
+  rhs <- paste("1 +", fe_form, "+", re_form)
 
   ##TODO: multilevel regression with imd and msoa
 
