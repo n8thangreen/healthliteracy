@@ -161,7 +161,8 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
   # construct formula object
   fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
                 "workingstatus", "job_status", "gross_income", "own_home")
-  re_names <- c("imd", "msoa")
+  re_names <- "imd"
+  # re_names <- c("imd", "msoa")
 
   fe_form <- paste(fe_names, collapse = " + ")
   re_form <- paste0("(1|", re_names, ")", collapse = " + ")
@@ -171,25 +172,25 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
   ##TODO: multilevel regression with imd and msoa
 
   if (!stan) {
-    lit <- glm(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights, ...)
-    num <- glm(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(), weights = weights, ...)
-    ict <- glm(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights, ...)
+    lit <- glmer(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights, ...)
+    num <- glmer(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(), weights = weights, ...)
+    ict <- glmer(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights, ...)
   } else {
-    lit <- rstanarm::stan_glm(
+    lit <- rstanarm::stan_glmer(
       glue("lit_thresholdL2_bin ~ {rhs}"),
       data = lit_dat,
       family = binomial(),
       weights = weights,
       chains = 2, iter = 2000, ...)
 
-    num <- rstanarm::stan_glm(
+    num <- rstanarm::stan_glmer(
       glue("num_thresholdL1_bin ~ {rhs}"),
       data = num_dat,
       family = binomial(),
       weights = weights,
       chains = 2, iter = 2000, ...)
 
-    ict <- rstanarm::stan_glm(
+    ict <- rstanarm::stan_glmer(
       glue("ict_thresholdEL3_bin ~ {rhs}"),
       data = ict_dat,
       family = binomial(),
