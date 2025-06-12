@@ -16,18 +16,19 @@ clean_data <- function(data, save = FALSE) {
   model_dat <-
     data |>
     dplyr::select(
-      WORKINGSTATUS2,
-      GROSS_ANNUAL_INCOME_OLDBANDS,
-      BUK,
-      QxTenu1,
-      Sex1,
-      AGE1NET,
+      WORKINGSTATUS2,     # 724 - Whether working (paid work, government training scheme, own business, or unpaid work for relatives)
+      GROSS_ANNUAL_INCOME_OLDBANDS,  # 815 - Banded annual gross income for employees and self-employed (banded in line with 2003)
+      BUK,                # 19 - Whether born in the UK
+      QxTenu1,            # 763 - Home ownership status
+      Sex1,               # 6 -Gender (Respondent)
+      AGE1NET,            # 11 - Age of the respondent (3 band nets)
       Sesol,              # is English first language
-      ETHNICSIMPLE,
-      HIQUAL,
+      ETHNICSIMPLE,       # 17 - Simple ethnic group identifier
+      HIQUAL,             # 581 - Highest qualification currently held
       CLITSPEAK,          # ENFL everyday English skills (literacy and speaking)
       IMDSCOREB4,         # Index of Multiple Deprivation banded into deciles
-      NSSEC7,
+      NSSEC7,             # 828	- NS SEC respondent - current/most recent occupation - 7 groups
+
       # outcomes
       SUMMARYCOMP,        # self-assessed computer skills (summary)
       TSKILLA,            # self-assessed computer skills (summary 2)
@@ -38,6 +39,7 @@ clean_data <- function(data, save = FALSE) {
       starts_with("NumeracyThreshold"),  # numeracy threshold,
       MultipleChoiceLevelA_1,            # ICT level
       MultipleChoiceLevelA_1Thres,       # ICT threshold
+
       # weights
       rimweight2003,
       rimweightLIT2003,
@@ -46,6 +48,7 @@ clean_data <- function(data, save = FALSE) {
       rimweightNUMICT2003,
       rimweightLITICT2003,
       rimweightLITNUM2003) |>
+
     # remove class
     dplyr::mutate(
       WORKINGSTATUS2 = unclass(WORKINGSTATUS2),
@@ -64,6 +67,7 @@ clean_data <- function(data, save = FALSE) {
       MultipleChoiceLevelA_1Thres = unclass(MultipleChoiceLevelA_1Thres),
       LiteracyScoreA_1 = unclass(LiteracyScoreA_1),
       NumeracyScoreA_1 = unclass(NumeracyScoreA_1)) |>
+
     # relabel and order levels
     dplyr::transmute(
       workingstatus = factor(WORKINGSTATUS2,
@@ -76,7 +80,7 @@ clean_data <- function(data, save = FALSE) {
         factor(levels = c("<10000", ">=10000", "other")),
       uk_born = factor(BUK, levels = c(2,1), labels = c("No", "Yes")),
       sex = factor(Sex1, levels = c(2,1), c("Female", "Male")),
-      own_home = ifelse(QxTenu1 == 1, "Yes", "No") |>
+      own_home = ifelse(QxTenu1 == 1, "Yes", "No") |>   # assume shared ownership is not own home
         factor(levels = c("No", "Yes")),
       age = ifelse(AGE1NET %in% 1:2, "16-44",
                    ifelse(AGE1NET == 3, ">=45", "other")) |>
@@ -86,7 +90,7 @@ clean_data <- function(data, save = FALSE) {
       qualification = ifelse(HIQUAL %in% 1:4, ">=level 2", "<=Level 1") |>
         factor(levels = c("<=Level 1", ">=level 2")),
       imd = factor(10 - IMDSCOREB4),           # for some reason (?) these are the wrong way round. why?...
-      job_status = ifelse(NSSEC7 %in% 1:2, "higher",
+      job_status = ifelse(NSSEC7 %in% 1:2, "higher",  # managerial
                           ifelse(NSSEC7 == 3, "intermediate",
                                  ifelse(NSSEC7 %in% 4:10, "lower", "other"))) |>
         factor(levels = c("lower", "intermediate", "higher")),
@@ -107,11 +111,13 @@ clean_data <- function(data, save = FALSE) {
       lit_weightsL1 = unclass(rimweightLIT2003),
       num_weightsEL3 = unclass(rimweightNUM2003),
       ict_weightsEL3 = unclass(rimweightICT2003)) |>
+
+    # remove missing
     dplyr::filter(!is.na(age),
                   !is.na(ethnicity))
 
   # health literacy assessment specific data sets
-  # where have answered question
+  # filtered by have answered question
 
   lit <- model_dat |>
     dplyr::filter(lit_thresholdL2 %in% c("above", "below")) |>
@@ -137,7 +143,7 @@ clean_data <- function(data, save = FALSE) {
   tibble::lst(lit, num, ict)
 }
 
-#' @title Fit health literacy, numeracy and ICT models
+#' @title Fit health literacy, numeracy and ICT regression models
 #'
 #' @param survey_data List of data frames containing the cleaned survey data
 #' @param stan Logical indicating whether to use Stan or not
@@ -149,6 +155,7 @@ clean_data <- function(data, save = FALSE) {
 #' @importFrom here here
 #' @importFrom rstanarm stan_glm
 #' @importFrom tibble lst
+#' @seealso [clean_data()]
 #'
 fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
 
@@ -156,7 +163,7 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
   num_dat <- survey_data$num
   ict_dat <- survey_data$ict
 
-  model <- if (stan) "stan" else "freq"
+  model_type <- if (stan) "stan" else "freq"
 
   # construct formula object
   fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
@@ -169,12 +176,18 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
 
   rhs <- paste("1 +", fe_form, "+", re_form)
 
-  ##TODO: multilevel regression with imd and msoa
-
   if (!stan) {
-    lit <- glmer(glue("lit_thresholdL2_bin ~ {rhs}"), data = lit_dat, family = binomial(), weights = weights, ...)
-    num <- glmer(glue("num_thresholdL1_bin ~ {rhs}"), data = num_dat, family = binomial(), weights = weights, ...)
-    ict <- glmer(glue("ict_thresholdEL3_bin ~ {rhs}"), data = ict_dat, family = binomial(), weights = weights, ...)
+    lit <- lme4::glmer(glue("lit_thresholdL2_bin ~ {rhs}"),
+                       data = lit_dat, family = binomial(),
+                       weights = weights, ...)
+
+    num <- lme4::glmer(glue("num_thresholdL1_bin ~ {rhs}"),
+                       data = num_dat, family = binomial(),
+                       weights = weights, ...)
+
+    ict <- lme4::glmer(glue("ict_thresholdEL3_bin ~ {rhs}"),
+                       data = ict_dat, family = binomial(),
+                       weights = weights, ...)
   } else {
     lit <- rstanarm::stan_glmer(
       glue("lit_thresholdL2_bin ~ {rhs}"),
@@ -199,7 +212,7 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
   }
 
   if (save) {
-    save(lit, num, ict, file = here::here(glue::glue("data/{model}_fits.RData")))
+    save(lit, num, ict, file = here::here(glue::glue("data/{model_type}_fits.RData")))
   }
 
   tibble::lst(lit, num, ict)

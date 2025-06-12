@@ -154,6 +154,7 @@ create_target_marginal_pop_data <- function(covariate_data) {
 
 
 #' @title Create target population data
+#'
 #' Use individual level Resident survey data
 #' So can estimate full joint distribution
 #'
@@ -162,27 +163,15 @@ create_target_marginal_pop_data <- function(covariate_data) {
 #'
 create_target_pop_data <- function(covariate_data) {
 
-  # IMD is at LSOA level
-  ward_lookup <- read.csv(here::here("raw_data/Ward - neighbourhood - quadrant 2024.csv"))
-
-  imd_dat <- read.csv(here::here("raw_data/localincomedeprivationdata_Newham.csv")) |>
-    rename(LSOA11CD = "LSOA.code..2011.",
-           imd = "Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.",
-           pop = "Total.population..mid.2015..excluding.prisoners.") |>
-    select(LSOA11CD, imd, pop)
-
-  LSOA_lookup <-
-    read.csv(here::here("raw_data/Lower_Layer_Super_Output_Area_(2011)_to_Ward_(2015)_Lookup_in_England_and_Wales.csv")) |>
-    filter(LAD15NM == "Newham")
+  LSOA_IMD_data <-
+    read.csv(here::here("../../data/File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv"))
 
   imd_lookup <-
-    LSOA_lookup |>
-    merge(ward_lookup, by.x = "WD15NM", by.y = "Ward") |>
-    merge(imd_dat) |>
-    group_by(imd) |>
-    summarize(pop = sum(pop)) |>
-    mutate(p_imd = pop / sum(pop)) |>
-    select(-pop)
+    LSOA_IMD_data |>
+    filter(`Local.Authority.District.name..2019.` == "Newham") |>
+    group_by(Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.) |>
+    summarize(pop = sum(Total.population..mid.2015..excluding.prisoners.)) |>
+    mutate(p_imd = pop / sum(pop))
 
   # from resident survey individual level data
   # unless otherwise indicated

@@ -19,8 +19,8 @@ mrp_data <-
         # create_target_marginal_pop_data())
         create_target_pop_data())
 
-save(mrp_data, file = here::here("data/mrp_data.RData"))
 save(fit, file = here::here("data/fit.RData"))
+save(mrp_data, file = here::here("data/mrp_data.RData"))
 
 ###########
 # outcomes
