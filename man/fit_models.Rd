@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{fit_models}
 \alias{fit_models}
-\title{Fit health literacy, numeracy and ICT models}
+\title{Fit health literacy, numeracy and ICT regression models}
 \usage{
 fit_models(survey_data, stan = TRUE, save = FALSE, ...)
 }
@@ -19,5 +19,8 @@ fit_models(survey_data, stan = TRUE, save = FALSE, ...)
 List of fitted models
 }
 \description{
-Fit health literacy, numeracy and ICT models
+Fit health literacy, numeracy and ICT regression models
+}
+\seealso{
+[clean_data()]
 }

@@ -16,8 +16,8 @@ fit <- fit_models(survey_data, stan = use_stan)
 mrp_data <-
   map(survey_data,
       ~ create_covariate_data(.x) |>
-        # create_target_marginal_pop_data())
-        create_target_pop_data())
+        # create_target_marginal_pop_data())  # from tables only
+        create_target_pop_data())             # from individual survey responses
 
 save(fit, file = here::here("data/fit.RData"))
 save(mrp_data, file = here::here("data/mrp_data.RData"))

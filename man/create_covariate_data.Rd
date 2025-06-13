@@ -2,13 +2,18 @@
 % Please edit documentation in R/create_poststrat_inputs.R
 \name{create_covariate_data}
 \alias{create_covariate_data}
-\title{Create covariate data}
+\title{Create covariate data
+Skills for Life survey}
 \usage{
 create_covariate_data(survey_dat)
 }
 \arguments{
 \item{survey_dat}{Survey data for a particular health literacy outcome}
 }
+\value{
+grid of all combinations of values
+}
 \description{
 Create covariate data
+Skills for Life survey
 }
