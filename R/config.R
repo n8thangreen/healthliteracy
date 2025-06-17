@@ -1,9 +1,8 @@
 
-#' proportion_tables
-#' from resident survey report summary tables (weighted)
-#' unless otherwise indicated
+#' Proportion marginal tables from resident survey
+#' report summary tables (weighted)
 #' @export
-proportion_tables <- function()
+res_survey_prop_tables <- function() {
   list(
     age = tribble(~age, ~p_age,
                   "16-44", 0.64, # 0.15 + 0.27 + 0.22
@@ -23,8 +22,17 @@ proportion_tables <- function()
 
     own_home = tribble(~own_home, ~p_own_home,
                        "Yes", 0.35,
-                       "No", 0.65),
+                       "No", 0.65)
+  )
+}
 
+
+##TODO: use outcome frameworks survey?
+
+#' Proportion marginal tables other sources
+#' @export
+demo_prop_tables <- function() {
+  list(
     # ONS census 2021 Highest level of qualification
     qualification = tribble(~qualification, ~p_qual,
                             ">=level 2", 0.57,
@@ -71,3 +79,4 @@ proportion_tables <- function()
                          "intermediate", 0.276,
                          "lower", 0.557) # 0.234 + 0.323
   )
+}

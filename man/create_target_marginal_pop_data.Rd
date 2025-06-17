@@ -2,10 +2,12 @@
 % Please edit documentation in R/create_poststrat_inputs.R
 \name{create_target_marginal_pop_data}
 \alias{create_target_marginal_pop_data}
-\title{Create target population data
-Marginal Resident Survey data taken from tables in report}
+\title{Create target population data without individual level data
+
+Marginal Resident Survey data taken from tables in report
+other sources from ONS}
 \usage{
-create_target_marginal_pop_data(covariate_data)
+create_target_marginal_pop_data(covariate_data, save = FALSE)
 }
 \arguments{
 \item{covariate_data}{Covariate data}
@@ -14,6 +16,8 @@ create_target_marginal_pop_data(covariate_data)
 dataframe of levels and joint probability
 }
 \description{
-Create target population data
+Create target population data without individual level data
+
 Marginal Resident Survey data taken from tables in report
+other sources from ONS
 }
