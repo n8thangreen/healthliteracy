@@ -168,27 +168,14 @@ create_NRS_prob_data <- function() {
     ) |>
     select(age, sex, ethnicity, workingstatus, own_home, Weight)
 
-  resident_marginals <- res_dat |>
-    tidyr::pivot_longer(cols = -Weight, names_to = "variable", values_to = "value") |>
-    filter(!is.na(value)) |>
-    group_by(variable, value) |>
-    summarise(
-      weighted_count = sum(Weight), .groups = "drop") |>
-    mutate(
-      weighted_proportion = weighted_count / sum(res_dat$Weight, na.rm = TRUE)
-    ) |>
-    arrange(variable, desc(weighted_proportion))
+  nrs_joint <-
+    res_dat |>
+    dplyr::count(age, sex, ethnicity, workingstatus, own_home,
+                 name = "frequency", wt = Weight) |>
+    ungroup() |>
+    mutate(p_nrs = round(frequency/sum(frequency), 3))
 
-  # grid of joint probabilities
-  resident_joint <- res_dat |>
-    filter(if_all(everything(), ~ !is.na(.))) |>
-    group_by(age, sex, ethnicity, workingstatus, own_home) |>
-    summarise(
-      weighted_count = sum(Weight), .groups = "drop") |>
-    mutate(
-      p_age_sex_eth_work_home = weighted_count / sum(weighted_count)
-    ) |>
-    arrange(desc(p_age_sex_eth_work_home))
+  save(nrs_joint, file = here::here("data/nrs_joint.rda"))
 
-  resident_joint
+  nrs_joint
 }
