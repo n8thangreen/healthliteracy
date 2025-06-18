@@ -5,9 +5,9 @@
 \title{Create target population data
 
 Use individual level Resident survey data
-So can estimate full joint distribution}
+so can estimate full joint distribution}
 \usage{
-create_target_pop_data(covariate_data)
+create_target_pop_data(covariate_data, save = FALSE)
 }
 \arguments{
 \item{covariate_data}{Covariate data}
@@ -19,5 +19,5 @@ dataframe of levels and joint probability
 Create target population data
 
 Use individual level Resident survey data
-So can estimate full joint distribution
+so can estimate full joint distribution
 }

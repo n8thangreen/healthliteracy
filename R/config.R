@@ -1,10 +1,8 @@
 
-#' Marginal proportion tables
-#'
-#' data from resident survey report summary tables (weighted)
-#' unless otherwise indicated
+#' Proportion marginal tables from resident survey
+#' report summary tables (weighted)
 #' @export
-proportion_tables <- function()
+res_survey_prop_tables <- function() {
   list(
     age = tribble(~age, ~p_age,
                   "16-44", 0.64, # 0.15 + 0.27 + 0.22
@@ -24,8 +22,15 @@ proportion_tables <- function()
 
     own_home = tribble(~own_home, ~p_own_home,
                        "Yes", 0.35,
-                       "No", 0.65),
+                       "No", 0.65)
+  )
+}
 
+
+#' Proportion marginal tables other sources
+#' @export
+demo_prop_tables <- function(equivalise_income = FALSE) {
+  list(
     # ONS census 2021 Highest level of qualification
     qualification = tribble(~qualification, ~p_qual,
                             ">=level 2", 0.57,
@@ -35,12 +40,20 @@ proportion_tables <- function()
     # Q70: Are you the main or joint householder? e.g.responsible for bills such as rent, mortgage and utilities
     # this would be good but its mostly 'not answered'!
     # Q54	What is your average monthly pay?
-    #
-    ##TODO: break down by LSOA and map to CNA
-    ##  read from Newham tab in saiefy1920finalqaddownload280923.xlsx
-    gross_income = tribble(~gross_income, ~p_income,
-                           ">=10000", 0.9,
-                           "<10000", 0.1),
+
+    if (equivalise_income) {
+      # from equivalised income
+      # resident_survey <- create_equivalised_income(resident_survey)  # equivalise_income.R
+      gross_income = tribble(~gross_income, ~p_income,
+                             ">=10000", 0.67,
+                             "<10000", 0.33)
+    } else {
+      ##TODO: break down by LSOA and map to CNA
+      ##  read from Newham tab in saiefy1920finalqaddownload280923.xlsx
+      gross_income = tribble(~gross_income, ~p_income,
+                             ">=10000", 0.9,
+                             "<10000", 0.1)
+    },
 
     # census 2021 usual resident population
     uk_born = tribble(~uk_born, ~p_uk,
@@ -72,3 +85,4 @@ proportion_tables <- function()
                          "intermediate", 0.276,
                          "lower", 0.557) # 0.234 + 0.323
   )
+}

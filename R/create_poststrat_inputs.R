@@ -61,7 +61,8 @@ create_target_marginal_pop_data <- function(covariate_data, save = FALSE) {
 
   res <-
     covariate_data |>
-    proportion_tables() |>
+    c(demo_prop_tables(),
+      res_survey_prop_tables()) |>
     reduce(left_join, .init = covariate_data) |>
     merge(imd_lookup) |>
 
@@ -95,28 +96,35 @@ create_target_pop_data <- function(covariate_data, save = FALSE) {
   imd_lookup <-
     LSOA_IMD_data |>
     filter(`Local.Authority.District.name..2019.` == "Newham") |>
-    group_by(Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.) |>
+    rename(imd = Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.) |>
+    group_by(imd) |>
     summarize(pop = sum(Total.population..mid.2015..excluding.prisoners.)) |>
     mutate(p_imd = pop / sum(pop))
 
   # from resident survey individual level data
   # unless otherwise indicated
 
-  file_loc <- "C:/Users/n8tha/Documents/Newham Council Fellowship/data/residents survey 2023/London Borough of Newham - Residents Survey - 2023 - Dataset v3.xlsx"
+  file_loc <- here::here("../../data/Newham Resident Survey 2023/London Borough of Newham - Residents Survey - 2023 - Dataset v3.xlsx")
 
   resident_survey <- readxl::read_xlsx(file_loc, sheet = "Labels")
   variable_labels <- readxl::read_xlsx(file_loc, sheet = "Variable Labels")
 
   # select columns
   res_dat <- resident_survey |>
-    select(Q73, Q71, Q82, Q47GRP, Q69, Weight) |>
+    select(Q73,     # How old are you? (grouped)
+           Q71,     # Are you...? [sex]
+           Q82,     # How would you describe your ethnic group?
+           Q47GRP,  # Which of these activities best describes what you are doing at present? (Grouped Responses) [work]
+           Q69,     # In which of these ways does your household occupy your current accommodation? [ownership]
+           Weight) |>
     # transform variables
     mutate(age = ifelse(Q73 %in% c("16-24", "25-34", "35-44"), "16-44", ">=45"),
            sex = ifelse(!Q71 %in% c("Male", "Female"), NA, Q71),
            ethnicity = ifelse(Q82 %in% c("White - British",
                                          "White - Irish",
                                          "White - Any other White background"), "White", "BME"),
-           workingstatus = ifelse(Q47GRP %in% c("Employed"), "Yes", "No"),
+           workingstatus = ifelse(Q47GRP %in% c("Employed"),
+                                  "Yes", "No"),
            own_home = ifelse(Q69 %in% c("Own outright", "Own with a mortgage or loan", "Shared ownership"),
                              "Yes", "No")
            ) |>
@@ -149,7 +157,7 @@ create_target_pop_data <- function(covariate_data, save = FALSE) {
     merge(resident_joint)
 
   res <- res |>
-    proportion_tables() |>
+    demo_prop_tables() |>
     reduce(left_join, .init = covariate_data) |>
     merge(imd_lookup) |>
 
