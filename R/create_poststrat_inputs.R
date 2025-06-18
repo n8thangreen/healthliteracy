@@ -145,7 +145,6 @@ create_NRS_prob_data <- function() {
   file_loc <- here::here("../../data/Newham Resident Survey 2023/London Borough of Newham - Residents Survey - 2023 - Dataset v3.xlsx")
 
   resident_survey <- readxl::read_xlsx(file_loc, sheet = "Labels")
-  variable_labels <- readxl::read_xlsx(file_loc, sheet = "Variable Labels")
 
   # select columns
   res_dat <- resident_survey |>
