@@ -85,10 +85,12 @@ create_target_marginal_pop_data <- function(covariate_data, save = FALSE) {
 #' Use individual level Resident survey data
 #' so can estimate full joint distribution
 #'
-#' @param covariate_data Covariate data
+#' @param covariate_data Covariate data fro SfL
 #' @return dataframe of levels and joint probability
 #'
-create_target_pop_data <- function(covariate_data, save = FALSE) {
+create_target_pop_data <- function(covariate_data,
+                                   additional_prob_data = NULL,
+                                   save = FALSE) {
 
   LSOA_IMD_data <-
     read.csv(here::here("../../data/File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv"))
@@ -152,12 +154,17 @@ create_target_pop_data <- function(covariate_data, save = FALSE) {
     ) |>
     arrange(desc(p_age_sex_eth_work_home))
 
+  # when its a single dataframe
+  if (inherits(additional_prob_data, "list")) {
+    additional_prob_data <- list(additional_prob_data)
+  }
+
   res <-
     covariate_data |>
     merge(resident_joint)
 
   res <- res |>
-    demo_prop_tables() |>
+    additional_prob_data |>
     reduce(left_join, .init = covariate_data) |>
     merge(imd_lookup) |>
 

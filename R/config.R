@@ -41,18 +41,18 @@ demo_prop_tables <- function(equivalise_income = FALSE) {
     # this would be good but its mostly 'not answered'!
     # Q54	What is your average monthly pay?
 
-    if (equivalise_income) {
+    gross_income = if (equivalise_income) {
       # from equivalised income
       # resident_survey <- create_equivalised_income(resident_survey)  # equivalise_income.R
-      gross_income = tribble(~gross_income, ~p_income,
-                             ">=10000", 0.67,
-                             "<10000", 0.33)
+      tribble(~gross_income, ~p_income,
+              ">=10000", 0.67,
+              "<10000", 0.33)
     } else {
       ##TODO: break down by LSOA and map to CNA
       ##  read from Newham tab in saiefy1920finalqaddownload280923.xlsx
-      gross_income = tribble(~gross_income, ~p_income,
-                             ">=10000", 0.9,
-                             "<10000", 0.1)
+      tribble(~gross_income, ~p_income,
+              ">=10000", 0.9,
+              "<10000", 0.1)
     },
 
     # census 2021 usual resident population

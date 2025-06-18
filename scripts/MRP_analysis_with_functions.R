@@ -13,6 +13,9 @@ create_target_pop_fn <- create_target_pop_data             # from individual sur
 # raw data
 load(here::here("data/skills_for_life_data.RData"))
 
+# IPF data
+load(synth_data, file = "data/synth_data.rda")
+
 survey_data <- clean_data(data)
 
 if (refit) {
@@ -24,7 +27,10 @@ if (refit) {
 mrp_data <-
   map(survey_data,
       ~ create_covariate_data(.x) |>
-        create_target_pop_fn())
+        create_target_pop_fn(additional_prob_data = demo_prop_tables())
+        # create_target_pop_fn(additional_prob_data = synth_data)
+        # create_target_pop_fn(additional_prob_data = demo_prop_tables(equivalise_income = TRUE)))
+)
 
 save(fit, file = here::here("data/fit.RData"))
 save(mrp_data, file = here::here("data/mrp_data.RData"))
