@@ -67,10 +67,10 @@ create_target_marginal_pop_data <- function(covariate_data, save = FALSE) {
     merge(imd_lookup) |>
 
     #####################
-    # calculate product of probabilities, assuming independence
-    rowwise() |>
-      mutate(product_p = prod(c_across(starts_with("p_")))) |>
-      ungroup()
+  # calculate product of probabilities, assuming independence
+  rowwise() |>
+    mutate(product_p = prod(c_across(starts_with("p_")))) |>
+    ungroup()
 
   if (save) {
     write.csv(res, here::here("data/total_dat.csv"))
@@ -85,7 +85,10 @@ create_target_marginal_pop_data <- function(covariate_data, save = FALSE) {
 #' Use individual level Resident survey data
 #' so can estimate full joint distribution
 #'
+#' @param additional_prob_data non-NRS data
+#' @param save logical
 #' @param covariate_data Covariate data fro SfL
+#'
 #' @return dataframe of levels and joint probability
 #'
 create_target_pop_data <- function(covariate_data,
@@ -103,8 +106,41 @@ create_target_pop_data <- function(covariate_data,
     summarize(pop = sum(Total.population..mid.2015..excluding.prisoners.)) |>
     mutate(p_imd = pop / sum(pop))
 
-  # from resident survey individual level data
-  # unless otherwise indicated
+  nrs_prob_data <- create_NRS_prob_data()
+
+  # when its a single dataframe
+  if (inherits(additional_prob_data, "list")) {
+    additional_prob_data <- list(additional_prob_data)
+  }
+
+  res <-
+    covariate_data |>
+    merge(nrs_prob_data)
+
+  res <-
+    additional_prob_data |>
+    reduce(left_join, .init = res) |>
+    merge(imd_lookup) |>
+
+  #####################
+  # calculate product of probabilities, assuming independence
+  rowwise() |>
+    mutate(product_p = prod(c_across(starts_with("p_")))) |>
+    ungroup()
+
+  if (save) {
+    write.csv(res, here::here("data/total_dat.csv"))
+  }
+
+  res
+}
+
+#' Create Newhan Resident Survey probability data
+#'
+#' from resident survey individual level data
+#' joint distribution
+#'
+create_NRS_prob_data <- function() {
 
   file_loc <- here::here("../../data/Newham Resident Survey 2023/London Borough of Newham - Residents Survey - 2023 - Dataset v3.xlsx")
 
@@ -129,7 +165,7 @@ create_target_pop_data <- function(covariate_data,
                                   "Yes", "No"),
            own_home = ifelse(Q69 %in% c("Own outright", "Own with a mortgage or loan", "Shared ownership"),
                              "Yes", "No")
-           ) |>
+    ) |>
     select(age, sex, ethnicity, workingstatus, own_home, Weight)
 
   resident_marginals <- res_dat |>
@@ -154,30 +190,5 @@ create_target_pop_data <- function(covariate_data,
     ) |>
     arrange(desc(p_age_sex_eth_work_home))
 
-  # when its a single dataframe
-  if (inherits(additional_prob_data, "list")) {
-    additional_prob_data <- list(additional_prob_data)
-  }
-
-  res <-
-    covariate_data |>
-    merge(resident_joint)
-
-  res <- res |>
-    additional_prob_data |>
-    reduce(left_join, .init = covariate_data) |>
-    merge(imd_lookup) |>
-
-    #####################
-    # calculate product of probabilities, assuming independence
-    rowwise() |>
-      mutate(product_p = prod(c_across(starts_with("p_")))) |>
-      ungroup()
-
-  if (save) {
-    write.csv(res, here::here("data/total_dat.csv"))
-  }
-
-  res
+  resident_joint
 }
-

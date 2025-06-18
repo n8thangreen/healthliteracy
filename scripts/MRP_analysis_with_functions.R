@@ -28,7 +28,7 @@ mrp_data <-
   map(survey_data,
       ~ create_covariate_data(.x) |>
         create_target_pop_fn(additional_prob_data = demo_prop_tables())
-        # create_target_pop_fn(additional_prob_data = synth_data)
+        # create_target_pop_fn(additional_prob_data = create_lfs_synth_data())
         # create_target_pop_fn(additional_prob_data = demo_prop_tables(equivalise_income = TRUE)))
 )
 
