@@ -4,20 +4,27 @@
 
 library(purrr)
 
+refit <- FALSE
+use_stan <- TRUE
+
+# create_target_pop_fn <- create_target_marginal_pop_data  # from tables only (marginal)
+create_target_pop_fn <- create_target_pop_data             # from individual survey responses (joint)
+
 # raw data
 load(here::here("data/skills_for_life_data.RData"))
 
 survey_data <- clean_data(data)
 
-use_stan <- TRUE
-
-fit <- fit_models(survey_data, stan = use_stan)
+if (refit) {
+  fit <- fit_models(survey_data, stan = use_stan)
+} else {
+  load(here::here("data/fit.RData"))
+}
 
 mrp_data <-
   map(survey_data,
       ~ create_covariate_data(.x) |>
-        # create_target_marginal_pop_data())  # from tables only
-        create_target_pop_data())             # from individual survey responses
+        create_target_pop_fn())
 
 save(fit, file = here::here("data/fit.RData"))
 save(mrp_data, file = here::here("data/mrp_data.RData"))
