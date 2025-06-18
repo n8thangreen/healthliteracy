@@ -1,6 +1,7 @@
 
-#' proportion_tables
-#' from resident survey report summary tables (weighted)
+#' Marginal proportion tables
+#'
+#' data from resident survey report summary tables (weighted)
 #' unless otherwise indicated
 #' @export
 proportion_tables <- function()
