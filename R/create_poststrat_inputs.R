@@ -109,7 +109,7 @@ create_target_pop_data <- function(covariate_data,
   nrs_prob_data <- create_NRS_prob_data()
 
   # when its a single dataframe
-  if (inherits(additional_prob_data, "list")) {
+  if (!inherits(additional_prob_data, "list")) {
     additional_prob_data <- list(additional_prob_data)
   }
 
