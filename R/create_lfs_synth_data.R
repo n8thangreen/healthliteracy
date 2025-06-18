@@ -20,42 +20,7 @@
 #' }
 create_lfs_synth_data <- function() {
 
-  lfs_data <-
-    read.delim(here::here("../../data/LFS/UKDA-9323-tab/tab/lfsp_js24_eul_pwt24.tab"))
-
-  demo_data <- lfs_data |>
-    as_tibble() |>
-    select(LEVQUL22,  # highest qualification
-           BANDG,    # Expected gross earnings, <10,000 = < 1.17 code
-           CRYOX7_EUL_Sub,   # Country of birth, 1 UNITED KINGDOM
-           CRYOX7_EUL_Main,
-           CRY12,    # (921) England, (924) Wales, (923) Scotland, (922) Northern Ireland, (926) UK, Britain (don’t know country)
-           LANG,     # First language at home, (1) English
-           NSECMJ20  # NS-SEC major group (SOC2020 based)
-    ) |>
-    mutate(
-      english_lang = ifelse(LANG == 1, "Yes", "No"),
-      uk_born = ifelse(CRYOX7_EUL_Sub == 1, "Yes" ,"No"),
-      gross_income = ifelse(as.numeric(sub("^.*\\.", "", BANDG)) %in% 1:16,
-                            "<10000",
-                            ">=10000"),
-      qualification = ifelse(LEVQUL22 %in% c(1,2,3,4,5,6,7),
-                             ">=level 2", "<=Level 1"),
-      job_status = ifelse(NSECMJ20 %in% c(1,2),
-                          "higher", ifelse(NSECMJ20 %in% c(3,4),
-                                           "intermediate", "lower"))
-    ) |>
-    select(qualification, gross_income, uk_born, english_lang, job_status) |>
-    mutate(across(everything(), as.factor))
-
-  # table(
-  #   demo_data$job_status,
-  #   demo_data$english_lang,
-  #   demo_data$uk_born,
-  #   demo_data$gross_income,
-  #   demo_data$qualification
-  # ) |>
-  #   prop.table()
+  lfs_data <- clean_lfs_data()
 
   #########
   # simpop
@@ -108,12 +73,12 @@ create_lfs_synth_data <- function() {
   }
 
   # 1. Create a simPop input object
-  demo_data$person_id <- 1:nrow(demo_data)
-  demo_data$sim_weight <- 1
-  demo_data$strata_col <- factor("default_strata")
+  lfs_data$person_id <- 1:nrow(lfs_data)
+  lfs_data$sim_weight <- 1
+  lfs_data$strata_col <- factor("default_strata")
 
   inp <- simPop::specifyInput(
-    data = as.data.frame(demo_data),
+    data = as.data.frame(lfs_data),
     hhid = "person_id",
     # hhsize = NULL,
     # pid = "person_id",
@@ -136,8 +101,8 @@ create_lfs_synth_data <- function() {
   vars_to_simulate <- names(target_counts_list)
 
   pers_tables_for_calibPop <- lapply(vars_to_simulate, function(var_name) {
-    current_demo_data_levels <- levels(demo_data[[var_name]])
-    dummy_strata_level <- levels(demo_data$strata_col)[1]
+    current_lfs_data_levels <- levels(lfs_data[[var_name]])
+    dummy_strata_level <- levels(lfs_data$strata_col)[1]
 
     df <- data.frame(
       Category = names(target_counts_list[[var_name]]),
@@ -149,8 +114,8 @@ create_lfs_synth_data <- function() {
     # Add the strata_col to each marginal table
     df$strata_col <- dummy_strata_level # All entries get the same dummy strata value
 
-    df[[var_name]] <- factor(df[[var_name]], levels = current_demo_data_levels)
-    df[["strata_col"]] <- factor(df[["strata_col"]], levels = levels(demo_data$strata_col))
+    df[[var_name]] <- factor(df[[var_name]], levels = current_lfs_data_levels)
+    df[["strata_col"]] <- factor(df[["strata_col"]], levels = levels(lfs_data$strata_col))
 
     return(df)
   })
@@ -158,13 +123,12 @@ create_lfs_synth_data <- function() {
   names(pers_tables_for_calibPop) <- vars_to_simulate
 
   # Step 3: Calibrate the Simulated Population to External Marginals
-  # This is the step where `persTables` is used, matching YOUR calibPop signature.
   final_sim_pop_obj <- calibPop(
     inp = sim_pop_obj,
     persTables = pers_tables_for_calibPop,
     split = "strata_col",
     verbose = TRUE,
-    maxiter = 200                    # Using 'maxiter' from your calibPop signature
+    maxiter = 200
   )
 
   synth_data <- simPop::popData(final_sim_pop_obj)
@@ -179,4 +143,46 @@ create_lfs_synth_data <- function() {
   save(synth_data, file = here::here("data/synth_data.rda"))
 
   synth_data
+}
+
+#
+clean_lfs_data <- function() {
+  lfs_data <-
+    read.delim(here::here("../../data/LFS/UKDA-9323-tab/tab/lfsp_js24_eul_pwt24.tab"))
+
+  res <- lfs_data |>
+    as_tibble() |>
+    select(LEVQUL22,  # highest qualification
+           BANDG,    # Expected gross earnings, <10,000 = < 1.17 code
+           CRYOX7_EUL_Sub,   # Country of birth, 1 UNITED KINGDOM
+           CRYOX7_EUL_Main,
+           CRY12,    # (921) England, (924) Wales, (923) Scotland, (922) Northern Ireland, (926) UK, Britain (don’t know country)
+           LANG,     # First language at home, (1) English
+           NSECMJ20  # NS-SEC major group (SOC2020 based)
+    ) |>
+    mutate(
+      english_lang = ifelse(LANG == 1, "Yes", "No"),
+      uk_born = ifelse(CRYOX7_EUL_Sub == 1, "Yes" ,"No"),
+      gross_income = ifelse(as.numeric(sub("^.*\\.", "", BANDG)) %in% 1:16,
+                            "<10000",
+                            ">=10000"),
+      qualification = ifelse(LEVQUL22 %in% c(1,2,3,4,5,6,7),
+                             ">=level 2", "<=Level 1"),
+      job_status = ifelse(NSECMJ20 %in% c(1,2),
+                          "higher", ifelse(NSECMJ20 %in% c(3,4),
+                                           "intermediate", "lower"))
+    ) |>
+    select(qualification, gross_income, uk_born, english_lang, job_status) |>
+    mutate(across(everything(), as.factor))
+
+  # table(
+  #   demo_data$job_status,
+  #   demo_data$english_lang,
+  #   demo_data$uk_born,
+  #   demo_data$gross_income,
+  #   demo_data$qualification
+  # ) |>
+  #   prop.table()
+
+  res
 }

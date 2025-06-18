@@ -4,7 +4,7 @@
 \alias{demo_prop_tables}
 \title{Proportion marginal tables other sources}
 \usage{
-demo_prop_tables()
+demo_prop_tables(equivalise_income = FALSE)
 }
 \description{
 Proportion marginal tables other sources

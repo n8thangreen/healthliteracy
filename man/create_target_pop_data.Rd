@@ -7,10 +7,18 @@
 Use individual level Resident survey data
 so can estimate full joint distribution}
 \usage{
-create_target_pop_data(covariate_data, save = FALSE)
+create_target_pop_data(
+  covariate_data,
+  additional_prob_data = NULL,
+  save = FALSE
+)
 }
 \arguments{
-\item{covariate_data}{Covariate data}
+\item{covariate_data}{Covariate data fro SfL}
+
+\item{additional_prob_data}{non-NRS data}
+
+\item{save}{logical}
 }
 \value{
 dataframe of levels and joint probability

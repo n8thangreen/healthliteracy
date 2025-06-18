@@ -3,6 +3,7 @@
 export(demo_prop_tables)
 export(res_survey_prop_tables)
 import(dplyr)
+import(simPop)
 importFrom(dplyr,summarize)
 importFrom(glue,glue)
 importFrom(here,here)
