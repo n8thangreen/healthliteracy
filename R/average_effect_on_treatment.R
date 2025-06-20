@@ -61,8 +61,6 @@ calc_att_stan <- function(fit, data, var) {
     # rather than whole sample for ame
     level_dat <- data |> filter(!!sym(var) == i)
 
-    fac_levels <- levels(data[[var]])
-
     # assign everyone the same level
     # counterfactual samples like regular ate
     level_dat_lst[[i]] <- purrr::map_dfr(fac_levels,
