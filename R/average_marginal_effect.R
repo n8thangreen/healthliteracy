@@ -67,6 +67,7 @@ calc_ame <- function(fit, data, var) {
     fac_levels <- levels(data[[var]])
 
     # assign everyone the same level
+    # counterfactual samples
     appended_df <- purrr::map_dfr(fac_levels,
                                   ~data %>% mutate({{var}} := .x))
 
@@ -99,7 +100,7 @@ calc_ame <- function(fit, data, var) {
     ame_dat <-
       reshape2::melt(ame_dat) |>
       group_by(variable) |>
-      mutate(ame_base = value - first(value))
+      mutate(ame_base = value - first(value))  # ame against base level
   } else {
     ##TODO: frequentist version
   }

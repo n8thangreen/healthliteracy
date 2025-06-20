@@ -426,6 +426,19 @@ sucra_plot <- function(ps_var,
 
 # all outcomes on a single cumulative sucra plot
 #
+#' @param ame_data
+#' @param max_rank
+#' @param title
+#' @param threshold
+#' @param neg_ame logical
+#' @param abs_val logical
+#' @param save logical
+#' @param filename string
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 sucra_group_plot <- function(ame_data,
                              max_rank = 3,
                              title = "",
@@ -441,13 +454,16 @@ sucra_group_plot <- function(ame_data,
   for (plot_name in names(ame_data)) {
     ps_var <- ame_data[[plot_name]]
 
+    ##TODO: problem with pop and name column
+    ##      for att job status has length 2 why?
     ame_wide <-
       bind_rows(ps_var, .id = "vars") %>%
       mutate(ame_base = if (neg_ame) -ame_base else ame_base,
              ame_base = if (abs_val) -abs(ame_base) else ame_base) |>  # ranks the largest first
-      filter(ame_base != 0) |>
+      filter(ame_base != 0) |>     # remove comparison with itself
+      ungroup() |>
       select(vars, name, variable, ame_base) |>
-      group_by(vars, name) |>
+      # group_by(vars, name) |>
       reshape2::dcast(variable ~ vars + name,
                       value.var = "ame_base")
     row_ranks <-
