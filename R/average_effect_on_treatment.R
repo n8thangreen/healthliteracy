@@ -54,28 +54,28 @@ calc_att_stan <- function(fit, data, var) {
   # i.e. those who have the covariate value
   # changed in the counterfactual
 
-  base_level <- fac_levels[1]
-
   level_dat_lst <- list()
 
   for (i in fac_levels) {
-    # subpopulation data at a level only
+    # subpopulation data at a 'treatment' level only
     # rather than whole sample for ame
     level_dat <- data |> filter(!!sym(var) == i)
 
-    # counterfactual sample
-    # everyone assigned base level
-    level_dat_base <- level_dat |> mutate(!!sym(var) := base_level)
+    fac_levels <- levels(data[[var]])
 
-    # append same population data with base level
-    level_dat$level <- i                             ## level_to?
-    level_dat_base$level <- base_level
-
-    # twins of treated and not treated
-    level_dat_lst[[i]] <- bind_rows(level_dat_base, level_dat, .id = "level_id")   ##TODO: better name?
+    # assign everyone the same level
+    # counterfactual samples like regular ate
+    level_dat_lst[[i]] <- purrr::map_dfr(fac_levels,
+                                         ~level_dat %>% mutate({{var}} := .x))
   }
 
-  appended_df <- bind_rows(level_dat_lst, .id = "comparator")  ##TODO: level_from?
+  # create combined from-to label
+  appended_df <-
+    level_dat_lst |>
+    bind_rows(, .id = "level_from") |>
+    mutate(from_to = paste(level_from, !!sym(var), sep = "_")) |>
+    select(from_to, everything()) |>    # move to start
+    dplyr::filter(level_from != !!sym(var))
 
   ##TODO: following is duplicate code from calc_ame
 
@@ -98,22 +98,17 @@ calc_att_stan <- function(fit, data, var) {
   att_dat_wide <-
     appended_df %>%
     cbind(post_draws) %>%
-    select(level, everything()) |>                  # move to start
-    group_by(comparator, level, level_id) %>%      ##TODO: check and rename. why 3?
+    group_by(from_to) %>%
     filter(sum(product_p, na.rm = TRUE) > 0) %>%    # weight.mean doesnt allow sum(w) == 0
     # group_by(!!sym(var)) %>%
     summarize_at(vars(starts_with('draws')),
                  list(~ weighted.mean(., w = product_p)))
 
-  # common first column name
-  names(att_dat_wide)[1] <- "name"
-
   att_dat <-
     reshape2::melt(att_dat_wide) |>
-    group_by(variable, name) |>
-    mutate(ame_base = value - first(value)) |>  # att calculation. prediction of treated vs base level
-    filter(name != base_level) |>
-    rename(pop = name, name = level)  # to match ame and use same plotting functions
+    group_by(variable, level_from) |>              # variable is the draw number
+    mutate(ame_base = value - first(value)) |>  # att calculation. prediction of treated vs base level_to
+    rename(pop = level_from, name = from_to)  # to match ame and use same plotting functions
 
   att_dat
 }
