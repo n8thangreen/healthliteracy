@@ -24,7 +24,6 @@ if (refit) {
   load(here::here("data/fit.RData"))
 }
 
-
 mrp_data <-
   map(survey_data,
       ~ create_covariate_data(.x) |>
