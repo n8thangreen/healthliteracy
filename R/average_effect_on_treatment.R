@@ -68,14 +68,14 @@ calc_att_stan <- function(fit, data, var) {
     level_dat_base <- level_dat |> mutate(!!sym(var) := base_level)
 
     # append same population data with base level
-    level_dat$level <- i
+    level_dat$level <- i                             ## level_to?
     level_dat_base$level <- base_level
 
     # twins of treated and not treated
-    level_dat_lst[[i]] <- bind_rows(level_dat_base, level_dat, .id = "level_id")
+    level_dat_lst[[i]] <- bind_rows(level_dat_base, level_dat, .id = "level_id")   ##TODO: better name?
   }
 
-  appended_df <- bind_rows(level_dat_lst, .id = "comparator")
+  appended_df <- bind_rows(level_dat_lst, .id = "comparator")  ##TODO: level_from?
 
   ##TODO: following is duplicate code from calc_ame
 
@@ -99,7 +99,7 @@ calc_att_stan <- function(fit, data, var) {
     appended_df %>%
     cbind(post_draws) %>%
     select(level, everything()) |>                  # move to start
-    group_by(comparator, level, level_id) %>%
+    group_by(comparator, level, level_id) %>%      ##TODO: check and rename. why 3?
     filter(sum(product_p, na.rm = TRUE) > 0) %>%    # weight.mean doesnt allow sum(w) == 0
     # group_by(!!sym(var)) %>%
     summarize_at(vars(starts_with('draws')),
