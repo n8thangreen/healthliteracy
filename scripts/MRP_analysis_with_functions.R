@@ -29,11 +29,11 @@ mrp_data <-
       ~ create_covariate_data(.x) |>
         # create_target_pop_data(additional_prob_data = demo_prop_tables())               # ONS marginals
         create_target_pop_data(additional_prob_data = synth_data)                      # LFS with ONS
-        # create_target_pop_data(additional_prob_data = demo_prop_tables(equivalise_income = TRUE)))
 )
 
 save(fit, file = here::here("data/fit.RData"))
-save(mrp_data, file = here::here("data/mrp_data.RData"))
+# save(mrp_data, file = here::here("data/mrp_data_ons.RData"))
+save(mrp_data, file = here::here("data/mrp_data_lfs.RData"))
 
 ###########
 # outcomes
@@ -104,7 +104,7 @@ load(here::here("data/all_strat_ame_data.RData"))
 
 out <- list()
 for (i in names(ame_data)) {
-  out[[i]] <- bar_plot(ame_data[[i]], title = i)
+  out[[i]] <- bar_plot(ame_data[[i]], title = i) + ylim(-0.3, 0.3)
 }
 gridout <- gridExtra::grid.arrange(grobs = out, ncol = 1)
 
@@ -113,14 +113,15 @@ ggsave(gridout, filename = here::here("plots/all_bar_plots.png"),
 
 # scatter plots
 
+title_text <- c(ict = "ICT", lit = "Literacy", num = "Numeracy")
 for (i in names(ame_data)) {
-  scatter_plot(ame_data[[i]], title = i, save = F)
+  scatter_plot(ame_data[[i]], title = title_text[i], save = T)
 }
 
 # AME forest plot
 
 for (i in names(ame_data)) {
-  ame_forest_plot(ame_data[[i]], title = i, save = F)
+  ame_forest_plot(ame_data[[i]], title = title_text[i], save = F)
 }
 
 ame_forest <- ame_forest_group_plot(ame_data, save = F) +
@@ -181,18 +182,20 @@ for (i in names(ame_data)) {
 }
 
 rank_group_plot(ame_data, max_rank = 3, save = F)
-rank_group_plot(att_data, max_rank = 3, save = F)
+rank_group_plot(att_data, max_rank = 3, save = F)  # error
 
 # sucra plot
 
 for (i in names(ame_data)) {
-  sucra_plot(ps_var = ame_data[[i]], title = i, save = TRUE)
+  sucra_plot(ps_var = ame_data[[i]], title = title_text[i], save = TRUE)
 }
 
 gg <- list()
-gg[[1]] <- sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T)
-gg[[2]] <- sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T, filename = "att_sucra_group_plot.png")
-gg[[3]] <- sucra_group_plot(swate_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = T, filename = "swate_sucra_group_plot.png")
+gg[[1]] <- sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F)
+
+##TODO: error
+gg[[2]] <- sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "att_sucra_group_plot.png")
+gg[[3]] <- sucra_group_plot(swate_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "swate_sucra_group_plot.png")
 
 # extract common legend
 legend <- cowplot::get_legend(gg[[1]])
