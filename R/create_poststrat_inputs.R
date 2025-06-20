@@ -98,12 +98,20 @@ create_target_pop_data <- function(covariate_data,
   LSOA_IMD_data <-
     read.csv(here::here("../../data/File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv"))
 
+  # for completeness
+  missing_imd <-
+    data.frame(imd = 1:9,
+               pop_default = 10)  # small
+
   imd_lookup <-
     LSOA_IMD_data |>
     filter(`Local.Authority.District.name..2019.` == "Newham") |>
     rename(imd = Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.) |>
     group_by(imd) |>
     summarize(pop = sum(Total.population..mid.2015..excluding.prisoners.)) |>
+    full_join(missing_imd, by = "imd") |>
+    mutate(pop = coalesce(pop, pop_default)) |>
+    select(imd, pop) |>
     mutate(p_imd = pop / sum(pop))
 
   nrs_prob_data <- create_NRS_prob_data()
@@ -126,7 +134,12 @@ create_target_pop_data <- function(covariate_data,
   # calculate product of probabilities, assuming independence
   rowwise() |>
     mutate(product_p = prod(c_across(starts_with("p_")))) |>
-    ungroup()
+    ungroup() |>
+    mutate(
+      across(
+        c(workingstatus, sex, own_home, age, ethnicity, gross_income,
+          uk_born, english_lang, qualification, job_status),
+        as.factor))
 
   if (save) {
     write.csv(res, here::here("data/total_dat.csv"))

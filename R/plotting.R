@@ -157,8 +157,8 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE,
         ps_var[[i]] |>
         group_by(name) |>
         summarise(mean_value = mean(ame_base, na.rm = TRUE),
-                  upper = quantile(ame_base, 0.975),
-                  lower = quantile(ame_base, 0.025)) |>
+                  upper = quantile(ame_base, 0.975, na.rm = TRUE),
+                  lower = quantile(ame_base, 0.025, na.rm = TRUE)) |>
         mutate(variable = i,
                var_name = paste0(variable, " ", name),
                group = plot_name) |>

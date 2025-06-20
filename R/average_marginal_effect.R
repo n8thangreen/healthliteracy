@@ -8,7 +8,10 @@ average_marginal_effect <- function(fit, data, save = FALSE) {
 
   poststrat_est <- poststratification(fit, data)
 
-  names_vars <- all.vars(terms(fit)[[3]])
+  names_fe <- all.vars(terms(fit)[[3]])
+  names_re <- rstanarm::ranef(fit) |> names()
+
+  names_vars <- c(names_fe, names_re)
 
   ame_dat <- list()
 
@@ -18,8 +21,9 @@ average_marginal_effect <- function(fit, data, save = FALSE) {
       ame_dat[[i]] <- calc_ame(fit, data, i)
     }
 
-    if (save)
+    if (save) {
       save(ame_dat, file = here::here("data/ame_data_stan.RData"))
+    }
 
   } else {
 
@@ -45,8 +49,9 @@ average_marginal_effect <- function(fit, data, save = FALSE) {
       names(ame_dat[[i]])[1] <- "name"
     }
 
-    if (save)
+    if (save) {
       save(ame_dat, file = here::here("data/ame_data.RData"))
+    }
   }
 
   ame_dat
@@ -96,7 +101,7 @@ calc_ame <- function(fit, data, var) {
       group_by(variable) |>
       mutate(ame_base = value - first(value))
   } else {
-  ##TODO: frequentist version
+    ##TODO: frequentist version
   }
 
   ame_dat

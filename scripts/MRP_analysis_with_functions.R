@@ -8,15 +8,15 @@ refit <- FALSE
 use_stan <- TRUE
 
 # create_target_pop_fn <- create_target_marginal_pop_data  # from tables only (marginal)
-create_target_pop_fn <- create_target_pop_data             # from individual survey responses (joint)
+create_target_pop_fn <- create_target_pop_data             # from individual resident survey responses (joint)
 
 # raw data
 load(here::here("data/skills_for_life_data.RData"))
 
 # IPF data
-load(synth_data, file = "data/synth_data.rda")
+load(here::here("data/synth_data.rda"))  # create_lfs_synth_data()
 
-survey_data <- clean_data(data)
+survey_data <- clean_sfl_data(data)
 
 if (refit) {
   fit <- fit_models(survey_data, stan = use_stan)
@@ -24,12 +24,13 @@ if (refit) {
   load(here::here("data/fit.RData"))
 }
 
+
 mrp_data <-
   map(survey_data,
       ~ create_covariate_data(.x) |>
-        create_target_pop_fn(additional_prob_data = demo_prop_tables())
-        # create_target_pop_fn(additional_prob_data = create_lfs_synth_data())
-        # create_target_pop_fn(additional_prob_data = demo_prop_tables(equivalise_income = TRUE)))
+        # create_target_pop_data(additional_prob_data = demo_prop_tables())               # ONS marginals
+        create_target_pop_data(additional_prob_data = synth_data)                      # LFS with ONS
+        # create_target_pop_data(additional_prob_data = demo_prop_tables(equivalise_income = TRUE)))
 )
 
 save(fit, file = here::here("data/fit.RData"))
@@ -48,14 +49,16 @@ strat_ame_data <- list()
 
 for (i in out_name) {
 
-  # # poststrat[[i]] <-
-  # #   poststratification(fit[[i]],
-  # #                      mrp_data[[i]])
-  # #
-  # ame_data[[i]] <-
-  #   average_marginal_effect(fit[[i]],
-  #                           mrp_data[[i]],
-  #                           save = TRUE)
+  # poststrat[[i]] <-
+  #   poststratification(
+  #   fit[[i]],
+  #   mrp_data[[i]])
+
+  ame_data[[i]] <-
+    average_marginal_effect(
+      fit[[i]],
+      mrp_data[[i]],
+      save = TRUE)
 
   att_data[[i]] <-
     average_effect_on_treatment(
@@ -67,12 +70,13 @@ for (i in out_name) {
     subpop_weighted_average_effect(
       att_data[[i]],
       mrp_data[[i]])
-  #
-  #   strat_ame_data[[i]] <-
-  #     all_cate(fit[[i]],
-  #               survey_data[[i]],
-  #               mrp_data[[i]],
-  #               save = TRUE)
+
+    # strat_ame_data[[i]] <-
+    #   all_cate(
+    #     fit[[i]],
+    #     survey_data[[i]],
+    #     mrp_data[[i]],
+    #     save = TRUE)
 }
 
 save(poststrat, file = here::here("data/all_poststrat.RData"))
@@ -95,6 +99,7 @@ load(here::here("data/all_att_data.RData"))
 load(here::here("data/all_swate_data.RData"))
 load(here::here("data/all_strat_ame_data.RData"))
 # load(here::here("data/all_cate_data.RData"))
+
 
 # bar plots
 
@@ -119,11 +124,42 @@ for (i in names(ame_data)) {
   ame_forest_plot(ame_data[[i]], title = i, save = F)
 }
 
-ame_forest_group_plot(ame_data, save = F)
-ame_forest_group_plot(att_data, save = T, filename = "att_forest_group_plot.png")
-ame_forest_group_plot(swate_data, save = T, filename = "swate_forest_group_plot.png")
+ame_forest <- ame_forest_group_plot(ame_data, save = F) +
+  scale_color_discrete(
+    name = "Type",
+    labels = c("ict" = "ICT",
+               "lit" = "Literacy",
+               "num" = "Numeracy"))
 
-# rank bar plot
+att_forest <-
+  ame_forest_group_plot(att_data, save = F) +
+  ylab("Average treatment effect on treated") +
+  scale_color_discrete(
+    name = "Type",
+    labels = c("ict" = "ICT",
+               "lit" = "Literacy",
+               "num" = "Numeracy"))
+
+swate_forest <-
+  ame_forest_group_plot(swate_data, save = F) +
+  ylab("Subpopulation weighted average treatment effect") +
+  scale_color_discrete(
+  name = "Type",
+  labels = c("ict" = "ICT",
+             "lit" = "Literacy",
+             "num" = "Numeracy"))
+
+ggsave(plot = ame_forest, filename = "plots/ame_forest_group_plot.png",
+       width = 9, height = 7, dpi = 300, bg = "white")
+
+ggsave(plot = att_forest, filename = "plots/att_forest_group_plot.png",
+       width = 9, height = 7, dpi = 300, bg = "white")
+
+ggsave(plot = swate_forest, filename = "plots/swate_forest_group_plot.png",
+       width = 9, height = 7, dpi = 300, bg = "white")
+
+
+## rank bar plot
 
 for (i in names(ame_data)) {
   rank_plot(ps_var = ame_data[[i]], title = i, save = F)
@@ -159,6 +195,7 @@ gridout <- cowplot::plot_grid(
   ncol = 2,
   rel_widths = c(1, 0.2)
 )
+gridout
 
 ggsave(gridout, filename = here::here("plots/all_sucra_group_plot.png"),
        width = 10, height = 12, dpi = 300, bg = "white")

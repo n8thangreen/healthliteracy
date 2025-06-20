@@ -10,7 +10,7 @@
 #' @import dplyr
 #' @importFrom tibble lst
 #'
-clean_data <- function(data, save = FALSE) {
+clean_sfl_data <- function(data, save = FALSE) {
 
   # select variables
   model_dat <-

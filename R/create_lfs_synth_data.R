@@ -27,7 +27,7 @@ create_lfs_synth_data <- function() {
 
   target_marginals_props <- demo_prop_tables()
 
-  N_small_area <- 1000 # Let's say you want 1000 synthetic individuals
+  N_small_area <- 10000  # number of synthetic individuals
 
   # Convert proportions to counts for simPop
   # counts are integers and sum exactly to N_small_area
@@ -60,7 +60,7 @@ create_lfs_synth_data <- function() {
     )
   )
 
-  # Adjust for rounding errors to ensure they sum to N_small_area
+  # adjust for rounding errors to ensure sum to N_small_area
   for (i in seq_along(target_counts_list)) {
     diff <- N_small_area - sum(target_counts_list[[i]])
 
@@ -100,6 +100,7 @@ create_lfs_synth_data <- function() {
 
   vars_to_simulate <- names(target_counts_list)
 
+  # list format for calibPop() input
   pers_tables_for_calibPop <- lapply(vars_to_simulate, function(var_name) {
     current_lfs_data_levels <- levels(lfs_data[[var_name]])
     dummy_strata_level <- levels(lfs_data$strata_col)[1]
@@ -127,25 +128,39 @@ create_lfs_synth_data <- function() {
     inp = sim_pop_obj,
     persTables = pers_tables_for_calibPop,
     split = "strata_col",
-    verbose = TRUE,
+    # verbose = TRUE,
     maxiter = 200
   )
 
   synth_data <- simPop::popData(final_sim_pop_obj)
 
+  # frequencies per category
   synth_data <-
     synth_data |>
     as_tibble() |>
     dplyr::count(!!!syms(vars_to_simulate), name = "frequency") |>
     ungroup() |>
-    mutate(p_synth = round(frequency/sum(frequency), 3))
+    mutate(p_synth = round(frequency/sum(frequency), 3)) |>
+    select(-frequency)
+
+  # fill in missing categories
+  load(here::here("data/skills_for_life_data.RData"))
+  synth_data <- survey_data[[1]] |>
+    create_covariate_data() |>
+    select(vars_to_simulate) |>
+    distinct() |>
+    mutate(p_default = 0) |>
+    left_join(synth_data) |>
+    mutate(p_synth = coalesce(p_synth, p_default)) |>
+    select(-p_default)
 
   save(synth_data, file = here::here("data/synth_data.rda"))
 
   synth_data
 }
 
-#
+#' clean labour force survey data
+#'
 clean_lfs_data <- function() {
   lfs_data <-
     read.delim(here::here("../../data/LFS/UKDA-9323-tab/tab/lfsp_js24_eul_pwt24.tab"))

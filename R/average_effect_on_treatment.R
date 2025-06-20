@@ -6,7 +6,10 @@ average_effect_on_treatment <- function(fit, data, save = FALSE) {
   is_stan <- inherits(fit, "stanreg")
   ndraws <- 20
 
-  names_vars <- all.vars(terms(fit)[[3]])
+  names_fe <- all.vars(terms(fit)[[3]])
+  names_re <- rstanarm::ranef(fit) |> names()
+
+  names_vars <- c(names_fe, names_re)
 
   att_dat <- list()
 
