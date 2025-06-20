@@ -129,6 +129,7 @@ ame_forest <- ame_forest_group_plot(ame_data, save = F) +
     labels = c("ict" = "ICT",
                "lit" = "Literacy",
                "num" = "Numeracy"))
+ame_forest
 
 att_forest <-
   ame_forest_group_plot(att_data, save = F) +
@@ -138,6 +139,7 @@ att_forest <-
     labels = c("ict" = "ICT",
                "lit" = "Literacy",
                "num" = "Numeracy"))
+att_forest
 
 swate_forest <-
   ame_forest_group_plot(swate_data, save = F) +
@@ -147,6 +149,17 @@ swate_forest <-
   labels = c("ict" = "ICT",
              "lit" = "Literacy",
              "num" = "Numeracy"))
+swate_forest
+
+# combine plots with a shared legend
+gridout <- cowplot::plot_grid(
+  cowplot::plot_grid(att_forest, swate_forest, ncol = 2, labels = c("a)", "b)")),
+  # legend,
+  ncol = 1
+  # ncol = 2,
+  # rel_widths = c(1, 0.2)
+)
+gridout
 
 ggsave(plot = ame_forest, filename = "plots/ame_forest_group_plot.png",
        width = 9, height = 7, dpi = 300, bg = "white")
@@ -157,6 +170,8 @@ ggsave(plot = att_forest, filename = "plots/att_forest_group_plot.png",
 ggsave(plot = swate_forest, filename = "plots/swate_forest_group_plot.png",
        width = 9, height = 7, dpi = 300, bg = "white")
 
+ggsave(plot = gridout, filename = "plots/forest_group_grid_plot.png",
+       width = 11, height = 7, dpi = 300, bg = "white")
 
 ## rank bar plot
 
