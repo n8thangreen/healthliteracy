@@ -73,7 +73,7 @@ calc_att_stan <- function(fit, data, var) {
     bind_rows(, .id = "level_from") |>
     mutate(from_to = paste(level_from, !!sym(var), sep = "_")) |>
     select(from_to, everything()) |>    # move to start
-    dplyr::filter(level_from != !!sym(var))
+    dplyr::filter(level_from != !!sym(var)) #todo need this for comparison. Delete
 
   ##TODO: following is duplicate code from calc_ame
 
