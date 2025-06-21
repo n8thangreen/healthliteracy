@@ -72,8 +72,7 @@ calc_att_stan <- function(fit, data, var) {
     level_dat_lst |>
     bind_rows(, .id = "level_from") |>
     mutate(from_to = paste(level_from, !!sym(var), sep = "_")) |>
-    select(from_to, everything()) |>    # move to start
-    dplyr::filter(level_from != !!sym(var)) #todo need this for comparison. Delete
+    select(from_to, everything())    # move to start
 
   ##TODO: following is duplicate code from calc_ame
 
@@ -96,11 +95,18 @@ calc_att_stan <- function(fit, data, var) {
   att_dat_wide <-
     appended_df %>%
     cbind(post_draws) %>%
-    group_by(from_to) %>%
+    group_by(from_to, level_from) %>%
     filter(sum(product_p, na.rm = TRUE) > 0) %>%    # weight.mean doesnt allow sum(w) == 0
     # group_by(!!sym(var)) %>%
-    summarize_at(vars(starts_with('draws')),
-                 list(~ weighted.mean(., w = product_p)))
+    summarize(across(starts_with('draws'),
+                 list(~ weighted.mean(., w = product_p)))) |>
+    mutate(
+      is_pattern = stringr::str_detect(from_to, "^([^_]+)_\\1$")) |>  # repeated label
+    arrange(
+      level_from,
+      desc(is_pattern),    # TRUE values to top i.e original
+      from_to) |>
+    select(-is_pattern)
 
   att_dat <-
     reshape2::melt(att_dat_wide) |>
