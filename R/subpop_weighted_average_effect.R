@@ -1,5 +1,5 @@
 
-#' Weighted average effect by size of subpopulation
+#' Weighted average treatment effect of treated by size of subpopulation
 #'
 subpop_weighted_average_effect <- function(att_data, mrp_data) {
 
@@ -8,7 +8,7 @@ subpop_weighted_average_effect <- function(att_data, mrp_data) {
   swate <- att_data
 
   for (i in names_vars) {
-    # population size proportion of each level
+    # population proportion of each level
     prop_levels <- tapply(mrp_data$product_p, mrp_data[[i]], sum)
 
     # weighted average treatment effect

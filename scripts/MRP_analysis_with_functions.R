@@ -43,7 +43,7 @@ out_name <- c("lit", "num", "ict")
 poststrat <- list()
 ame_data <- list()
 att_data <- list()
-swate_data <- list()
+swatt_data <- list()
 strat_ame_data <- list()
 
 for (i in out_name) {
@@ -65,23 +65,25 @@ for (i in out_name) {
       mrp_data[[i]],
       save = TRUE)
 
-  swate_data[[i]] <-
+  # change to swatt?
+  swatt_data[[i]] <-
     subpop_weighted_average_effect(
       att_data[[i]],
       mrp_data[[i]])
 
-    # strat_ame_data[[i]] <-
-    #   all_cate(
-    #     fit[[i]],
-    #     survey_data[[i]],
-    #     mrp_data[[i]],
-    #     save = TRUE)
+  # # slow
+  # strat_ame_data[[i]] <-
+  #   all_cate(
+  #     fit[[i]],
+  #     survey_data[[i]],
+  #     mrp_data[[i]],
+  #     save = TRUE)
 }
 
 save(poststrat, file = here::here("data/all_poststrat.RData"))
 save(ame_data, file = here::here("data/all_ame_data.RData"))
 save(att_data, file = here::here("data/all_att_data.RData"))
-save(swate_data, file = here::here("data/all_swate_data.RData"))
+save(swatt_data, file = here::here("data/all_swatt_data.RData"))
 save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
 # save(cate_data, file = here::here("data/all_cate_data.RData"))
 
@@ -95,7 +97,7 @@ library(gridExtra)
 load(here::here("data/all_poststrat.RData"))
 load(here::here("data/all_ame_data.RData"))
 load(here::here("data/all_att_data.RData"))
-load(here::here("data/all_swate_data.RData"))
+load(here::here("data/all_swatt_data.RData"))
 load(here::here("data/all_strat_ame_data.RData"))
 # load(here::here("data/all_cate_data.RData"))
 
@@ -132,6 +134,8 @@ ame_forest <- ame_forest_group_plot(ame_data, save = F) +
                "num" = "Numeracy"))
 ame_forest
 
+##TODO: some sort of grid by covariate?
+
 att_forest <-
   ame_forest_group_plot(att_data, save = F) +
   ylab("Average treatment effect on treated") +
@@ -142,8 +146,14 @@ att_forest <-
                "num" = "Numeracy"))
 att_forest
 
+swatt_ <- swatt_data
+swatt_$lit$imd <- NULL
+swatt_$num$imd <- NULL
+swatt_$ict$imd <- NULL
+
 swate_forest <-
-  ame_forest_group_plot(swate_data, save = F) +
+  swatt_ |>
+  ame_forest_group_plot(save = F) +
   ylab("Subpopulation weighted average treatment effect") +
   scale_color_discrete(
   name = "Type",
@@ -151,6 +161,25 @@ swate_forest <-
              "lit" = "Literacy",
              "num" = "Numeracy"))
 swate_forest
+
+# IMD only
+
+swatt_ <- list()
+swatt_$lit <- list()
+swatt_$lit$imd <- swatt_data$lit$imd
+swatt_$num$imd <- swatt_data$num$imd
+swatt_$ict$imd <- swatt_data$ict$imd
+
+swate_forest_imd <-
+  swatt_ |>
+  ame_forest_group_plot(save = F) +
+  ylab("Subpopulation weighted average treatment effect") +
+  scale_color_discrete(
+    name = "Type",
+    labels = c("ict" = "ICT",
+               "lit" = "Literacy",
+               "num" = "Numeracy"))
+swate_forest_imd
 
 # combine plots with a shared legend
 gridout <- cowplot::plot_grid(
@@ -195,7 +224,7 @@ gg[[1]] <- sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = T
 
 ##TODO: error
 gg[[2]] <- sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "att_sucra_group_plot.png")
-gg[[3]] <- sucra_group_plot(swate_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "swate_sucra_group_plot.png")
+gg[[3]] <- sucra_group_plot(swatt_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "swate_sucra_group_plot.png")
 
 # extract common legend
 legend <- cowplot::get_legend(gg[[1]])
@@ -242,7 +271,7 @@ tab %>%
 
 tab_ame <- sucra_table(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
 tab_att <- sucra_table(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
-tab_swate <- sucra_table(swate_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
+tab_swate <- sucra_table(swatt_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
 
 tab_ame |>
   kable(format = "latex", booktabs = TRUE, escape = FALSE,
