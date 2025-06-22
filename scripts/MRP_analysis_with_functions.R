@@ -134,8 +134,6 @@ ame_forest <- ame_forest_group_plot(ame_data, save = F) +
                "num" = "Numeracy"))
 ame_forest
 
-##TODO: some sort of grid by covariate?
-
 att_forest <-
   ame_forest_group_plot(att_data, save = F) +
   ylab("Average treatment effect on treated") +
@@ -216,11 +214,11 @@ rank_group_plot(att_data, max_rank = 3, save = F)  # error
 # sucra plot
 
 for (i in names(ame_data)) {
-  sucra_plot(ps_var = ame_data[[i]], title = title_text[i], save = TRUE)
+  sucra_plot(ps_var = ame_data[[i]], title = title_text[i], save = F)
 }
 
 gg <- list()
-gg[[1]] <- sucra_group_plot(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F)
+gg[[1]] <- sucra_group_plot(ame_data, max_rank = 4, threshold = 0.2, abs_val = TRUE, save = F)
 
 ##TODO: error
 gg[[2]] <- sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "att_sucra_group_plot.png")
