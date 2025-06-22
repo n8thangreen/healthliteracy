@@ -160,7 +160,8 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE,
                   upper = quantile(ame_base, 0.975, na.rm = TRUE),
                   lower = quantile(ame_base, 0.025, na.rm = TRUE)) |>
         mutate(variable = i,
-               var_name = paste0(variable, " ", name),
+               var_name = paste0(variable, ": ", name),
+               # var_name = paste0(""**", variable, "**: ", name),  # bold font
                group = plot_name) |>
         clean_names() |>
         filter(mean_value != 0)
@@ -171,8 +172,8 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE,
   ame_plot_dat <- do.call(rbind, ame_dat_ls)
 
   res <-
-    ggplot(ame_plot_dat, aes(x = name, y = mean_value, colour = group)) +
-    # ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = group)) +  ##TODO: just clean var_name?
+    # ggplot(ame_plot_dat, aes(x = name, y = mean_value, colour = group)) +
+    ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = group)) +
     geom_point(size = 4, position = position_dodge(width = 0.5)) +
     geom_linerange(aes(ymin = lower, ymax = upper), size = 1.3,
                    position = position_dodge(width = 0.5)) +
@@ -185,6 +186,7 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE,
     geom_hline(yintercept = 0, linetype = "dashed") +
     theme_minimal() +
     theme(legend.position = "top") +
+    # strip.text = element_markdown(size = 10, face = "plain"),
     scale_x_discrete(expand = expansion(add = 2)) +    # add extra space
     annotate("segment", x = 0, xend = 0, y = -0.1, yend = -0.3,
              arrow = arrow(type = "open", length = unit(0.2, "cm")), color = "black") +
