@@ -57,8 +57,3 @@ Contributions are welcome! Please follow these steps:
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-*Note*: For detailed information on multilevel regression and poststratification, refer to the [MRP book by Gelman and Hill](https://www.cambridge.org/core/books/data-analysis-using-regression-and-multilevelhierarchical-models/B58FAFC3B30B969D5BA8C2A18F88C2C5).
-
