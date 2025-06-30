@@ -22,7 +22,7 @@ This project aims to estimate the health literacy of residents in Newham, London
 
 - **[Skills for Life Survey](https://www.gov.uk/government/publications/2011-skills-for-life-survey)**: A survey measuring basic skills in literacy, numeracy, and ICT among adults in England.
 - **[Newham Resident Survey](https://www.newham.info/residents-survey/)**: Data from the from an annual probability sample survey on the population characteristics of Newham.
-- **[Census 2021](https://www.ons.gov.uk/census) and [Annual Population Survey](https://beta.ukdataservice.ac.uk/datacatalogue/series/series?id=200002)**: Local health profiles and indicators from the Office for National Statistics.
+- **[Labour Force Survey (LFS)](https://www.ons.gov.uk/surveys/informationforhouseholdsandindividuals/householdandindividualsurveys/labourforcesurvey), [Census 2021](https://www.ons.gov.uk/census) and [Annual Population Survey](https://beta.ukdataservice.ac.uk/datacatalogue/series/series?id=200002)**: Local health profiles and indicators from the Office for National Statistics (ONS).
 
 ## Methodology
 
