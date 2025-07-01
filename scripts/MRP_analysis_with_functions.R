@@ -258,18 +258,23 @@ library(dplyr)
 library(tidyr)
 
 # ame table
-tab <- ame_table(ame_data)
-
-xx <- tab |> clean_names("variable")
+tab <- ame_data |>
+  ame_table() |>
+  clean_names("variable")
 
 write.csv(tab, here::here("tables/ame_table.csv"), row.names = FALSE)
+
+indent_rows <- grep("^  ", tab$variable)
 
 tab %>%
   mutate(across(everything(), ~ replace_na(.x, ""))) |>
   kable(format = "latex", booktabs = TRUE, escape = FALSE,
-        col.names = c("Variable", "Literacy", "Numeracy", "ICT")) %>%
+        col.names = c("Variable", "Literacy", "Numeracy", "ICT"),
+        linesep = "") %>%
   kable_styling(latex_options = c("hold_position")) %>%
-  row_spec(0, bold = TRUE)
+  row_spec(0, bold = TRUE) |>
+  add_indent(positions = indent_rows, level_of_indent = 1, target_cols = 1)
+
 
 ## sucra table
 
