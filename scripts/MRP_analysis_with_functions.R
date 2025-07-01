@@ -214,16 +214,16 @@ for (i in names(ame_data)) {
 rank_group_plot(ame_data, max_rank = 3, save = F)
 rank_group_plot(att_data, max_rank = 3, save = F)  # error
 
-# sucra plot
+## sucra plot
 
 for (i in names(ame_data)) {
   sucra_plot(ps_var = ame_data[[i]], title = title_text[i], save = F)
 }
 
+ame_data <- setNames(ame_data, nm = c("Literacy", "Numeracy", "ICT"))
+
 gg <- list()
 gg[[1]] <- sucra_group_plot(ame_data, max_rank = 4, threshold = 0.2, abs_val = TRUE, save = F)
-
-##TODO: error
 gg[[2]] <- sucra_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "att_sucra_group_plot.png")
 gg[[3]] <- sucra_group_plot(swatt_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "swate_sucra_group_plot.png")
 
@@ -246,6 +246,10 @@ gridout
 
 ggsave(gridout, filename = here::here("plots/all_sucra_group_plot.png"),
        width = 10, height = 12, dpi = 300, bg = "white")
+
+ggsave(gg[[1]], filename = here::here("plots/ame_sucra_group_plot.png"),
+       width = 12, height = 6, dpi = 300, bg = "white")
+
 
 
 #########

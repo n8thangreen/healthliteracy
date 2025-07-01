@@ -497,7 +497,15 @@ sucra_group_plot <- function(ame_data,
     combined_rank_dat |>
     group_by(name, group) |>
     mutate(sucra = cumsum(count),
-           sucra = sucra / max(sucra))
+           sucra = sucra / max(sucra)) |>
+    ungroup() |>
+    mutate(
+      name = ifelse(
+        grepl("Age \\(years\\)", name), "Age (years) >=45", name),
+      name = ifelse(
+        grepl("Gross income \\(£\\) \\$", name), "Gross income (£) >=10000", name),
+      name = ifelse(
+        grepl("Qualification", name), "Qualification >=level 2", name))
 
   res <-
     sucra |>
