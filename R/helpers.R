@@ -19,8 +19,8 @@ clean_names <- function(x, col_name = "var_name") {
       var_tmp = gsub(pattern = "Gross income", replacement = "Gross income (£)", var_tmp),
       var_tmp = gsub(pattern = "Age", replacement = "Age (years)", var_tmp),
       var_tmp = gsub(pattern = "Workingstatus", replacement = "Working status", var_tmp),
-      var_tmp = gsub(pattern = ">=", replacement = "$\\\\geq$", var_tmp),
-      var_tmp = gsub(pattern = "<=", replacement = "$\\\\leq$", var_tmp),
+      # var_tmp = gsub(pattern = ">=", replacement = "$\\\\geq$", var_tmp),
+      # var_tmp = gsub(pattern = "<=", replacement = "$\\\\leq$", var_tmp),
       var_tmp = gsub(pattern = "Uk", replacement = "UK", var_tmp)
     ) |>
     select(-!!sym(col_name)) |>
