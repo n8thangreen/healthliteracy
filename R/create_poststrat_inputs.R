@@ -87,22 +87,24 @@ create_target_marginal_pop_data <- function(covariate_data, save = FALSE) {
 #'
 #' @param additional_prob_data non-NRS data
 #' @param save logical
-#' @param covariate_data Covariate data fro SfL
-#'
+#' @param covariate_data Covariate data from SfL
 #' @return dataframe of levels and joint probability
+#' @importFrom glue glue
 #'
 create_target_pop_data <- function(covariate_data,
                                    additional_prob_data = NULL,
                                    save = FALSE) {
 
+  filename <- "File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv"
   LSOA_IMD_data <-
-    read.csv(here::here("../../data/File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv"))
+    read.csv(here::here(glue("../../data/{filename}")))
 
-  # for completeness
+  # for completeness include even empty deciles
   missing_imd <-
     data.frame(imd = 1:9,
                pop_default = 10)  # small
 
+  # population for Newham by decile
   imd_lookup <-
     LSOA_IMD_data |>
     filter(`Local.Authority.District.name..2019.` == "Newham") |>
@@ -148,18 +150,19 @@ create_target_pop_data <- function(covariate_data,
   res
 }
 
-#' Create Newhan Resident Survey probability data
+#' Create Newham Resident Survey probability data
 #'
 #' from resident survey individual level data
 #' joint distribution
 #'
-create_NRS_prob_data <- function() {
+create_NRS_prob_data <- function(save = TRUE) {
 
-  file_loc <- here::here("../../data/Newham Resident Survey 2023/London Borough of Newham - Residents Survey - 2023 - Dataset v3.xlsx")
+  filename <- "Newham Resident Survey 2023/London Borough of Newham - Residents Survey - 2023 - Dataset v3.xlsx"
+  file_loc <- here::here(glue("../../data/{filename}"))
 
   resident_survey <- readxl::read_xlsx(file_loc, sheet = "Labels")
 
-  # select columns
+  # select columns from questions
   res_dat <- resident_survey |>
     select(Q73,     # How old are you? (grouped)
            Q71,     # Are you...? [sex]
@@ -187,7 +190,9 @@ create_NRS_prob_data <- function() {
     ungroup() |>
     mutate(p_nrs = round(frequency/sum(frequency), 3))
 
-  save(nrs_joint, file = here::here("data/nrs_joint.rda"))
+  if (save) {
+    save(nrs_joint, file = here::here("data/nrs_joint.rda"))
+  }
 
   nrs_joint
 }

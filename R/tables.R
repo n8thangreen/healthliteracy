@@ -15,7 +15,7 @@ ame_table <- function(ame_data) {
       ame_dat_ls[[paste0(plot_name, "_", i)]] <-
         ps_var[[i]] |>
         group_by(name) |>
-        summarise(mean_value = mean(ame_base, na.rm = TRUE),
+        summarise(mean_value = mean(ame_base, na.rm = TRUE),  # posterior summaries
                   upper = quantile(ame_base, 0.975),
                   lower = quantile(ame_base, 0.025)) |>
         mutate(variable = i,
@@ -31,30 +31,29 @@ ame_table <- function(ame_data) {
   # Create a new column to format the value with range
   data_formatted <- ame_plot_dat %>%
     mutate(
-      value_with_range = sprintf("%.3f [%.3f, %.3f]", mean_value, lower, upper)
-    ) %>%
+      value_with_range = sprintf("%.3f [%.3f, %.3f]", mean_value, lower, upper)) %>%
     select(variable, name, group, value_with_range)
 
-  # Prepare the rows where we have just the variable names with empty values
+  # prepare rows where we have just variable names with empty values
   variable_rows <- data_formatted %>%
     distinct(variable) %>%
     mutate(
-      name = "",  # Empty name for variable rows
-      value_with_range = "",  # Empty values for variable rows
-      group = "dummy"  # Empty group for variable rows
+      name = "",              # empty name for variable rows
+      value_with_range = "",  # empty values for variable rows
+      group = "dummy"         # empty group for variable rows
     )
 
-  # Prepare the rows for the names (subcategories) under each variable
+  # prepare rows for the names (subcategories) under each variable
   name_rows <- data_formatted %>%
     mutate(
-      name = paste0("  ", name)  # Indent the names
+      name = paste0("  ", name)  # indent the names
     )
 
-  # Combine variable rows and name rows
+  # combine variable rows and name rows
   table <- bind_rows(variable_rows, name_rows) %>%
-    arrange(variable, name)  # Ensure the order is variable first, then names
+    arrange(variable, name)  # ensure order is variable first then names
 
-  # Pivot the table so that 'group' becomes columns and each value has the corresponding data
+  # pivot table so 'group' becomes columns and each value has corresponding data
   table_wide <- table %>%
     tidyr::pivot_wider(
       names_from = group,
@@ -63,11 +62,14 @@ ame_table <- function(ame_data) {
 
   table_wide <- table_wide %>%
     mutate(
-      variable = if_else(duplicated(variable), "", variable), # Blank out repeated variable
-      name = if_else(duplicated(variable), paste0("  ", name), name) # Indent subcategory names
+      variable = if_else(duplicated(variable), "", variable),     # blank out repeated variable
+      name = if_else(duplicated(variable), paste0("  ", name), name) # indent subcategory names
     )
 
-  table_wide$variable <- ifelse(table_wide$variable == "", table_wide$name, table_wide$variable)
+  table_wide$variable <- ifelse(table_wide$variable == "",
+                                yes = table_wide$name,
+                                no = table_wide$variable)
+
   table_wide <- select(table_wide, -dummy, -name)
 
   table_wide

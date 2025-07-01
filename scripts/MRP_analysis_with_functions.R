@@ -134,6 +134,9 @@ ame_forest <- ame_forest_group_plot(ame_data, save = F) +
                "num" = "Numeracy"))
 ame_forest
 
+ggsave(plot = ame_forest, filename = here::here("plots/ame_forest_group_plot.png"),
+       width = 9, height = 7, dpi = 300, bg = "white")
+
 att_forest <-
   ame_forest_group_plot(att_data, save = F) +
   ylab("Average treatment effect on treated") +
@@ -256,6 +259,9 @@ library(tidyr)
 
 # ame table
 tab <- ame_table(ame_data)
+
+xx <- tab |> clean_names("variable")
+
 write.csv(tab, here::here("tables/ame_table.csv"), row.names = FALSE)
 
 tab %>%

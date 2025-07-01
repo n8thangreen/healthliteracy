@@ -2,9 +2,9 @@
 % Please edit documentation in R/create_poststrat_inputs.R
 \name{create_NRS_prob_data}
 \alias{create_NRS_prob_data}
-\title{Create Newhan Resident Survey probability data}
+\title{Create Newham Resident Survey probability data}
 \usage{
-create_NRS_prob_data()
+create_NRS_prob_data(save = TRUE)
 }
 \description{
 from resident survey individual level data

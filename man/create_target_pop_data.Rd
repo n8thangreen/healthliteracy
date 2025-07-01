@@ -14,7 +14,7 @@ create_target_pop_data(
 )
 }
 \arguments{
-\item{covariate_data}{Covariate data fro SfL}
+\item{covariate_data}{Covariate data from SfL}
 
 \item{additional_prob_data}{non-NRS data}
 

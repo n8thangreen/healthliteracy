@@ -172,15 +172,15 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE,
   ame_plot_dat <- do.call(rbind, ame_dat_ls)
 
   res <-
-    # ggplot(ame_plot_dat, aes(x = name, y = mean_value, colour = group)) +
+    # ggplot(ame_plot_dat, aes(x = name, y = mean_value, colour = group)) +   # when facet dont need variable text
     ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = group)) +
     geom_point(size = 4, position = position_dodge(width = 0.5)) +
     geom_linerange(aes(ymin = lower, ymax = upper), size = 1.3,
                    position = position_dodge(width = 0.5)) +
     coord_flip() +
-    # facet_grid(variable ~ ., scales = "free", space = "free") +
-    facet_wrap(~ variable, scales = "free_y", ncol = 2) +
-    ylab("Average marginal effect") +
+    # facet_grid(variable ~ ., scales = "free", space = "free") +   # grid
+    # facet_wrap(~ variable, scales = "free_y", ncol = 2) +         # warp
+    ylab("MRP-ATE for probability not health literate") +
     xlab("") +
     # ggtitle(title) +
     geom_hline(yintercept = 0, linetype = "dashed") +

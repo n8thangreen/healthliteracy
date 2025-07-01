@@ -2,10 +2,10 @@
 % Please edit documentation in R/subpop_weighted_average_effect.R
 \name{subpop_weighted_average_effect}
 \alias{subpop_weighted_average_effect}
-\title{Weighted average effect by size of subpopulation}
+\title{Weighted average treatment effect of treated by size of subpopulation}
 \usage{
 subpop_weighted_average_effect(att_data, mrp_data)
 }
 \description{
-Weighted average effect by size of subpopulation
+Weighted average treatment effect of treated by size of subpopulation
 }
