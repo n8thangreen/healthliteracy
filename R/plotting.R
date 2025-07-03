@@ -171,20 +171,23 @@ ame_forest_group_plot <- function(ame_data, title = "", save = FALSE,
   # combine the data into a single data frame
   ame_plot_dat <- do.call(rbind, ame_dat_ls)
 
+  ame_plot_dat <- ame_plot_dat |>
+    mutate(var_name = as.factor(var_name))
+
   group_labels <- c("Literacy", "Numeracy", "ICT")
 
   res <-
     # ggplot(ame_plot_dat, aes(x = name, y = mean_value, colour = group)) +   # when facet dont need variable text
-    ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = group, linetype = group)) +
+    ggplot(ame_plot_dat, aes(x = fct_rev(var_name), y = mean_value, colour = group, linetype = group)) +
     geom_point(aes(shape = group), size = 4, position = position_dodge(width = 0.8)) +
     geom_linerange(aes(ymin = lower, ymax = upper, colour = group, linetype = group), size = 1.3,
                    position = position_dodge(width = 0.8)) +
-    scale_shape_manual(name = "Type", labels = group_labels,
+    scale_shape_manual(name = "Outcome:", labels = group_labels,
                        values = c(16, 17, 18)) +  # 16=circle, 17=triangle, 18=diamond
-    scale_linetype_manual(name = "Type", labels = group_labels,
+    scale_linetype_manual(name = "Outcome:", labels = group_labels,
                           values = c("solid", "dashed", "longdash")) +
     scale_color_manual(
-      name = "Type",
+      name = "Outcome:",
       labels = group_labels,
       values = c("red", "blue", "darkgreen")) +
     coord_flip() +
@@ -527,23 +530,24 @@ sucra_group_plot <- function(ame_data,
       name = ifelse(
         grepl("Gross income \\(£\\) \\$", name), "Gross income (£) >=10000", name),
       name = ifelse(
-        grepl("Qualification", name), "Qualification >=level 2", name))
-
-  res <-
-    sucra |>
+        grepl("Qualification", name), "Qualification >=level 2", name)) |>
     group_by(name, group) |>
     filter(rank <= max_rank) |>
     filter(!all(sucra <= threshold)) |>
     mutate(name = as.factor(name),
            name = droplevels(name)) |>
-    ggplot(aes(x = rank, y = sucra, colour = name)) +
+    rename("Variable/Category" = name)
+
+  res <-
+    sucra |>
+    ggplot(aes(x = rank, y = sucra, colour = `Variable/Category`)) +
     facet_wrap(~ group) +
     geom_line(linewidth = 1.2) +
     geom_point(size = 3) +
     ggtitle(title) +
     ylab("Probability ranking or higher") +
     ylim(0,1) +
-    theme_minimal() +
+    theme_minimal(base_size = 18) +
     scale_x_discrete(limits = factor(1:max_rank),
                      labels = 1:max_rank)
 

@@ -128,7 +128,7 @@ for (i in names(ame_data)) {
 
 ame_forest <- ame_forest_group_plot(ame_data, save = F) +
   scale_color_discrete(
-    name = "Type",
+    name = "Outcome:",
     labels = c("ict" = "ICT",
                "lit" = "Literacy",
                "num" = "Numeracy"))
@@ -141,7 +141,7 @@ att_forest <-
   ame_forest_group_plot(att_data, save = F) +
   ylab("Average treatment effect on treated") +
   scale_color_discrete(
-    name = "Type",
+    name = "Outcome:",
     labels = c("ict" = "ICT",
                "lit" = "Literacy",
                "num" = "Numeracy"))
@@ -157,7 +157,7 @@ swate_forest <-
   ame_forest_group_plot(save = F) +
   ylab("Subpopulation weighted average treatment effect") +
   scale_color_discrete(
-  name = "Type",
+  name = "Outcome:",
   labels = c("ict" = "ICT",
              "lit" = "Literacy",
              "num" = "Numeracy"))
