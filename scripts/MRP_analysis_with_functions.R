@@ -4,7 +4,7 @@
 
 library(purrr)
 
-refit <- FALSE
+refit <- TRUE
 use_stan <- TRUE
 
 # create_target_pop_fn <- create_target_marginal_pop_data  # from tables only (marginal)
@@ -59,17 +59,17 @@ for (i in out_name) {
       mrp_data[[i]],
       save = TRUE)
 
-  att_data[[i]] <-
-    average_effect_on_treatment(
-      fit[[i]],
-      mrp_data[[i]],
-      save = TRUE)
-
-  # change to swatt?
-  swatt_data[[i]] <-
-    subpop_weighted_average_effect(
-      att_data[[i]],
-      mrp_data[[i]])
+  # att_data[[i]] <-
+  #   average_effect_on_treatment(
+  #     fit[[i]],
+  #     mrp_data[[i]],
+  #     save = TRUE)
+  #
+  # # change to swatt?
+  # swatt_data[[i]] <-
+  #   subpop_weighted_average_effect(
+  #     att_data[[i]],
+  #     mrp_data[[i]])
 
   # # slow
   # strat_ame_data[[i]] <-

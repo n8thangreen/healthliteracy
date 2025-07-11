@@ -95,26 +95,7 @@ create_target_pop_data <- function(covariate_data,
                                    additional_prob_data = NULL,
                                    save = FALSE) {
 
-  filename <- "File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv"
-  LSOA_IMD_data <-
-    read.csv(here::here(glue("../../data/{filename}")))
-
-  # for completeness include even empty deciles
-  missing_imd <-
-    data.frame(imd = 1:9,
-               pop_default = 10)  # small
-
-  # population for Newham by decile
-  imd_lookup <-
-    LSOA_IMD_data |>
-    filter(`Local.Authority.District.name..2019.` == "Newham") |>
-    rename(imd = Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.) |>
-    group_by(imd) |>
-    summarize(pop = sum(Total.population..mid.2015..excluding.prisoners.)) |>
-    full_join(missing_imd, by = "imd") |>
-    mutate(pop = coalesce(pop, pop_default)) |>
-    select(imd, pop) |>
-    mutate(p_imd = pop / sum(pop))
+  imd_lookup <- create_imd_lookup(quintile = TRUE)
 
   nrs_prob_data <- create_NRS_prob_data()
 
@@ -132,7 +113,7 @@ create_target_pop_data <- function(covariate_data,
     reduce(left_join, .init = res) |>
     merge(imd_lookup) |>
 
-  #####################
+    #####################
   # calculate product of probabilities, assuming independence
   rowwise() |>
     mutate(product_p = prod(c_across(starts_with("p_")))) |>
@@ -196,3 +177,48 @@ create_NRS_prob_data <- function(save = TRUE) {
 
   nrs_joint
 }
+
+#
+create_imd_lookup <- function(quintile = NA, decile = NA) {
+
+  filename <- "File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv"
+  LSOA_IMD_data <-
+    read.csv(here::here(glue("../../data/{filename}"))) |>
+    rename(imd = Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.)
+
+  if (quintile) {
+    LSOA_IMD_data <-
+      mutate(LSOA_IMD_data,
+             imd = case_when(
+               imd %in% c(1, 2) ~ 1,
+               imd %in% c(3, 4) ~ 2,
+               imd %in% c(5, 6) ~ 3,
+               imd %in% c(7, 8) ~ 4,
+               imd %in% c(9,10) ~ 5))
+
+    # for completeness include even empty deciles
+    missing_imd <-
+      data.frame(imd = 1:5,
+                 pop_default = 10)  # small
+  } else if (decile) {
+    missing_imd <-
+      data.frame(imd = 1:9,
+                 pop_default = 10)  # small
+  } else {
+    stop("missing quantile argument.")
+  }
+
+  # population for Newham by decile
+  imd_lookup <-
+    LSOA_IMD_data |>
+    filter(`Local.Authority.District.name..2019.` == "Newham") |>
+    group_by(imd) |>
+    summarize(pop = sum(Total.population..mid.2015..excluding.prisoners.)) |>
+    full_join(missing_imd, by = "imd") |>
+    mutate(pop = coalesce(pop, pop_default)) |>
+    select(imd, pop) |>
+    mutate(p_imd = pop / sum(pop))
+
+  imd_lookup
+}
+

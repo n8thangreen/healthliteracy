@@ -89,7 +89,13 @@ clean_sfl_data <- function(data, save = FALSE) {
       ethnicity = factor(ETHNICSIMPLE, levels = c(1,2), labels = c("White", "BME")),
       qualification = ifelse(HIQUAL %in% 1:4, ">=level 2", "<=Level 1") |>
         factor(levels = c("<=Level 1", ">=level 2")),
-      imd = factor(10 - IMDSCOREB4),           # for some reason (?) these are the wrong way round. why?...
+      # imd = factor(10 - IMDSCOREB4),     # original greater deprivation being higher number
+      imd = case_when(
+        IMDSCOREB4 %in% c(1, 2) ~ 5,
+        IMDSCOREB4 %in% c(3, 4) ~ 4,
+        IMDSCOREB4 %in% c(5, 6) ~ 3,
+        IMDSCOREB4 %in% c(7, 8) ~ 2,
+        IMDSCOREB4 == 9         ~ 1),
       job_status = ifelse(NSSEC7 %in% 1:2, "higher",  # managerial
                           ifelse(NSSEC7 == 3, "intermediate",
                                  ifelse(NSSEC7 %in% 4:10, "lower", "other"))) |>

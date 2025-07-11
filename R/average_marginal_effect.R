@@ -26,6 +26,7 @@ average_marginal_effect <- function(fit, data, save = FALSE) {
     }
 
   } else {
+    # frequentist
 
     for (i in names_vars) {
       fac_levels <- levels(data[[i]])
@@ -59,10 +60,11 @@ average_marginal_effect <- function(fit, data, save = FALSE) {
 
 #' @title Calculate Average Marginal Effect
 #'
-calc_ame <- function(fit, data, var) {
+calc_ame <- function(fit, data, var, ndraws = 20) {
 
   if (inherits(fit, "stanreg")) {
-    ndraws <- 20
+
+    if (!is.factor(data[[var]])) data[[var]] <- factor(data[[var]])
 
     fac_levels <- levels(data[[var]])
 
