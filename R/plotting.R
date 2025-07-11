@@ -141,13 +141,13 @@ ame_forest_plot <- function(ps_var, title = "", save = FALSE) {
   res
 }
 
-# combined all outcomes on a single forest plot
-#
+#' Combined all outcomes on a single forest plot
+#' @importFrom forcats fct_rev
+#'
 ame_forest_group_plot <- function(ame_data,
                                   title = "",
                                   save = FALSE,
                                   filename = "ame_forest_group_plot.png") {
-
   # process each dataset
   ame_dat_ls <- list()
 
@@ -180,7 +180,7 @@ ame_forest_group_plot <- function(ame_data,
 
   res <-
     # ggplot(ame_plot_dat, aes(x = name, y = mean_value, colour = group)) +   # when facet dont need variable text
-    ggplot(ame_plot_dat, aes(x = fct_rev(var_name), y = mean_value, colour = group, linetype = group)) +
+    ggplot(ame_plot_dat, aes(x = forcats::fct_rev(var_name), y = mean_value, colour = group, linetype = group)) +
     geom_point(aes(shape = group), size = 4, position = position_dodge(width = 0.8)) +
     geom_linerange(aes(ymin = lower, ymax = upper, colour = group, linetype = group), size = 1.3,
                    position = position_dodge(width = 0.8)) +

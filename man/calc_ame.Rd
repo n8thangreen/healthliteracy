@@ -4,7 +4,7 @@
 \alias{calc_ame}
 \title{Calculate Average Marginal Effect}
 \usage{
-calc_ame(fit, data, var)
+calc_ame(fit, data, var, ndraws = 20)
 }
 \description{
 Calculate Average Marginal Effect

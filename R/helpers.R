@@ -14,7 +14,11 @@ clean_names <- function(x, col_name = "var_name") {
       # Option 2: Capture and uppercase ANY WHITESPACE + first letter (more robust)
       # var_tmp = gsub("^([[:space:]]*.)", "\\U\\1", tolower(var_tmp), perl = TRUE),
       var_tmp = gsub(pattern = "Imd", replacement = "IMD", var_tmp),
-      var_tmp = gsub(pattern = "IMD", replacement = "IMD (decile)", var_tmp),
+
+      # depending on number of groups
+      var_tmp = gsub(pattern = "IMD", replacement = "IMD (quintile)", var_tmp),
+      # var_tmp = gsub(pattern = "IMD", replacement = "IMD (decile)", var_tmp),
+
       var_tmp = gsub(pattern = "English lang", replacement = "English language", var_tmp),
       var_tmp = gsub(pattern = "Gross income", replacement = "Gross income (£)", var_tmp),
       var_tmp = gsub(pattern = "Age", replacement = "Age (years)", var_tmp),
