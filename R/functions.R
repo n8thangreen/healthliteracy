@@ -172,15 +172,28 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
   model_type <- if (stan) "stan" else "freq"
 
   # construct formula object
+
   fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
-                "workingstatus", "job_status", "gross_income", "own_home")
-  re_names <- "imd"
-  # re_names <- c("imd", "msoa")
+                "workingstatus", "job_status", "gross_income", "own_home", "imd")
+  re_names <- NULL
+
+  # fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
+  #               "workingstatus", "job_status", "gross_income", "own_home")
+  # re_names <- "imd"
 
   fe_form <- paste(fe_names, collapse = " + ")
-  re_form <- paste0("(1|", re_names, ")", collapse = " + ")
 
-  rhs <- paste("1 +", fe_form, "+", re_form)
+  # fixed effect only?
+  has_re <- length(re_names) > 0
+
+  if (has_re) {
+    re_form <- paste0("(1|", re_names, ")", collapse = " + ")
+    re_form <- paste("+", re_form)
+  } else {
+    re_form <- NULL
+  }
+
+  rhs <- paste("1 +", fe_form, re_form)
 
   if (!stan) {
     lit <- lme4::glmer(glue("lit_thresholdL2_bin ~ {rhs}"),
@@ -195,26 +208,50 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
                        data = ict_dat, family = binomial(),
                        weights = weights, ...)
   } else {
-    lit <- rstanarm::stan_glmer(
-      glue("lit_thresholdL2_bin ~ {rhs}"),
-      data = lit_dat,
-      family = binomial(),
-      weights = weights,
-      chains = 2, iter = 2000, ...)
 
-    num <- rstanarm::stan_glmer(
-      glue("num_thresholdL1_bin ~ {rhs}"),
-      data = num_dat,
-      family = binomial(),
-      weights = weights,
-      chains = 2, iter = 2000, ...)
+    if (has_re) {
+      lit <- rstanarm::stan_glmer(
+        glue("lit_thresholdL2_bin ~ {rhs}"),
+        data = lit_dat,
+        family = binomial(),
+        weights = weights,
+        chains = 2, iter = 2000, ...)
 
-    ict <- rstanarm::stan_glmer(
-      glue("ict_thresholdEL3_bin ~ {rhs}"),
-      data = ict_dat,
-      family = binomial(),
-      weights = weights,
-      chains = 2, iter = 2000, ...)
+      num <- rstanarm::stan_glmer(
+        glue("num_thresholdL1_bin ~ {rhs}"),
+        data = num_dat,
+        family = binomial(),
+        weights = weights,
+        chains = 2, iter = 2000, ...)
+
+      ict <- rstanarm::stan_glmer(
+        glue("ict_thresholdEL3_bin ~ {rhs}"),
+        data = ict_dat,
+        family = binomial(),
+        weights = weights,
+        chains = 2, iter = 2000, ...)
+    } else {
+      lit <- rstanarm::stan_glm(
+        glue("lit_thresholdL2_bin ~ {rhs}"),
+        data = lit_dat,
+        family = binomial(),
+        weights = weights,
+        chains = 2, iter = 2000, ...)
+
+      num <- rstanarm::stan_glm(
+        glue("num_thresholdL1_bin ~ {rhs}"),
+        data = num_dat,
+        family = binomial(),
+        weights = weights,
+        chains = 2, iter = 2000, ...)
+
+      ict <- rstanarm::stan_glm(
+        glue("ict_thresholdEL3_bin ~ {rhs}"),
+        data = ict_dat,
+        family = binomial(),
+        weights = weights,
+        chains = 2, iter = 2000, ...)
+    }
   }
 
   if (save) {
