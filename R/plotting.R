@@ -464,7 +464,7 @@ cumrank_plot <- function(ps_var,
 #'   data frame should contain columns `name` (the variable/category being ranked),
 #'   `variable` (an identifier for the simulation/draw), and `ame_base` (the effect value to be ranked).
 #' @param max_rank An integer specifying the maximum rank to display on the x-axis.
-#'   Defaults to `3`.
+#'   Defaults to `NA` for all ranks.
 #' @param title A character string for the main title of the plot. Defaults to `""`.
 #' @param threshold A numeric value between 0 and 1. Variables that never achieve a
 #'   cumulative rank value above this threshold will be filtered out to declutter the plot.

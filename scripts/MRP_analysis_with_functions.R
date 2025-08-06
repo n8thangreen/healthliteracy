@@ -289,9 +289,9 @@ tab %>%
 
 ## sucra table
 
-tab_ame <- sucra_table(ame_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
-tab_att <- sucra_table(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
-tab_swate <- sucra_table(swatt_data, max_rank = 3, threshold = 0.2, abs_val = TRUE)
+tab_ame <- sucra_table(ame_data, abs_val = TRUE)
+tab_att <- sucra_table(att_data, abs_val = TRUE)
+tab_swate <- sucra_table(swatt_data, abs_val = TRUE)
 
 tab_ame |>
   kable(format = "latex", booktabs = TRUE, escape = FALSE,
