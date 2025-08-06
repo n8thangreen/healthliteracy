@@ -398,12 +398,13 @@ rank_plot_by_var <- function(ps_var,
 
 
 
-# cumulative rank (SUCRA)
+# Cumulative rank (SUCRA-type) plot
 #
-sucra_plot <- function(ps_var,
-                       max_rank = 5,
-                       title = "",
-                       save = FALSE) {
+cumrank_plot <- function(ps_var,
+                         max_rank = 5,
+                         title = "",
+                         save = FALSE) {
+
   # this is duplication of rank_plot
   ame_wide <-
     bind_rows(ps_var, .id = "vars") |>
@@ -426,20 +427,20 @@ sucra_plot <- function(ps_var,
     mutate(rank = as.integer(rank))
   ####
 
-  sucra <-
+  cumrank <-
     rank_dat |>
     group_by(name) |>
-    mutate(sucra = cumsum(count),
-           sucra = sucra / max(sucra))
+    mutate(cumrank = cumsum(count),
+           cumrank = cumrank / max(cumrank))
 
   res <-
-    sucra |>
+    cumrank |>
     group_by(name) |>
     filter(rank <= max_rank) |>
-    filter(!all(sucra == 0)) |>
+    filter(!all(cumrank == 0)) |>
     mutate(name = as.factor(name),
            name = droplevels(name)) |>
-    ggplot(aes(x = rank, y = sucra, colour = name)) +
+    ggplot(aes(x = rank, y = cumrank, colour = name)) +
     geom_line(linewidth = 1.2) +
     geom_point(size = 3) +
     ggtitle(title) +
@@ -449,36 +450,54 @@ sucra_plot <- function(ps_var,
                      labels = 1:max_rank)
 
   if (save) {
-    ggsave(plot = res, filename = here::here(glue::glue("plots/sucra_plot_{title}.png")),
+    ggsave(plot = res, filename = here::here(glue::glue("plots/cumrank_plot_{title}.png")),
            width = 10, height = 6, dpi = 300, bg = "white")
   }
 
   res
 }
 
-# all outcomes on a single cumulative sucra plot
+# All outcomes on a single cumulative rank plot
 #
-#' @param ame_data
-#' @param max_rank
-#' @param title
-#' @param threshold
-#' @param neg_ame logical
-#' @param abs_val logical
-#' @param save logical
-#' @param filename string
+#' @param ame_data A named list. Each element of the list should itself be a named
+#'   list of data frames. The top-level names are used for facet titles. Each
+#'   data frame should contain columns `name` (the variable/category being ranked),
+#'   `variable` (an identifier for the simulation/draw), and `ame_base` (the effect value to be ranked).
+#' @param max_rank An integer specifying the maximum rank to display on the x-axis.
+#'   Defaults to `3`.
+#' @param title A character string for the main title of the plot. Defaults to `""`.
+#' @param threshold A numeric value between 0 and 1. Variables that never achieve a
+#'   cumulative rank value above this threshold will be filtered out to declutter the plot.
+#'   Defaults to `0`.
+#' @param neg_ame A logical value. If `TRUE`, the `ame_base` values are negated before
+#'   ranking, reversing the rank order (e.g., ranking the most negative effects as best).
+#'   Defaults to `FALSE`.
+#' @param abs_val A logical value. If `TRUE`, ranking is based on the absolute magnitude
+#'   of `ame_base` (largest absolute value gets the best rank). Defaults to `FALSE`.
+#' @param save A logical value. If `TRUE`, the plot is saved to a file. Defaults to `FALSE`.
+#' @param filename A character string. The name of the file to save the plot as if
+#'   `save = TRUE`. Defaults to `"cumrank_group_plot.png"`.
 #'
-#' @returns
+#' @return A `ggplot` object
+#'
+#' @importFrom dplyr bind_rows mutate filter ungroup select group_by rename n cumsum all
+#' @importFrom tidyr gather
+#' @importFrom reshape2 dcast
+#' @importFrom ggplot2 ggplot aes facet_wrap geom_line geom_point ggtitle ylab ylim theme_minimal scale_x_discrete ggsave
+#' @importFrom glue glue
+#' @importFrom here here
+#' @importFrom janitor clean_names
+#'
 #' @export
 #'
-#' @examples
-sucra_group_plot <- function(ame_data,
-                             max_rank = 3,
-                             title = "",
-                             threshold = 0.5,
-                             neg_ame = FALSE,
-                             abs_val = FALSE,
-                             save = FALSE,
-                             filename = "sucra_group_plot.png") {
+cumrank_group_plot <- function(ame_data,
+                               max_rank = NA,
+                               title = "",
+                               threshold = 0,
+                               neg_ame = FALSE,
+                               abs_val = FALSE,
+                               save = FALSE,
+                               filename = "cumrank_group_plot.png") {
 
   ### duplicated from rank_group_plot
   rank_dat_ls <- list()
@@ -488,6 +507,7 @@ sucra_group_plot <- function(ame_data,
 
     ##TODO: problem with pop and name column
     ##      for att job status has length 2 why?
+
     ame_wide <-
       bind_rows(ps_var, .id = "vars") %>%
       mutate(ame_base = if (neg_ame) -ame_base else ame_base,
@@ -520,12 +540,18 @@ sucra_group_plot <- function(ame_data,
   combined_rank_dat <- bind_rows(rank_dat_ls)
   ###
 
-  sucra <-
+  # all ranks
+  if (is.na(max_rank)) {
+    max_rank <- max(combined_rank_dat$rank)
+  }
+
+  cumrank <-
     combined_rank_dat |>
     group_by(name, group) |>
-    mutate(sucra = cumsum(count),
-           sucra = sucra / max(sucra)) |>
+    mutate(cumrank = cumsum(count),
+           cumrank = cumrank / max(cumrank)) |>
     ungroup() |>
+    # clean names
     mutate(
       name = ifelse(
         grepl("Age \\(years\\)", name), "Age (years) >=45", name),
@@ -535,14 +561,14 @@ sucra_group_plot <- function(ame_data,
         grepl("Qualification", name), "Qualification >=level 2", name)) |>
     group_by(name, group) |>
     filter(rank <= max_rank) |>
-    filter(!all(sucra <= threshold)) |>
+    filter(!all(cumrank <= threshold)) |>
     mutate(name = as.factor(name),
            name = droplevels(name)) |>
     rename("Variable/Category" = name)
 
   res <-
-    sucra |>
-    ggplot(aes(x = rank, y = sucra, colour = `Variable/Category`)) +
+    cumrank |>
+    ggplot(aes(x = rank, y = cumrank, colour = `Variable/Category`)) +
     facet_wrap(~ group) +
     geom_line(linewidth = 1.2) +
     geom_point(size = 3) +
