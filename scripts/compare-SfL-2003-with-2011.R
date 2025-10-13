@@ -28,8 +28,9 @@ if (refit) {
 
 load(here::here("data/skills_for_life_2003_data.RData"))
 
-survey_data2003 <- clean_sfl_data(data2003)
+survey_data2003 <- clean_sfl_data_2003(data2003)
 
+##TODO: theres no ICT data in SfL 2003. separate fit function?
 if (refit) {
   fit20003 <- fit_models(survey_data2003, stan = use_stan)
 } else {
