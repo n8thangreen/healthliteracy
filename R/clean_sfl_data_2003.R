@@ -17,31 +17,31 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
   model_dat <-
     data |>
     dplyr::select(
-      EMPLOY,  #WORKINGSTATUS2,     # General labour market status
-      # EARNING,  #GROSS_ANNUAL_INCOME_OLDBANDS,  # 815 - Banded annual gross income for employees and self-employed (banded in line with 2003)
-      INCOMX,  # Personal earnings before tax in last year
+      EMPLOY,   #WORKINGSTATUS2,     # General labour market status
+
+      INCOMX,   #GROSS_ANNUAL_INCOME_OLDBANDS, # Personal earnings before tax in last year
 
       #missing  # BUK,                # 19 - Whether born in the UK
       ENGSTAT,  # English as first language
 
-      TENURE,  #QxTenu1,            # 763 - Home ownership status
-      SEX,  #Sex1,               # 6 -Gender (Respondent)
+      TENURE,   #QxTenu1,            # 763 - Home ownership status
+      SEX,      #Sex1,               # 6 -Gender (Respondent)
       AGEBAND,  #AGE1NET,            # 11 - Age of the respondent (3 band nets)
       ENGSTAT,  #Sesol,              # is English first language
-      ETHNIC,  #ETHNICSIMPLE,       # 17 - Simple ethnic group identifier
-      HIQUAG1,   #HIQUAL,             # 581 - Highest qualification currently held
-      IMDSCOREB4,  #IMDSCOREB4,         # Index of Multiple Deprivation banded into deciles
-      RNSSEC,  #NSSEC7,             # 828	- NS SEC respondent - current/most recent occupation - 7 groups
+      ETHNIC,   #ETHNICSIMPLE,       # 17 - Simple ethnic group identifier
+      HIQUAG1,  #HIQUAL,             # 581 - Highest qualification currently held
+      IMDSCOREB4,  #IMDSCOREB4,      # Index of Multiple Deprivation banded into deciles
+      RNSSEC,   #NSSEC7,             # 828	- NS SEC respondent - current/most recent occupation - 7 groups
 
       # --- outcomes ---
 
       # literacy
-      LITERACYSCORENET,  #LiteracyScoreA_1,                  # literacy level
-      LITERACYTHRESHOLD,   #starts_with("LiteracyThreshold"),  # literacy threshold
-      LITLEV,
+      LITERACYSCORENET,    # 1.00-EL3 or below; 2.00-L1; 3.00-L2  # literacy level
+      LITERACYTHRESHOLD,   # Below Adequate (EL and below)  # literacy threshold
+      LITLEV,              # EL1 or below; EL2; EL3; L1; L2 or above
 
       # numeracy
-      NUMERACYSCORENET,  #NumeracyScoreA_1,                  # numeracy level
+      NUMERACYSCORENET,   #NumeracyScoreA_1,                  # numeracy level
       NUMERACYTHRESHOLD,  #starts_with("NumeracyThreshold"),  # numeracy threshold,
       NUMLEV,
 
@@ -54,7 +54,7 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
       WTALL,  #rimweight2003,
       WTLIT,  #rimweightLIT2003,
       WTNUM,  #rimweightNUM2003,
-      WTICT,  # rimweightICT2003,
+      WTICT,  #rimweightICT2003,
       # rimweightNUMICT2003,
       # rimweightLITICT2003,
       WTBOTH  #rimweightLITNUM2003
@@ -84,10 +84,10 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
 
       # --- weights ---
 
-      weights = unclass(WTALL),
-      lit_weightsL1 = unclass(WTLIT),
-      num_weightsEL3 = unclass(WTNUM),
-      ict_weightsEL3 = unclass(WTICT)
+      WTALL = unclass(WTALL),
+      WTLIT = unclass(WTLIT),
+      WTNUM = unclass(WTNUM),
+      WTICT = unclass(WTICT)
     ) |>
 
     # relabel and order levels
@@ -103,7 +103,7 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
       gross_income = factor(gross_income,
                             levels = c("<10000", ">=10000", "other")),
 
-      uk_born = factor(ENGSTAT, levels = c(2,1), labels = c("No", "Yes")),
+      uk_born = factor(ENGSTAT, levels = c(2,1), labels = c("No", "Yes")),  # proxy
 
       sex = factor(SEX, levels = c(2,1), c("Female", "Male")),
 
@@ -112,12 +112,15 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
 
       age = ifelse(AGEBAND %in% 1:4, "16-44",
                    ifelse(AGEBAND %in% 5:7, ">=45", "other")) |>
-        factor(levels = c("16-44", ">=45")),
+        factor(levels = c("16-44", ">=45", "other")),
 
       english_lang = factor(ENGSTAT, levels = c(2,1), labels = c("No", "Yes")),
 
-      ethnicity = ifelse(ETHNIC %in% c(1,2,3), "White", "BME"),
-      ethnicity = factor(ethnicity),
+      ethnicity = ifelse(ETHNIC %in% c(1,2,3), 1, 2),
+      # ethnicity = ifelse(ETHNIC %in% c(1,2,3,4,5,6), 1, 2),  # include white mixed
+
+      ethnicity = factor(ethnicity, levels = c(1,2),
+                         labels = c("White", "BME")),
 
       qualification = ifelse(HIQUAG1 %in% 1:4, ">=level 2", "<=Level 1") |>
         factor(levels = c("<=Level 1", ">=level 2")),
@@ -132,7 +135,7 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
       job_status = ifelse(RNSSEC %in% 1:2, "higher",  # managerial
                           ifelse(RNSSEC == 3, "intermediate",
                                  ifelse(RNSSEC %in% 4:7, "lower", "other"))) |>
-        factor(levels = c("lower", "intermediate", "higher")),
+        factor(levels = c("lower", "intermediate", "higher", "other")),
 
       # --- thresholds ---
 
@@ -152,11 +155,13 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
 
       ict_thresholdEL3 =
         ifelse(PLEV == 1, "below",  ##TODO: EL or below, but want EL2 and below for comparison ie without EL3
-               ifelse(PLEV == 2, "above", "other"))
+               ifelse(PLEV == 2, "above", "other")),
+
+      WTALL, WTLIT, WTNUM, WTICT
       ) |>
 
     # remove missing
-    dplyr::filter(!is.na(age),
+    dplyr::filter(!is.na(age), age != "other",
                   !is.na(ethnicity))
 
   # health literacy assessment specific data sets
@@ -164,21 +169,29 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
 
   lit <- model_dat |>
     dplyr::filter(lit_thresholdL2 %in% c("above", "below")) |>
-    mutate(lit_thresholdL2 = as.factor(lit_thresholdL2),
-           lit_thresholdL2_bin = as.integer(lit_thresholdL2) - 1L) |>
-    select(-num_thresholdEL3, -num_thresholdL1, -ict_thresholdEL3)
+    mutate(lit_thresholdL2 = factor(lit_thresholdL2, levels = c("above", "below")),
+           lit_thresholdL2_bin = as.integer(lit_thresholdL2) - 1L,
+           lit_thresholdL1 = factor(lit_thresholdL1, levels = c("above", "below")),
+           lit_thresholdL1_bin = as.integer(lit_thresholdL1) - 1L,
+           weights = WTLIT) |>
+    select(-WTLIT, -WTNUM, -WTICT, -WTALL,
+           -num_thresholdEL3, -num_thresholdL1, -ict_thresholdEL3)
 
   num <- model_dat |>
     dplyr::filter(num_thresholdL1 %in% c("above", "below")) |>
-    mutate(num_thresholdL1 = as.factor(num_thresholdL1),
-           num_thresholdL1_bin = as.integer(num_thresholdL1) - 1L) |>
-    select(-num_thresholdEL3, -lit_thresholdL2, -ict_thresholdEL3)
+    mutate(num_thresholdL1 = factor(num_thresholdL1, levels = c("above", "below")),
+           num_thresholdL1_bin = as.integer(num_thresholdL1) - 1L,
+           weights = WTNUM) |>
+    select(-WTLIT, -WTNUM, -WTICT, -WTALL,
+           -num_thresholdEL3, -lit_thresholdL2, -ict_thresholdEL3)
 
   ict <- model_dat |>
     dplyr::filter(ict_thresholdEL3 %in% c("above", "below")) |>
-    mutate(ict_thresholdEL3 = as.factor(ict_thresholdEL3),
-           ict_thresholdEL3_bin = as.integer(ict_thresholdEL3) - 1L) |>
-    select(-num_thresholdEL3, -num_thresholdL1, -lit_thresholdL2)
+    mutate(ict_thresholdEL3 = factor(ict_thresholdEL3, levels = c("above", "below")),
+           ict_thresholdEL3_bin = as.integer(ict_thresholdEL3) - 1L,
+           weights = WTICT) |>
+    select(-WTLIT, -WTNUM, -WTICT, -WTALL,
+           -num_thresholdEL3, -num_thresholdL1, -lit_thresholdL2)
 
   tibble::lst(lit, num, ict)
 }

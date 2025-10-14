@@ -1,5 +1,5 @@
 
-#' @title Clean skills for life survey data
+#' @title Clean skills for life survey 2011 data
 #'
 #' Following Rowlands paper, we create derived variables and reorder
 #'
@@ -10,7 +10,7 @@
 #' @import dplyr
 #' @importFrom tibble lst
 #'
-clean_sfl_data <- function(data, save = FALSE) {
+clean_sfl_data_2011 <- function(data, save = FALSE) {
 
   # select variables
   model_dat <-
@@ -29,10 +29,8 @@ clean_sfl_data <- function(data, save = FALSE) {
       IMDSCOREB4,         # Index of Multiple Deprivation banded into deciles
       NSSEC7,             # 828	- NS SEC respondent - current/most recent occupation - 7 groups
 
-      # outcomes
-      SUMMARYCOMP,        # self-assessed computer skills (summary)
-      TSKILLA,            # self-assessed computer skills (summary 2)
-      COMBLIT,            # self-assessed reading a writing (summary)
+      # --- outcomes ---
+
       LiteracyScoreA_1,                  # literacy level
       starts_with("LiteracyThreshold"),  # literacy threshold
       NumeracyScoreA_1,                  # numeracy level
@@ -40,7 +38,8 @@ clean_sfl_data <- function(data, save = FALSE) {
       MultipleChoiceLevelA_1,            # ICT level
       MultipleChoiceLevelA_1Thres,       # ICT threshold
 
-      # weights
+      # --- weights ---
+
       rimweight2003,
       rimweightLIT2003,
       rimweightNUM2003,
@@ -62,6 +61,7 @@ clean_sfl_data <- function(data, save = FALSE) {
       HIQUAL = unclass(HIQUAL),
       IMDSCOREB4 = unclass(IMDSCOREB4),
       NSSEC7 = unclass(NSSEC7),
+
       LiteracyThresholdA_1 = unclass(LiteracyThresholdA_1),
       NumeracyThresholdA_1 = unclass(NumeracyThresholdA_1),
       MultipleChoiceLevelA_1Thres = unclass(MultipleChoiceLevelA_1Thres),
@@ -78,17 +78,26 @@ clean_sfl_data <- function(data, save = FALSE) {
                ifelse(GROSS_ANNUAL_INCOME_OLDBANDS %in% 3:6,
                       ">=10000", "other")) |>
         factor(levels = c("<10000", ">=10000", "other")),
+
       uk_born = factor(BUK, levels = c(2,1), labels = c("No", "Yes")),
+
       sex = factor(Sex1, levels = c(2,1), c("Female", "Male")),
+
       own_home = ifelse(QxTenu1 == 1, "Yes", "No") |>   # assume shared ownership is not own home
         factor(levels = c("No", "Yes")),
+
       age = ifelse(AGE1NET %in% 1:2, "16-44",
                    ifelse(AGE1NET == 3, ">=45", "other")) |>
-        factor(levels = c("16-44", ">=45")),
+        factor(levels = c("16-44", ">=45", "other")),
+
       english_lang = factor(Sesol, levels = c(2,1), labels = c("No", "Yes")),
-      ethnicity = factor(ETHNICSIMPLE, levels = c(1,2), labels = c("White", "BME")),
+
+      ethnicity = factor(ETHNICSIMPLE, levels = c(1,2),
+                         labels = c("White", "BME")),
+
       qualification = ifelse(HIQUAL %in% 1:4, ">=level 2", "<=Level 1") |>
         factor(levels = c("<=Level 1", ">=level 2")),
+
       # imd = factor(10 - IMDSCOREB4),     # original greater deprivation being higher number
       imd = case_when(
         IMDSCOREB4 %in% c(1, 2) ~ 5,
@@ -96,15 +105,21 @@ clean_sfl_data <- function(data, save = FALSE) {
         IMDSCOREB4 %in% c(5, 6) ~ 3,
         IMDSCOREB4 %in% c(7, 8) ~ 2,
         IMDSCOREB4 == 9         ~ 1),
+
       job_status = ifelse(NSSEC7 %in% 1:2, "higher",  # managerial
                           ifelse(NSSEC7 == 3, "intermediate",
-                                 ifelse(NSSEC7 %in% 4:10, "lower", "other"))) |>
-        factor(levels = c("lower", "intermediate", "higher")),
+                                 ifelse(NSSEC7 %in% 4:7, "lower", "other"))) |>
+        factor(levels = c("lower", "intermediate", "higher", "other")),
+
+
+      # --- outcomes ---
+
       lit_thresholdL1 =
-        ifelse(LiteracyThresholdA_1 == 1, "below",
-               ifelse(LiteracyThresholdA_1 == 2, "above", "other")),
-      lit_thresholdL2 = ifelse(LiteracyScoreA_1 == 5, "above",
-                               ifelse(LiteracyScoreA_1 %in% 1:4, "below", "other")),   # >= L2
+        ifelse(LiteracyThresholdA_1 == 1, "below",  # EL and below
+               ifelse(LiteracyThresholdA_1 == 2, "above", "other")),   # >= L1
+
+      lit_thresholdL2 = ifelse(LiteracyScoreA_1 == 5, "above",  # >= L2
+                               ifelse(LiteracyScoreA_1 %in% 1:4, "below", "other")),  # L1 and below
       num_thresholdEL3 =
         ifelse(NumeracyThresholdA_1 == 1, "below",
                ifelse(NumeracyThresholdA_1 == 2, "above", "other")),
@@ -113,13 +128,15 @@ clean_sfl_data <- function(data, save = FALSE) {
       ict_thresholdEL3 =
         ifelse(MultipleChoiceLevelA_1Thres == 1, "below",
                ifelse(MultipleChoiceLevelA_1Thres == 2, "above", "other")),
+
+      # weights
       weights = unclass(rimweight2003),
       lit_weightsL1 = unclass(rimweightLIT2003),
       num_weightsEL3 = unclass(rimweightNUM2003),
       ict_weightsEL3 = unclass(rimweightICT2003)) |>
 
     # remove missing
-    dplyr::filter(!is.na(age),
+    dplyr::filter(!is.na(age), age != "other",
                   !is.na(ethnicity))
 
   # health literacy assessment specific data sets
@@ -127,22 +144,27 @@ clean_sfl_data <- function(data, save = FALSE) {
 
   lit <- model_dat |>
     dplyr::filter(lit_thresholdL2 %in% c("above", "below")) |>
-    mutate(lit_thresholdL2 = as.factor(lit_thresholdL2),
-           lit_thresholdL2_bin = as.integer(lit_thresholdL2) - 1L) |>
+    mutate(lit_thresholdL2 = factor(lit_thresholdL2, levels = c("above", "below")),
+           lit_thresholdL2_bin = as.integer(lit_thresholdL2) - 1L,
+           lit_thresholdL1 = factor(lit_thresholdL1, levels = c("above", "below")),
+           lit_thresholdL1_bin = as.integer(lit_thresholdL1) - 1L,
+           weights = lit_weightsL1) |>
     select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3,
            -num_thresholdEL3, -num_thresholdL1, -ict_thresholdEL3)
 
   num <- model_dat |>
     dplyr::filter(num_thresholdL1 %in% c("above", "below")) |>
-    mutate(num_thresholdL1 = as.factor(num_thresholdL1),
-           num_thresholdL1_bin = as.integer(num_thresholdL1) - 1L) |>
+    mutate(num_thresholdL1 = factor(num_thresholdL1, levels = c("above", "below")),
+           num_thresholdL1_bin = as.integer(num_thresholdL1) - 1L,
+           weights = num_weightsEL3) |>
     select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3,
            -num_thresholdEL3, -lit_thresholdL2, -ict_thresholdEL3)
 
   ict <- model_dat |>
     dplyr::filter(ict_thresholdEL3 %in% c("above", "below")) |>
-    mutate(ict_thresholdEL3 = as.factor(ict_thresholdEL3),
-           ict_thresholdEL3_bin = as.integer(ict_thresholdEL3) - 1L) |>
+    mutate(ict_thresholdEL3 = factor(ict_thresholdEL3, levels = c("above", "below")),
+           ict_thresholdEL3_bin = as.integer(ict_thresholdEL3) - 1L,
+           weights = ict_weightsEL3) |>
     select(-lit_weightsL1, -num_weightsEL3, -ict_weightsEL3,
            -num_thresholdEL3, -num_thresholdL1, -lit_thresholdL2)
 
@@ -173,7 +195,11 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
 
   # construct formula object
 
-  fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
+  # fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
+  #               "workingstatus", "job_status", "gross_income", "own_home", "imd")
+
+  # remove uk_born which is not available in 2003
+  fe_names <- c("sex", "age", "ethnicity", "english_lang", "qualification",
                 "workingstatus", "job_status", "gross_income", "own_home", "imd")
   re_names <- NULL
 
@@ -196,17 +222,31 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
   rhs <- paste("1 +", fe_form, re_form)
 
   if (!stan) {
-    lit <- lme4::glmer(glue("lit_thresholdL2_bin ~ {rhs}"),
-                       data = lit_dat, family = binomial(),
-                       weights = weights, ...)
+    if (has_re) {
+      lit <- lme4::glmer(glue("lit_thresholdL2_bin ~ {rhs}"),
+                         data = lit_dat, family = binomial(),
+                         weights = weights, ...)
 
-    num <- lme4::glmer(glue("num_thresholdL1_bin ~ {rhs}"),
-                       data = num_dat, family = binomial(),
-                       weights = weights, ...)
+      num <- lme4::glmer(glue("num_thresholdL1_bin ~ {rhs}"),
+                         data = num_dat, family = binomial(),
+                         weights = weights, ...)
 
-    ict <- lme4::glmer(glue("ict_thresholdEL3_bin ~ {rhs}"),
-                       data = ict_dat, family = binomial(),
-                       weights = weights, ...)
+      ict <- lme4::glmer(glue("ict_thresholdEL3_bin ~ {rhs}"),
+                         data = ict_dat, family = binomial(),
+                         weights = weights, ...)
+    } else {
+      lit <- stats::glm(glue("lit_thresholdL2_bin ~ {rhs}"),
+                        data = lit_dat, family = binomial(),
+                        weights = weights, ...)
+
+      num <- stats::glm(glue("num_thresholdL1_bin ~ {rhs}"),
+                        data = num_dat, family = binomial(),
+                        weights = weights, ...)
+
+      ict <- stats::glm(glue("ict_thresholdEL3_bin ~ {rhs}"),
+                        data = ict_dat, family = binomial(),
+                        weights = weights, ...)
+    }
   } else {
 
     if (has_re) {

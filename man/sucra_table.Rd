@@ -9,8 +9,6 @@ Includes cumulative rank, SUCRA and expected rank}
 sucra_table(ame_data, max_rank = NA, threshold = 0, abs_val = TRUE)
 }
 \arguments{
-\item{ame_data}{}
-
 \item{max_rank}{An integer specifying the maximum rank to display on the x-axis.
 Defaults to `NA` for all ranks.}
 
@@ -20,6 +18,9 @@ Defaults to `0`.}
 
 \item{abs_val}{A logical value. If `TRUE`, ranking is based on the absolute magnitude
 of `ame_base` (largest absolute value gets the best rank). Defaults to `FALSE`.}
+}
+\value{
+data.frame
 }
 \description{
 Ranks SUCRA summary table
