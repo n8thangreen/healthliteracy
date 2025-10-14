@@ -247,6 +247,7 @@ gridout
 ggsave(gridout, filename = here::here("plots/all_sucra_group_plot.png"),
        width = 10, height = 12, dpi = 300, bg = "white")
 
+# ATE only
 ggsave(gg[[1]], filename = here::here("plots/ame_sucra_group_plot.png"),
        width = 12, height = 6, dpi = 300, bg = "white")
 
