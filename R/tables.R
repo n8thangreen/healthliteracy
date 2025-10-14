@@ -75,13 +75,24 @@ ame_table <- function(ame_data) {
   table_wide
 }
 
-#' @title Ranks summary table
+#' @title Ranks SUCRA summary table
 #'
 #' Includes cumulative rank, SUCRA and expected rank
 #'
+#' @param ame_data
+#' @param max_rank An integer specifying the maximum rank to display on the x-axis.
+#'   Defaults to `NA` for all ranks.
+#' @param threshold A numeric value between 0 and 1. Variables that never achieve a
+#'   cumulative rank value above this threshold will be filtered out to declutter the plot.
+#'   Defaults to `0`.
+#' @param abs_val A logical value. If `TRUE`, ranking is based on the absolute magnitude
+#'   of `ame_base` (largest absolute value gets the best rank). Defaults to `FALSE`.
+#'
+#' @return data.frame
+#'
 sucra_table <- function(ame_data,
-                        max_rank = 3,
-                        threshold = 0.2,
+                        max_rank = NA,
+                        threshold = 0,
                         abs_val = TRUE) {
   ### duplicated from rank_group_plot
   rank_dat_ls <- list()
@@ -91,6 +102,7 @@ sucra_table <- function(ame_data,
 
     xx <-
       bind_rows(ps_var, .id = "vars") |>
+      mutate(ame_base = if (abs_val) -abs(ame_base) else ame_base) |>  # ranks the largest first
       filter(ame_base != 0) |>
       select(vars, name, variable, ame_base) |>
       group_by(vars, name) |>
@@ -118,6 +130,11 @@ sucra_table <- function(ame_data,
   combined_rank_dat <- bind_rows(rank_dat_ls)
   ###
 
+  # all ranks
+  if (is.na(max_rank)) {
+    max_rank <- max(combined_rank_dat$rank)
+  }
+
   # calculate cumulative rank
   cumrank_long <-
     combined_rank_dat |>
@@ -139,9 +156,9 @@ sucra_table <- function(ame_data,
   final_table <- sucra_long |>
     pivot_wider(names_from = group, values_from = c(SUCRA, rank_hat))
 
-  # format names
-  # split by last underscore
+  # format and clean names
   final_table <- final_table |>
+    # split by last underscore
     mutate(name = sub("_(?!.*_)", "@@", name, perl = TRUE)) %>%
     separate(name, into = c("Variable", "Category"), sep = "@@") |>
     select(Variable, Category, everything()) |>
@@ -158,7 +175,7 @@ sucra_table <- function(ame_data,
            Variable = gsub("English Lang", "English Language", Variable),
            # include units
            Variable = gsub("Gross Income", "Gross Income (£)", Variable),
-           Variable = gsub("IMD", "IMD (decile)", Variable),
+           Variable = gsub("IMD", "IMD (quintile)", Variable),
            Variable = gsub("Age", "Age (years)", Variable),
            Category = gsub("<=", "$\\\\leq$", Category),
            Category = gsub(">=", "$\\\\geq$", Category),
