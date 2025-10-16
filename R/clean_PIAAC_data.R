@@ -152,13 +152,10 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       EMPLOY = unclass(EMPLOY),
       INCOMX = unclass(INCOMX),
       ENGSTAT = unclass(ENGSTAT),
-      TENURE = unclass(TENURE),
       SEX = unclass(SEX),
       AGEBAND = unclass(AGEBAND),
-      ETHNIC = unclass(ETHNIC),
       HIQUAG1 = unclass(HIQUAG1),
       RNSSEC = unclass(RNSSEC),
-      IMDSCOREB4 = unclass(IMDSCOREB4),
 
       # --- Outcome Variables ---
 
@@ -171,9 +168,6 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       # --- weights ---
 
       WTALL = unclass(WTALL),
-      WTLIT = unclass(WTLIT),
-      WTNUM = unclass(WTNUM),
-      WTICT = unclass(WTICT)
     ) |>
 
     # relabel and order levels
@@ -189,12 +183,9 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       gross_income = factor(gross_income,
                             levels = c("<10000", ">=10000", "other")),
 
-      uk_born = factor(ENGSTAT, levels = c(2,1), labels = c("No", "Yes")),  # proxy
+      uk_born = factor(ENGSTAT, levels = c(2,1), labels = c("No", "Yes")),
 
       sex = factor(SEX, levels = c(2,1), c("Female", "Male")),
-
-      own_home = ifelse(TENURE == 1, "Yes", "No") |>
-        factor(levels = c("No", "Yes")),
 
       age = ifelse(AGEBAND %in% 1:4, "16-44",
                    ifelse(AGEBAND %in% 5:7, ">=45", "other")) |>
@@ -203,20 +194,12 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       english_lang = factor(ENGSTAT, levels = c(2,1), labels = c("No", "Yes")),
 
       ethnicity = ifelse(ETHNIC %in% c(1,2,3), 1, 2),
-      # ethnicity = ifelse(ETHNIC %in% c(1,2,3,4,5,6), 1, 2),  # include white mixed
 
       ethnicity = factor(ethnicity, levels = c(1,2),
                          labels = c("White", "BME")),
 
       qualification = ifelse(HIQUAG1 %in% 1:4, ">=level 2", "<=Level 1") |>
         factor(levels = c("<=Level 1", ">=level 2")),
-
-      imd = case_when(
-        IMDSCOREB4 %in% c(1, 2) ~ 5,
-        IMDSCOREB4 %in% c(3, 4) ~ 4,
-        IMDSCOREB4 %in% c(5, 6) ~ 3,
-        IMDSCOREB4 %in% c(7, 8) ~ 2,
-        IMDSCOREB4 == 9         ~ 1),
 
       job_status = ifelse(RNSSEC %in% 1:2, "higher",  # managerial
                           ifelse(RNSSEC == 3, "intermediate",
