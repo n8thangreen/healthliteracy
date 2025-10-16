@@ -9,21 +9,20 @@ library(purrr)
 refit <- FALSE
 use_stan <- TRUE
 
-# create_target_pop_fn <- create_target_marginal_pop_data  # from tables only (marginal)
 create_target_pop_fn <- create_target_pop_data             # from individual resident survey responses (joint)
 
 # raw data
-load(here::here("data/skills_for_life_data.RData"))
+load(here::here("data/skills_for_life_2003_data.RData"))
 
 # IPF data
 load(here::here("data/synth_data.rda"))  # create_lfs_synth_data()
 
-survey_data <- clean_sfl_data(data)
+survey_data <- clean_sfl_data_2003(data2003)
 
 if (refit) {
   fit <- fit_models(survey_data, stan = use_stan)
 } else {
-  load(here::here("data/fit.RData"))
+  load(here::here("data/fit_2003.RData"))
 }
 
 mrp_data <-
@@ -33,9 +32,8 @@ mrp_data <-
         create_target_pop_data(additional_prob_data = synth_data)                      # LFS with ONS
 )
 
-save(fit, file = here::here("data/fit.RData"))
-# save(mrp_data, file = here::here("data/mrp_data_ons.RData"))
-save(mrp_data, file = here::here("data/mrp_data_lfs.RData"))
+save(fit, file = here::here("data/fit_2003.RData"))
+save(mrp_data, file = here::here("data/mrp_data_lfs_2003.RData"))
 
 ###########
 # outcomes
