@@ -1,5 +1,7 @@
-# MRP analysis using Skill for Life survey 2011 data
+# MRP analysis using Skill for Life survey 2003 data
 # refactored to use in the shiny app
+
+##TODO: change from 2011
 
 
 library(purrr)
