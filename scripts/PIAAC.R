@@ -18,8 +18,7 @@ use_stan <- FALSE
 load(here::here("data/data_PIAAC.RData"))
 
 # labelled data
-load("C:/Users/n8tha/Documents/data/PIAAC/PIAAC_Cycle2.rda")
-
+load(here::here("../../../data/PIAAC/PIAAC_Cycle2.rda"))
 
 PIAAC_survey_data <- clean_PIAAC_data(data_PIAAC)
 

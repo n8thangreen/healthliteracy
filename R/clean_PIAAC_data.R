@@ -1,10 +1,9 @@
 
-#' @title Clean PIAAC 2003 data
+#' @title Clean PIAAC 2023 data
 #'
 #' Following Rowlands paper, we create derived variables and reorder
-#' Want to correspond to SfL 2011 data for comparison.
 #'
-#' @param data Survey data at individual level i.e. raw Skills for Life data
+#' @param data Survey data at individual level
 #' @param save Logical indicating whether to save the cleaned data sets
 #' @return List of cleaned data sets for literacy, ict and numeracy
 #'
@@ -33,7 +32,7 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       A2_Q03a,  # Background - Born in country
 
       #QxTenu1,            # 763 - Home ownership status
-      ##TODO
+      ##TODO: missing
 
       #Sex1,               # 6 -Gender (Respondent)
       A2_N02_T,
@@ -46,9 +45,14 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       #Sesol,              # is English first language
       LNG_L1,  # First language learned at home in childhood and still understood - Respondent (IS0 639-2/T)
       LNG_HOME,  # Language most often spoken at home - Respondent (ISO 639-2/T)
+      BORNLANG, # Interactions between place of birth and language status (derived)
+
 
       #ETHNICSIMPLE,       # 17 - Simple ethnic group identifier
-      ##TODO
+      # this is missing in the available data extract
+      A2_Q03d,  # Background - Mother - Whether born in #CountryName
+      A2_Q03e,  # Background - Father - Whether born in #CountryName
+      HOMLGRGN,  # Source region of language spoken most often at home (9 regions) (derived)
 
       #HIQUAL,             # 581 - Highest qualification currently held
       B2_Q01_TC1,  # Highest level of education (Trend PIAAC 1/2, ISCED 97)
@@ -57,35 +61,89 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       #IMDSCOREB4,      # Index of Multiple Deprivation banded into deciles
       ##TODO
 
-      #NSSEC7,             # 828	- NS SEC respondent - current/most recent occupation - 7 groups
+      #NSSEC7,             # current/most recent occupation - 7 groups
       ISCO08_C,  # Current Job Occupation - Respondent (ISCO 2008)
       ISCO2C,  # Occupational classification of respondent's job at 2-digit level (ISCO 2008), current job
 
       # --- outcomes ---
 
       # literacy
-      LITERACYSCORENET,    # 1.00-EL3 or below; 2.00-L1; 3.00-L2  # literacy level
-      LITERACYTHRESHOLD,   # Below Adequate (EL and below)  # literacy threshold
-      LITLEV,              # EL1 or below; EL2; EL3; L1; L2 or above
+      starts_with("PVLIT"),
+      # LEVLIT,  # missing
 
       # numeracy
-      NUMERACYSCORENET,   #NumeracyScoreA_1,                  # numeracy level
-      NUMERACYTHRESHOLD,  #starts_with("NumeracyThreshold"),  # numeracy threshold,
-      NUMLEV,
+      starts_with("PVNUM"),
+      # LEVNUM,  # missing
 
       # ICT
-      PLEV,  # ICT Practical assessment level - EL/L1+
-      # MultipleChoiceLevelA_1,            # ICT level
-      # MultipleChoiceLevelA_1Thres,       # ICT threshold
+      starts_with("PVPSL"),
+      # LEVPSL,  # missing
 
       # weights
-      WTALL,  #rimweight2003,
-      WTLIT,  #rimweightLIT2003,
-      WTNUM,  #rimweightNUM2003,
-      WTICT,  #rimweightICT2003,
-      # rimweightNUMICT2003,
-      # rimweightLITICT2003,
-      WTBOTH  #rimweightLITNUM2003
+      SPFWT0
+    ) |>
+
+    # --- calculate OECD levels ---
+
+    # calculate means of plausible values for each person
+    rowwise() %>%
+    mutate(PVNUM_AVG = mean(c_across(PVNUM1:PVNUM10))) %>%
+    ungroup() %>%
+    mutate(LEVNUM = case_when(
+      PVNUM_AVG < 176 ~ "Below Level 1",
+      PVNUM_AVG >= 176 & PVNUM_AVG < 226 ~ "Level 1",
+      PVNUM_AVG >= 226 & PVNUM_AVG < 276 ~ "Level 2",
+      PVNUM_AVG >= 276 & PVNUM_AVG < 326 ~ "Level 3",
+      PVNUM_AVG >= 326 & PVNUM_AVG < 376 ~ "Level 4",
+      PVNUM_AVG >= 376 ~ "Level 5",
+      TRUE ~ NA_character_  # missing cases
+    )) |>
+
+    rowwise() %>%
+    mutate(PVLIT_AVG = mean(c_across(PVLIT1:PVLIT10))) %>%
+    ungroup() %>%
+    mutate(LEVLIT = case_when(
+      PVLIT_AVG < 176 ~ "Below Level 1",
+      PVLIT_AVG >= 176 & PVLIT_AVG < 226 ~ "Level 1",
+      PVLIT_AVG >= 226 & PVLIT_AVG < 276 ~ "Level 2",
+      PVLIT_AVG >= 276 & PVLIT_AVG < 326 ~ "Level 3",
+      PVLIT_AVG >= 326 & PVLIT_AVG < 376 ~ "Level 4",
+      PVLIT_AVG >= 376 ~ "Level 5",
+      TRUE ~ NA_character_
+    )) |>
+
+    rowwise() %>%
+    mutate(PVPSL_AVG = mean(c_across(PVPSL1:PVPSL10))) %>%
+    ungroup() %>%
+    mutate(LEVPSL = case_when(
+      PVPSL_AVG < 241 ~ "Below Level 1",
+      PVPSL_AVG >= 241 & PVPSL_AVG < 291 ~ "Level 1",
+      PVPSL_AVG >= 291 & PVPSL_AVG < 341 ~ "Level 2",
+      PVPSL_AVG >= 341 ~ "Level 3",
+      TRUE ~ NA_character_
+    )) |>
+
+    # --- calculate NQF (OK) levels ---
+
+    mutate(
+      # literacy
+      NQF_LIT = case_when(
+        LEVLIT == "Below Level 1" ~ "Entry Level 1 / 2",
+        LEVLIT == "Level 1"       ~ "Entry Level 3",
+        LEVLIT == "Level 2"       ~ "Level 1",
+        LEVLIT %in% c("Level 3", "Level 4", "Level 5") ~ "Level 2 and above",
+        TRUE ~ NA_character_ # Handles any missing cases
+      ),
+
+      # numeracy
+      NQF_NUM = case_when(
+        LEVNUM == "Below Level 1" ~ "Entry Level 1",
+        LEVNUM == "Level 1"       ~ "Entry Level 2",
+        LEVNUM == "Level 2"       ~ "Entry Level 3",
+        LEVNUM == "Level 3"       ~ "Level 1",
+        LEVNUM %in% c("Level 4", "Level 5") ~ "Level 2 and above",
+        TRUE ~ NA_character_
+      )
     ) |>
 
     # remove class
@@ -168,25 +226,23 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       # --- thresholds ---
 
       lit_thresholdL1 =
-        ifelse(LITERACYTHRESHOLD == 1, "below",  # EL and below
-               ifelse(LITERACYTHRESHOLD == 2, "above", "other")),
+        ifelse(NQF_LIT %in% c("Entry Level 1 / 2", "Entry Level 3"), "below",  # EL and below
+               ifelse(NQF_LIT %in% c("Level 1", "Level 2 and above"),
+                      "above", "other")),
 
-      lit_thresholdL2 = ifelse(LITLEV == 5, "above",  # L2 or above
-                               ifelse(LITLEV %in% 1:4, "below", "other")),
+      lit_thresholdL2 = ifelse(NQF_LIT == "Level 2 and above", "above",  # L2 or above
+                               ifelse(NQF_LIT %in% c("Entry Level 1 / 2", "Entry Level 3", "Level 1"),
+                                      "below", "other")),
 
       num_thresholdEL3 =
-        ifelse(NUMERACYTHRESHOLD == 1, "below",  # EL2 and below
-               ifelse(NUMERACYTHRESHOLD == 2, "above", "other")),
+        ifelse(NQF_NUM %in% c("Entry Level 1", "Entry Level 2"), "below",  # EL2 and below
+               ifelse(NQF_NUM %in% c("Entry Level 3", "Level 1", "Level 2 and above"),
+                      "above", "other")),
 
-      num_thresholdL1 = ifelse(NUMLEV == 4:5, "above",  # L1 or above
-                               ifelse(NUMLEV %in% 1:3, "below", "other")),
-
-      ict_thresholdEL3 =
-        ifelse(PLEV == 1, "below",  ##TODO: EL or below, but want EL2 and below for comparison ie without EL3
-               ifelse(PLEV == 2, "above", "other")),
-
-      WTALL, WTLIT, WTNUM, WTICT
-      ) |>
+      num_thresholdL1 = ifelse(NQF_NUM %in% c("Level 1", "Level 2 and above"), "above",  # L1 or above
+                               ifelse(NQF_NUM %in% c("Entry Level 1", "Entry Level 2", "Entry Level 3"),
+                                      "below", "other")),
+    ) |>
 
     # remove missing
     dplyr::filter(!is.na(age), age != "other",
@@ -202,25 +258,15 @@ clean_PIAAC_data <- function(data, save = FALSE) {
            lit_thresholdL1 = factor(lit_thresholdL1, levels = c("above", "below")),
            lit_thresholdL1_bin = as.integer(lit_thresholdL1) - 1L,
            weights = WTLIT) |>
-    select(-WTLIT, -WTNUM, -WTICT, -WTALL,
-           -num_thresholdEL3, -num_thresholdL1, -ict_thresholdEL3)
+    select(-num_thresholdEL3, -num_thresholdL1)
 
   num <- model_dat |>
     dplyr::filter(num_thresholdL1 %in% c("above", "below")) |>
     mutate(num_thresholdL1 = factor(num_thresholdL1, levels = c("above", "below")),
            num_thresholdL1_bin = as.integer(num_thresholdL1) - 1L,
            weights = WTNUM) |>
-    select(-WTLIT, -WTNUM, -WTICT, -WTALL,
-           -num_thresholdEL3, -lit_thresholdL2, -ict_thresholdEL3)
+    select(-num_thresholdEL3, -lit_thresholdL2)
 
-  ict <- model_dat |>
-    dplyr::filter(ict_thresholdEL3 %in% c("above", "below")) |>
-    mutate(ict_thresholdEL3 = factor(ict_thresholdEL3, levels = c("above", "below")),
-           ict_thresholdEL3_bin = as.integer(ict_thresholdEL3) - 1L,
-           weights = WTICT) |>
-    select(-WTLIT, -WTNUM, -WTICT, -WTALL,
-           -num_thresholdEL3, -num_thresholdL1, -lit_thresholdL2)
-
-  tibble::lst(lit, num, ict)
+  tibble::lst(lit, num)
 }
 
