@@ -106,9 +106,10 @@ clean_sfl_data_2011 <- function(data, save = FALSE) {
         IMDSCOREB4 %in% c(7, 8) ~ 2,
         IMDSCOREB4 == 9         ~ 1),
 
+      # National Statistics Socio-economic Classification (NS-SEC)
       job_status = ifelse(NSSEC7 %in% 1:2, "higher",  # managerial
-                          ifelse(NSSEC7 == 3, "intermediate",
-                                 ifelse(NSSEC7 %in% 4:7, "lower", "other"))) |>
+                          ifelse(NSSEC7 == 3:4, "intermediate",
+                                 ifelse(NSSEC7 %in% 5:7, "lower", "other"))) |>
         factor(levels = c("lower", "intermediate", "higher", "other")),
 
 

@@ -1,10 +1,8 @@
 # MRP analysis using Skill for Life survey 2011 data
-# refactored to use in the shiny app
-
 
 library(purrr)
 
-refit <- FALSE
+refit <- TRUE
 use_stan <- TRUE
 
 # create_target_pop_fn <- create_target_marginal_pop_data  # from tables only (marginal)
@@ -29,7 +27,7 @@ mrp_data <-
       ~ create_covariate_data(.x) |>
         # create_target_pop_data(additional_prob_data = demo_prop_tables())               # ONS marginals
         create_target_pop_data(additional_prob_data = synth_data)                      # LFS with ONS
-)
+  )
 
 save(fit, file = here::here("data/fit_2011.RData"))
 # save(mrp_data, file = here::here("data/mrp_data_ons_2011.RData"))
@@ -80,11 +78,11 @@ for (i in out_name) {
   #     save = TRUE)
 }
 
-save(poststrat, file = here::here("data/all_poststrat.RData"))
-save(ame_data, file = here::here("data/all_ame_data.RData"))
-save(att_data, file = here::here("data/all_att_data.RData"))
-save(swatt_data, file = here::here("data/all_swatt_data.RData"))
-save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
+save(ame_data, file = here::here("data/all_ame_data_2011.RData"))
+# save(poststrat, file = here::here("data/all_poststrat.RData"))
+# save(att_data, file = here::here("data/all_att_data.RData"))
+# save(swatt_data, file = here::here("data/all_swatt_data.RData"))
+# save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
 # save(cate_data, file = here::here("data/all_cate_data.RData"))
 
 ########
@@ -94,11 +92,11 @@ save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
 library(ggplot2)
 library(gridExtra)
 
-load(here::here("data/all_poststrat.RData"))
-load(here::here("data/all_ame_data.RData"))
-load(here::here("data/all_att_data.RData"))
-load(here::here("data/all_swatt_data.RData"))
-load(here::here("data/all_strat_ame_data.RData"))
+load(here::here("data/all_ame_data_2011.RData"))
+# load(here::here("data/all_poststrat.RData"))
+# load(here::here("data/all_att_data.RData"))
+# load(here::here("data/all_swatt_data.RData"))
+# load(here::here("data/all_strat_ame_data.RData"))
 # load(here::here("data/all_cate_data.RData"))
 
 
@@ -110,7 +108,7 @@ for (i in names(ame_data)) {
 }
 gridout <- gridExtra::grid.arrange(grobs = out, ncol = 1)
 
-ggsave(gridout, filename = here::here("plots/all_bar_plots.png"),
+ggsave(gridout, filename = here::here("plots/all_bar_plots_2011.png"),
        width = 5, height = 6, dpi = 300, bg = "white")
 
 # scatter plots
@@ -120,6 +118,9 @@ title_text <- c(ict = "ICT", lit = "Literacy", num = "Numeracy")
 for (i in names(ame_data)) {
   scatter_plot(ame_data[[i]], title = title_text[i], save = T)
 }
+
+# ggsave(gridout, filename = here::here("plots/scatter_plots_2011.png"),
+#        width = 5, height = 6, dpi = 300, bg = "white")
 
 # AME forest plot
 
@@ -135,7 +136,7 @@ ame_forest <- ame_forest_group_plot(ame_data, save = F) +
                "num" = "Numeracy"))
 ame_forest
 
-ggsave(plot = ame_forest, filename = here::here("plots/ame_forest_group_plot.png"),
+ggsave(plot = ame_forest, filename = here::here("plots/ame_forest_group_plot_2011.png"),
        width = 9, height = 7, dpi = 300, bg = "white")
 
 att_forest <-
@@ -193,16 +194,13 @@ gridout <- cowplot::plot_grid(
 )
 gridout
 
-ggsave(plot = ame_forest, filename = "plots/ame_forest_group_plot.png",
+ggsave(plot = att_forest, filename = "plots/att_forest_group_plot_2011.png",
        width = 9, height = 7, dpi = 300, bg = "white")
 
-ggsave(plot = att_forest, filename = "plots/att_forest_group_plot.png",
+ggsave(plot = swate_forest, filename = "plots/swate_forest_group_plot_2011.png",
        width = 9, height = 7, dpi = 300, bg = "white")
 
-ggsave(plot = swate_forest, filename = "plots/swate_forest_group_plot.png",
-       width = 9, height = 7, dpi = 300, bg = "white")
-
-ggsave(plot = gridout, filename = "plots/forest_group_grid_plot.png",
+ggsave(plot = gridout, filename = "plots/forest_group_grid_plot_2011.png",
        width = 11, height = 7, dpi = 300, bg = "white")
 
 
@@ -225,14 +223,15 @@ for (i in names(ame_data)) {
 ame_data <- setNames(ame_data, nm = c("Literacy", "Numeracy", "ICT"))
 
 gg <- list()
-gg[[2]] <- cumrank_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "att_cumrank_group_plot.png")
-gg[[3]] <- cumrank_group_plot(swatt_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "swate_cumrank_group_plot.png")
+gg[[2]] <- cumrank_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "att_cumrank_group_plot_2011.png")
+gg[[3]] <- cumrank_group_plot(swatt_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "swate_cumrank_group_plot_2011.png")
 
 gg[[1]] <- cumrank_group_plot(ame_data, max_rank = 4, threshold = 0.2, abs_val = TRUE, save = F)
 gg[[1]]
 
 gg_cumrank_complete <- cumrank_group_plot(ame_data, abs_val = TRUE, save = F)
-ggsave(gg_cumrank_complete, filename = here::here("plots/gg_cumrank_complete.png"),
+
+ggsave(gg_cumrank_complete, filename = here::here("plots/gg_cumrank_complete_2011.png"),
        width = 18, height = 12, dpi = 300, bg = "white")
 
 # extract common legend
@@ -252,11 +251,11 @@ gridout <- cowplot::plot_grid(
 )
 gridout
 
-ggsave(gridout, filename = here::here("plots/all_cumrank_group_plot.png"),
+ggsave(gridout, filename = here::here("plots/all_cumrank_group_plot_2011.png"),
        width = 10, height = 12, dpi = 300, bg = "white")
 
 # ATE only
-ggsave(gg[[1]], filename = here::here("plots/ame_cumrank_group_plot.png"),
+ggsave(gg[[1]], filename = here::here("plots/ame_cumrank_group_plot_2011.png"),
        width = 12, height = 6, dpi = 300, bg = "white")
 
 
@@ -274,7 +273,7 @@ tab <- ame_data |>
   ame_table() |>
   clean_names("variable")
 
-write.csv(tab, here::here("tables/ame_table.csv"), row.names = FALSE)
+write.csv(tab, here::here("tables/ame_table_2011.csv"), row.names = FALSE)
 
 indent_rows <- grep("^  ", tab$variable)
 

@@ -4,6 +4,9 @@
 
 library(ggalt)
 
+# load data
+##TODO: full_table
+
 # select
 output <- "literacy"
 # output <- "numeracy"
@@ -27,13 +30,15 @@ plot_dat <- plot_dat %>%
   tidyr::fill(var, .direction = "down")
 
 # clean latex
-plot_dat$cat <- with(plot_dat,
-                   gsub(pattern = "\\$", replacement = "", x = cat) |>
-                     gsub(pattern = "\\\\geq", replacement = ">=", x = _) |>
-                     gsub(pattern = "\\\\leq", replacement = "<=", x = _)
-)
+plot_dat$cat <-
+  with(plot_dat,
+       gsub(pattern = "\\$", replacement = "", x = cat) |>
+         gsub(pattern = "\\\\geq", replacement = ">=", x = _) |>
+         gsub(pattern = "\\\\leq", replacement = "<=", x = _)
+  )
 
-p <- ggplot(data = plot_dat, aes(y = cat, x = sfl, xend = pop)) +
+p <-
+  ggplot(data = plot_dat, aes(y = cat, x = sfl, xend = pop)) +
   geom_dumbbell() +
   geom_point(aes(x = sfl), size = 4, colour = "#F69541", na.rm = TRUE) +
   geom_point(aes(x = pop), size = 3, shape = 1, stroke = 2, colour = "#699DC6", na.rm = TRUE) +
@@ -41,7 +46,7 @@ p <- ggplot(data = plot_dat, aes(y = cat, x = sfl, xend = pop)) +
   theme_bw() +
   coord_flip() +
   facet_wrap(~ var, scales = "free_x")
-  # scale_y_discrete(labels = function(x) parse(text = x)) # Fix x-axis parsing
+# scale_y_discrete(labels = function(x) parse(text = x)) # Fix x-axis parsing
 
 p
 
