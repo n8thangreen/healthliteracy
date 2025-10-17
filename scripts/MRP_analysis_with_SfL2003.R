@@ -1,12 +1,9 @@
 # MRP analysis using Skill for Life survey 2003 data
-# refactored to use in the shiny app
-
-##TODO: change from 2011
 
 
 library(purrr)
 
-refit <- FALSE
+refit <- T
 use_stan <- TRUE
 
 create_target_pop_fn <- create_target_pop_data             # from individual resident survey responses (joint)
@@ -20,7 +17,7 @@ load(here::here("data/synth_data.rda"))  # create_lfs_synth_data()
 survey_data <- clean_sfl_data_2003(data2003)
 
 if (refit) {
-  fit <- fit_models(survey_data, stan = use_stan)
+  fit <- fit_models(survey_data, stan = use_stan, file_suffix = "2003")
 } else {
   load(here::here("data/fit_2003.RData"))
 }
@@ -28,8 +25,7 @@ if (refit) {
 mrp_data <-
   map(survey_data,
       ~ create_covariate_data(.x) |>
-        # create_target_pop_data(additional_prob_data = demo_prop_tables())               # ONS marginals
-        create_target_pop_data(additional_prob_data = synth_data)                      # LFS with ONS
+        create_target_pop_data(additional_prob_data = synth_data)        # LFS with ONS
 )
 
 save(fit, file = here::here("data/fit_2003.RData"))
@@ -40,52 +36,18 @@ save(mrp_data, file = here::here("data/mrp_data_lfs_2003.RData"))
 
 out_name <- c("lit", "num", "ict")
 
-poststrat <- list()
 ame_data <- list()
-att_data <- list()
-swatt_data <- list()
-strat_ame_data <- list()
 
 for (i in out_name) {
-
-  # poststrat[[i]] <-
-  #   poststratification(
-  #   fit[[i]],
-  #   mrp_data[[i]])
 
   ame_data[[i]] <-
     average_marginal_effect(
       fit[[i]],
       mrp_data[[i]],
       save = TRUE)
-
-  # att_data[[i]] <-
-  #   average_effect_on_treatment(
-  #     fit[[i]],
-  #     mrp_data[[i]],
-  #     save = TRUE)
-  #
-  # # change to swatt?
-  # swatt_data[[i]] <-
-  #   subpop_weighted_average_effect(
-  #     att_data[[i]],
-  #     mrp_data[[i]])
-
-  # # slow
-  # strat_ame_data[[i]] <-
-  #   all_cate(
-  #     fit[[i]],
-  #     survey_data[[i]],
-  #     mrp_data[[i]],
-  #     save = TRUE)
 }
 
-save(poststrat, file = here::here("data/all_poststrat.RData"))
-save(ame_data, file = here::here("data/all_ame_data.RData"))
-save(att_data, file = here::here("data/all_att_data.RData"))
-save(swatt_data, file = here::here("data/all_swatt_data.RData"))
-save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
-# save(cate_data, file = here::here("data/all_cate_data.RData"))
+save(ame_data, file = here::here("data/all_ame_data_2003.RData"))
 
 ########
 # plots
@@ -94,13 +56,7 @@ save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
 library(ggplot2)
 library(gridExtra)
 
-load(here::here("data/all_poststrat.RData"))
-load(here::here("data/all_ame_data.RData"))
-load(here::here("data/all_att_data.RData"))
-load(here::here("data/all_swatt_data.RData"))
-load(here::here("data/all_strat_ame_data.RData"))
-# load(here::here("data/all_cate_data.RData"))
-
+load(here::here("data/all_ame_data_2003.RData"))
 
 # bar plots
 
@@ -110,7 +66,7 @@ for (i in names(ame_data)) {
 }
 gridout <- gridExtra::grid.arrange(grobs = out, ncol = 1)
 
-ggsave(gridout, filename = here::here("plots/all_bar_plots.png"),
+ggsave(gridout, filename = here::here("plots/all_bar_plots_2003.png"),
        width = 5, height = 6, dpi = 300, bg = "white")
 
 # scatter plots
@@ -135,7 +91,8 @@ ame_forest <- ame_forest_group_plot(ame_data, save = F) +
                "num" = "Numeracy"))
 ame_forest
 
-ggsave(plot = ame_forest, filename = here::here("plots/ame_forest_group_plot.png"),
+ggsave(plot = ame_forest,
+       filename = here::here("plots/ame_forest_group_plot_2003.png"),
        width = 9, height = 7, dpi = 300, bg = "white")
 
 att_forest <-
@@ -148,63 +105,10 @@ att_forest <-
                "num" = "Numeracy"))
 att_forest
 
-swatt_ <- swatt_data
-swatt_$lit$imd <- NULL
-swatt_$num$imd <- NULL
-swatt_$ict$imd <- NULL
 
-swate_forest <-
-  swatt_ |>
-  ame_forest_group_plot(save = F) +
-  ylab("Subpopulation weighted average treatment effect") +
-  scale_color_discrete(
-  name = "Outcome:",
-  labels = c("ict" = "ICT",
-             "lit" = "Literacy",
-             "num" = "Numeracy"))
-swate_forest
-
-# IMD only
-
-swatt_ <- list()
-swatt_$lit <- list()
-swatt_$lit$imd <- swatt_data$lit$imd
-swatt_$num$imd <- swatt_data$num$imd
-swatt_$ict$imd <- swatt_data$ict$imd
-
-swate_forest_imd <-
-  swatt_ |>
-  ame_forest_group_plot(save = F) +
-  ylab("Subpopulation weighted average treatment effect") +
-  scale_color_discrete(
-    name = "Type",
-    labels = c("ict" = "ICT",
-               "lit" = "Literacy",
-               "num" = "Numeracy"))
-swate_forest_imd
-
-# combine plots with a shared legend
-gridout <- cowplot::plot_grid(
-  cowplot::plot_grid(att_forest, swate_forest, ncol = 2, labels = c("a)", "b)")),
-  # legend,
-  ncol = 1
-  # ncol = 2,
-  # rel_widths = c(1, 0.2)
-)
-gridout
-
-ggsave(plot = ame_forest, filename = "plots/ame_forest_group_plot.png",
+ggsave(plot = ame_forest,
+       filename = "plots/ame_forest_group_plot_2003.png",
        width = 9, height = 7, dpi = 300, bg = "white")
-
-ggsave(plot = att_forest, filename = "plots/att_forest_group_plot.png",
-       width = 9, height = 7, dpi = 300, bg = "white")
-
-ggsave(plot = swate_forest, filename = "plots/swate_forest_group_plot.png",
-       width = 9, height = 7, dpi = 300, bg = "white")
-
-ggsave(plot = gridout, filename = "plots/forest_group_grid_plot.png",
-       width = 11, height = 7, dpi = 300, bg = "white")
-
 
 ## rank bar plot
 
@@ -225,38 +129,21 @@ for (i in names(ame_data)) {
 ame_data <- setNames(ame_data, nm = c("Literacy", "Numeracy", "ICT"))
 
 gg <- list()
-gg[[2]] <- cumrank_group_plot(att_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "att_cumrank_group_plot.png")
-gg[[3]] <- cumrank_group_plot(swatt_data, max_rank = 3, threshold = 0.2, abs_val = TRUE, save = F, filename = "swate_cumrank_group_plot.png")
 
-gg[[1]] <- cumrank_group_plot(ame_data, max_rank = 4, threshold = 0.2, abs_val = TRUE, save = F)
+gg[[1]] <- cumrank_group_plot(ame_data, max_rank = 4,
+                              threshold = 0.2,
+                              abs_val = TRUE, save = F)
 gg[[1]]
 
 gg_cumrank_complete <- cumrank_group_plot(ame_data, abs_val = TRUE, save = F)
-ggsave(gg_cumrank_complete, filename = here::here("plots/gg_cumrank_complete.png"),
+
+ggsave(gg_cumrank_complete,
+       filename = here::here("plots/gg_cumrank_complete_2003.png"),
        width = 18, height = 12, dpi = 300, bg = "white")
 
-# extract common legend
-legend <- cowplot::get_legend(gg[[1]])
-
-# remove legends
-p1_no_legend <- gg[[1]] + theme(legend.position = "none")
-p2_no_legend <- gg[[2]] + theme(legend.position = "none")
-p3_no_legend <- gg[[3]] + theme(legend.position = "none")
-
-# combine plots with a shared legend
-gridout <- cowplot::plot_grid(
-  cowplot::plot_grid(p1_no_legend, p2_no_legend, p3_no_legend, ncol = 1, labels = c("a)", "b)", "c)")),
-  legend,
-  ncol = 2,
-  rel_widths = c(1, 0.2)
-)
-gridout
-
-ggsave(gridout, filename = here::here("plots/all_cumrank_group_plot.png"),
-       width = 10, height = 12, dpi = 300, bg = "white")
-
 # ATE only
-ggsave(gg[[1]], filename = here::here("plots/ame_cumrank_group_plot.png"),
+ggsave(gg[[1]],
+       filename = here::here("plots/ame_cumrank_group_plot_2003.png"),
        width = 12, height = 6, dpi = 300, bg = "white")
 
 
@@ -274,7 +161,7 @@ tab <- ame_data |>
   ame_table() |>
   clean_names("variable")
 
-write.csv(tab, here::here("tables/ame_table.csv"), row.names = FALSE)
+write.csv(tab, file = here::here("tables/ame_table_2003.csv"), row.names = FALSE)
 
 indent_rows <- grep("^  ", tab$variable)
 
@@ -291,37 +178,17 @@ tab %>%
 ## sucra table
 
 tab_ame <- sucra_table(ame_data, abs_val = TRUE)
-tab_att <- sucra_table(att_data, abs_val = TRUE)
-tab_swate <- sucra_table(swatt_data, abs_val = TRUE)
 
 tab_ame |>
   kable(format = "latex", booktabs = TRUE, escape = FALSE,
       # align = c("l", "l", "r", "r", "r"),
-        caption = "SUCRA and expected rank using the average treatment effect for the health literacy
+        caption =
+        "SUCRA and expected rank using the average treatment effect for the health literacy
 outcomes ICT, literacy and numeracy. \\label{tab:sucra-ate}",
-        col.names = c("Variable", "Category", "ICT", "Literacy", "Numeracy", "ICT", "Literacy", "Numeracy")) |>
+      col.names = c("Variable", "Category",
+                    "ICT", "Literacy", "Numeracy",
+                    "ICT", "Literacy", "Numeracy")) |>
   kable_styling(latex_options = c("hold_position")) |>
   add_header_above(c(" " = 2, "SUCRA" = 3, "E[rank]" = 3)) |>
   row_spec(0, bold = TRUE)
-
-tab_att |>
-  kable(format = "latex", booktabs = TRUE, escape = FALSE,
-      # align = c("l", "l", "r", "r", "r"),
-        caption = "SUCRA and expected rank using the average treatment on treated effect for the health literacy
-outcomes ICT, literacy and numeracy. \\label{tab:}",
-        col.names = c("Variable", "Category", "ICT", "Literacy", "Numeracy", "ICT", "Literacy", "Numeracy")) |>
-  kable_styling(latex_options = c("hold_position")) |>
-  add_header_above(c(" " = 2, "SUCRA" = 3, "E[rank]" = 3)) |>
-  row_spec(0, bold = TRUE)
-
-tab_swate |>
-  kable(format = "latex", booktabs = TRUE, escape = FALSE,
-      # align = c("l", "l", "r", "r", "r"),
-        caption = "SUCRA and expected rank using the subpopulation weighted average treatment effect for the health literacy
-outcomes ICT, literacy and numeracy. \\label{tab:}",
-        col.names = c("Variable", "Category", "ICT", "Literacy", "Numeracy", "ICT", "Literacy", "Numeracy")) |>
-  kable_styling(latex_options = c("hold_position")) |>
-  add_header_above(c(" " = 2, "SUCRA" = 3, "E[rank]" = 3)) |>
-  row_spec(0, bold = TRUE)
-
 

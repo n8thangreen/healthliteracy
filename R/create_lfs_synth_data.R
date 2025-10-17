@@ -1,6 +1,8 @@
 
 #' Create labour force survey synthetic data
 #'
+#' Using {simPop} package to perform iterative proportional fitting (IPF).
+#'
 #' @import dplyr
 #' @import simPop
 #'
@@ -38,22 +40,26 @@ create_lfs_synth_data <- function() {
       ),
       target_marginals_props$qualification$qualification
     ),
+
     gross_income = setNames(
       round(
         target_marginals_props$gross_income$p_income * N_small_area
       ),
       target_marginals_props$gross_income$gross_income
     ),
+
     uk_born = setNames(
       round(target_marginals_props$uk_born$p_uk * N_small_area),
       target_marginals_props$uk_born$uk_born
     ),
+
     english_lang = setNames(
       round(
         target_marginals_props$english_lang$p_english * N_small_area
       ),
       target_marginals_props$english_lang$english_lang
     ),
+
     job_status = setNames(
       round(target_marginals_props$job_status$p_job * N_small_area),
       target_marginals_props$job_status$job_status
@@ -115,8 +121,11 @@ create_lfs_synth_data <- function() {
     # Add the strata_col to each marginal table
     df$strata_col <- dummy_strata_level # All entries get the same dummy strata value
 
-    df[[var_name]] <- factor(df[[var_name]], levels = current_lfs_data_levels)
-    df[["strata_col"]] <- factor(df[["strata_col"]], levels = levels(lfs_data$strata_col))
+    df[[var_name]] <- factor(df[[var_name]],
+                             levels = current_lfs_data_levels)
+
+    df[["strata_col"]] <- factor(df[["strata_col"]],
+                                 levels = levels(lfs_data$strata_col))
 
     return(df)
   })
@@ -145,6 +154,7 @@ create_lfs_synth_data <- function() {
 
   # fill in missing categories
   load(here::here("data/skills_for_life_data.RData"))
+
   synth_data <- survey_data[[1]] |>
     create_covariate_data() |>
     select(vars_to_simulate) |>
@@ -156,7 +166,7 @@ create_lfs_synth_data <- function() {
 
   save(synth_data, file = here::here("data/synth_data.rda"))
 
-  synth_data
+  invisible(synth_data)
 }
 
 #' clean labour force survey data
@@ -177,16 +187,24 @@ clean_lfs_data <- function() {
     ) |>
     mutate(
       english_lang = ifelse(LANG == 1, "Yes", "No"),
+
       uk_born = ifelse(CRYOX7_EUL_Sub == 1, "Yes" ,"No"),
+
       gross_income = ifelse(as.numeric(sub("^.*\\.", "", BANDG)) %in% 1:16,
                             "<10000",
                             ">=10000"),
+
       qualification = ifelse(LEVQUL22 %in% c(1,2,3,4,5,6,7),
                              ">=level 2", "<=Level 1"),
-      job_status = ifelse(NSECMJ20 %in% c(1,2),
-                          "higher", ifelse(NSECMJ20 %in% c(3,4),
-                                           "intermediate", "lower"))
+
+      # job_status = ifelse(NSECMJ20 %in% c(1,2),  ##TODO: changed to include "other"
+      #                     "higher", ifelse(NSECMJ20 %in% c(3,4),
+      #                                      "intermediate", "lower"))
+      job_status = ifelse(NSECMJ20 %in% c(1,2), "higher",  # managerial
+                          ifelse(NSECMJ20 %in% c(3,4), "intermediate",
+                                 ifelse(NSECMJ20 %in% c(5,6,7), "lower", "other")))
     ) |>
+
     select(qualification, gross_income, uk_born, english_lang, job_status) |>
     mutate(across(everything(), as.factor))
 

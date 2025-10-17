@@ -1,0 +1,29 @@
+
+"TS062 - NS-SeC"
+"ONS Crown Copyright Reserved [from Nomis on 17 October 2025]"
+"Population :","All usual residents aged 16 years and over"
+"Units      :","Persons"
+"Area Type  :","local authorities: district / unitary (as of April 2023)"
+"Area Name  :","Newham"
+
+"National Statistics Socio-economic Classification (NS-SEC)","2021","%"
+
+"Total: All usual residents aged 16 years and over",276172,100.0
+"L1, L2 and L3 Higher managerial, administrative and professional occupations",29613,10.7
+"L4, L5 and L6 Lower managerial, administrative and professional occupations",42336,15.3
+"L7 Intermediate occupations",23023,8.3
+"L8 and L9 Small employers and own account workers",33619,12.2
+"L10 and L11 Lower supervisory and technical occupations",12009,4.3
+"L12 Semi-routine occupations",28898,10.5
+"L13 Routine occupations",29868,10.8
+"L14.1 and L14.2 Never worked and long-term unemployed",41839,15.1
+"L15 Full-time students",34967,12.7
+
+
+
+"","In order to protect against disclosure of personal information, records"
+"","have been swapped between different geographic areas and counts perturbed"
+"","by small amounts. Small counts at the lowest geographies will be most"
+"","affected."
+"",""
+

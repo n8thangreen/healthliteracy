@@ -185,7 +185,7 @@ clean_sfl_data_2011 <- function(data, save = FALSE) {
 #' @importFrom tibble lst
 #' @seealso [clean_data()]
 #'
-fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
+fit_models <- function(survey_data, stan = TRUE, save = FALSE, file_suffix = "", ...) {
 
   lit_dat <- survey_data$lit
   num_dat <- survey_data$num
@@ -295,7 +295,12 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, ...) {
   }
 
   if (save) {
-    save(lit, num, ict, file = here::here(glue::glue("data/{model_type}_fits.RData")))
+
+    if (nchar(file_suffix) > 0) {
+      file_suffix <- paste0("_", file_suffix)
+    }
+
+    save(lit, num, ict, file = here::here(glue::glue("data/{model_type}{file_suffix}_fits.RData")))
   }
 
   tibble::lst(lit, num, ict)

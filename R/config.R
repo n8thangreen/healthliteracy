@@ -72,19 +72,21 @@ demo_prop_tables <- function(equivalise_income = FALSE) {
                            "Yes", 0.6537,
                            "No", 0.3463),
 
-    # AB: higher and intermediate managerial, administrative and professional occupations
-    # C1: supervisory, clerical and junior managerial, administrative and professional occupations
-    # C2: skilled manual occupations
-    # DE: semi-skilled and unskilled manual and lowest grade occupations
-    #
-    # tribble(~job_status_ASG, ~job_status, ~prop,
-    #         "AB", "higher", 0.167,
-    #         "C1", "intermediate", 0.276,
-    #         "C2", "lower", 0.234,
-    #         "DE", "lower", 0.323)
+    # L1, L2 and L3 Higher managerial, administrative and professional occupations	29,613	10.7
+    # L4, L5 and L6 Lower managerial, administrative and professional occupations	42,336	15.3
+    # L7 Intermediate occupations	23,023	8.3
+    # L8 and L9 Small employers and own account workers	33,619	12.2
+    # L10 and L11 Lower supervisory and technical occupations	12,009	4.3
+    # L12 Semi-routine occupations	28,898	10.5
+    # L13 Routine occupations	29,868	10.8
+    # L14.1 and L14.2 Never worked and long-term unemployed	41,839	15.1
+    # L15 Full-time students	34,967	12.7
+
     job_status = tribble(~job_status, ~p_job,
-                         "higher", 0.167,
-                         "intermediate", 0.276,
-                         "lower", 0.557) # 0.234 + 0.323
+                         "higher", 0.107 + 0.153,         # L1 to L6
+                         "intermediate", 0.083 + 0.122,   # L7, L8, L9
+                         "lower", 0.043 + 0.105 + 0.108,  # L10 to L13
+                         "other", 0.151 + 0.127           # L14.1, L14.2, L15
+    )
   )
 }
