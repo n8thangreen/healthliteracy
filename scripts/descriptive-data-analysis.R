@@ -13,7 +13,8 @@ library(stringr)
 ##################
 # skills for life
 
-load(here::here("data/skills_for_life_data.RData"))
+load(here::here("data/skills_for_life_2011_data.RData"))
+# load(here::here("data/skills_for_life_2003_data.RData"))
 
 survey_data <- clean_data(data)
 

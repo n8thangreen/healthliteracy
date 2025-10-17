@@ -186,7 +186,7 @@ clean_sfl_data_2011 <- function(data, save = FALSE) {
 #' @importFrom tibble lst
 #' @seealso [clean_data()]
 #'
-fit_models <- function(survey_data, stan = TRUE, save = FALSE, file_suffix = "", ...) {
+fit_models <- function(survey_data, stan = TRUE, save = FALSE, year_suffix = "", ...) {
 
   lit_dat <- survey_data$lit
   num_dat <- survey_data$num
@@ -197,7 +197,7 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, file_suffix = "",
   # --- construct formula object
 
   # # all FE
-  # if (file_suffix == "2003") {
+  # if (year_suffix == "2003") {
   #   # remove uk_born which is not available in 2003
   #   fe_names <- c("sex", "age", "ethnicity", "english_lang", "qualification",
   #                 "workingstatus", "job_status", "gross_income", "own_home", "imd")
@@ -209,7 +209,7 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, file_suffix = "",
   # re_names <- NULL
 
   # with RE for IMD
-  if (file_suffix == "2003") {
+  if (year_suffix == "2003") {
     # remove uk_born which is not available in 2003
     fe_names <- c("sex", "age", "ethnicity", "english_lang", "qualification",
                   "workingstatus", "job_status", "gross_income", "own_home")
@@ -309,11 +309,11 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, file_suffix = "",
 
   if (save) {
 
-    if (nchar(file_suffix) > 0) {
-      file_suffix <- paste0("_", file_suffix)
+    if (nchar(year_suffix) > 0) {
+      year_suffix <- paste0("_", year_suffix)
     }
 
-    save(lit, num, ict, file = here::here(glue::glue("data/{model_type}{file_suffix}_fits.RData")))
+    save(lit, num, ict, file = here::here(glue::glue("data/{model_type}{year_suffix}_fits.RData")))
   }
 
   tibble::lst(lit, num, ict)

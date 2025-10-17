@@ -17,7 +17,7 @@ load(here::here("data/synth_data.rda"))  # create_lfs_synth_data()
 survey_data <- clean_sfl_data_2011(data2011)
 
 if (refit) {
-  fit <- fit_models(survey_data, stan = use_stan)
+  fit <- fit_models(survey_data, stan = use_stan, year_suffix = "2003")
 } else {
   load(here::here("data/fit_2011.RData"))
 }
