@@ -20,7 +20,9 @@ load(here::here("data/data_PIAAC.RData"))
 # labelled data
 load(here::here("../../../data/PIAAC/PIAAC_Cycle2.rda"))
 
-PIAAC_survey_data <- clean_PIAAC_data(data_PIAAC)
+# PIAAC_survey_data <- clean_PIAAC_data(data_PIAAC)
+
+PIAAC_survey_data <- clean_PIAAC_data(PIAAC_Cycle2)
 
 #
 fit_PIAAC <- fit_models(PIAAC_survey_data, stan = use_stan)

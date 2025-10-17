@@ -12,6 +12,21 @@
 #'
 clean_PIAAC_data <- function(data, save = FALSE) {
 
+  qualif_mapping <- tibble::tribble(
+    ~PIAAC,                              ~ISCED_1997,                            ~UK_RQF,         ~examples,
+    #-----------------------------------|---------------------------------------|----------------|--------------------------------------------------------------------------------|
+    "No formal qualification or below ISCED 1",    "Below ISCED 1",               "Entry Level",   "Entry Level certificates/diplomas, Skills for Life",
+    "ISCED 1",                              "ISCED 1",                            "Below Level 1", "Primary school education (Key Stages 1 & 2)",
+    "ISCED 2",                              "ISCED 2",                            "Level 1",       "GCSEs (grades 3-1 or D-G), NVQ Level 1",
+    "ISCED 3C shorter than 2 years",        "ISCED 3",                            "Level 2",       "GCSEs (grades 9-4 or A*-C), BTEC Level 2, NVQ Level 2",
+    "ISCED 3C (2y+), 3A-B, 3 (2y+)",        "ISCED 3",                            "Level 3",       "A-Levels, T-Levels, BTEC Level 3 National Diploma, Access to HE Diploma",
+    "ISCED 4C, 4A-B, 4",                    "ISCED 4",                            "Level 4",       "Certificate of Higher Education (CertHE), Higher National Certificate (HNC)",
+    "ISCED 5B",                             "ISCED 5",                            "Level 5",       "Foundation Degree, Higher National Diploma (HND), Diploma of Higher Education (DipHE)",
+    "ISCED 5A, bachelor degree",            "ISCED 5 (leading to Bachelor's)",    "Level 6",       "Bachelor's Degree (e.g., BA, BSc), Graduate Certificate",
+    "ISCED 5A, master degree",              "ISCED 5 (leading to Master's)",      "Level 7",       "Master's Degree (e.g., MA, MSc), PGCE, Postgraduate Diploma",
+    "ISCED 6",                              "ISCED 6",                            "Level 8",       "Doctorate (PhD, DPhil)"
+  )
+
   # select variables
   model_dat <-
     data |>
@@ -21,14 +36,9 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       SUBJSTATUS_BQDI,  # Current work more groups
 
       #GROSS_ANNUAL_INCOME_OLDBANDS, # Personal earnings before tax in last year
-      EARNFLAGC2,  # Earnings including bonuses reporting method (derived)
-      D2_Q14b,  # Current work - Earnings - Gross pay
       D2_Q14d6,  # Current work - Earnings - Broad categories - Gross pay per year
-      D2_Q16b,   # Current work - Earnings - Total earnings broad categories
 
       # BUK,                # 19 - Whether born in the UK
-      IMYRS_BQDI,  # Years in country; .A “Native born”
-      CNT_BRTH,  # country of birth
       A2_Q03a,  # Background - Born in country
 
       #QxTenu1,            # 763 - Home ownership status
@@ -38,21 +48,22 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       A2_N02_T,
 
       #AGE1NET,            # 11 - Age of the respondent (3 band nets)
-      CALCAGE,   # Person age
-      AGE_BQDI,  # Age in 10 year bands
+      # CALCAGE,   # Person age
+      # AGE_BQDI,  # Age in 10 year bands
       AGEG10LFS, # Age in 10 year bands
 
       #Sesol,              # is English first language
-      LNG_L1,  # First language learned at home in childhood and still understood - Respondent (IS0 639-2/T)
-      LNG_HOME,  # Language most often spoken at home - Respondent (ISO 639-2/T)
       BORNLANG, # Interactions between place of birth and language status (derived)
 
-
-      #ETHNICSIMPLE,       # 17 - Simple ethnic group identifier
-      # this is missing in the available data extract
-      A2_Q03d,  # Background - Mother - Whether born in #CountryName
-      A2_Q03e,  # Background - Father - Whether born in #CountryName
-      HOMLGRGN,  # Source region of language spoken most often at home (9 regions) (derived)
+      ## missing
+      # #ETHNICSIMPLE,       # 17 - Simple ethnic group identifier
+      # # this is missing in the available data extract
+      # LNG_L1,  # First language learned at home in childhood and still understood - Respondent (IS0 639-2/T)
+      # LNG_HOME,  # Language most often spoken at home - Respondent (ISO 639-2/T)
+      # CNT_BRTH,  # country of birth
+      # A2_Q03d,  # Background - Mother - Whether born in #CountryName
+      # A2_Q03e,  # Background - Father - Whether born in #CountryName
+      # HOMLGRGN,  # Source region of language spoken most often at home (9 regions) (derived)
 
       #HIQUAL,             # 581 - Highest qualification currently held
       B2_Q01_TC1,  # Highest level of education (Trend PIAAC 1/2, ISCED 97)
@@ -62,8 +73,6 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       ##TODO
 
       #NSSEC7,             # current/most recent occupation - 7 groups
-      ISCO08_C,  # Current Job Occupation - Respondent (ISCO 2008)
-      ISCO2C,  # Occupational classification of respondent's job at 2-digit level (ISCO 2008), current job
 
       # --- outcomes ---
 
@@ -146,65 +155,41 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       )
     ) |>
 
-    # remove class
-    dplyr::mutate(
-      # --- Predictor Variables ---
-      EMPLOY = unclass(EMPLOY),
-      INCOMX = unclass(INCOMX),
-      ENGSTAT = unclass(ENGSTAT),
-      SEX = unclass(SEX),
-      AGEBAND = unclass(AGEBAND),
-      HIQUAG1 = unclass(HIQUAG1),
-      RNSSEC = unclass(RNSSEC),
-
-      # --- Outcome Variables ---
-
-      LITERACYTHRESHOLD = unclass(LITERACYTHRESHOLD),
-      LITLEV = unclass(LITLEV),
-      NUMERACYTHRESHOLD = unclass(NUMERACYTHRESHOLD),
-      NUMLEV = unclass(NUMLEV),
-      PLEV = unclass(PLEV),
-
-      # --- weights ---
-
-      WTALL = unclass(WTALL),
-    ) |>
-
     # relabel and order levels
     dplyr::transmute(
-      workingstatus = ifelse(EMPLOY %in% c(1,2), yes = 1, no = 0),
+      workingstatus = ifelse(C2_Q07_T == 1, yes = 1, no = 0),
       workingstatus = factor(workingstatus,
                              levels = c(0,1), labels = c("No", "Yes")),
 
-      gross_income = ifelse(INCOMX %in% 1:3,
+      gross_income = ifelse(D2_Q14d6 == 1,
                             "<10000",
-                            ifelse(INCOMX %in% 4:12,
-                                   ">=10000", "other")),
-      gross_income = factor(gross_income,
-                            levels = c("<10000", ">=10000", "other")),
+                            ifelse(INCOMX %in% 2:6,
+                                   ">=10000", "other")) |>
+        factor(levels = c("<10000", ">=10000", "other")),
 
-      uk_born = factor(ENGSTAT, levels = c(2,1), labels = c("No", "Yes")),
+      uk_born = factor(A2_Q03a, levels = c(2,1), labels = c("No", "Yes")),
 
-      sex = factor(SEX, levels = c(2,1), c("Female", "Male")),
+      sex = factor(A2_N02_T, levels = c(2,1), c("Female", "Male")),
 
-      age = ifelse(AGEBAND %in% 1:4, "16-44",
-                   ifelse(AGEBAND %in% 5:7, ">=45", "other")) |>
+      age = ifelse(AGEG10LFS %in% 1:3, "16-44",
+                   ifelse(AGEG10LFS %in% 4:5, ">=45", "other")) |>
         factor(levels = c("16-44", ">=45", "other")),
 
-      english_lang = factor(ENGSTAT, levels = c(2,1), labels = c("No", "Yes")),
+      english_lang = ifelse(BORNLANG %in% c(1,3), 1, 2) |>
+        factor(levels = c(2,1), labels = c("No", "Yes")),
 
-      ethnicity = ifelse(ETHNIC %in% c(1,2,3), 1, 2),
+      ## missing
+      # ethnicity = ifelse(ETHNIC %in% c(1,2,3), 1, 2) |>
+      #   factor(levels = c(1,2), labels = c("White", "BME")),
 
-      ethnicity = factor(ethnicity, levels = c(1,2),
-                         labels = c("White", "BME")),
-
-      qualification = ifelse(HIQUAG1 %in% 1:4, ">=level 2", "<=Level 1") |>
+      qualification = ifelse(B2_Q01_TC1 %in% 1:3, "<=Level 1", ">=level 2") |>
         factor(levels = c("<=Level 1", ">=level 2")),
 
-      job_status = ifelse(RNSSEC %in% 1:2, "higher",  # managerial
-                          ifelse(RNSSEC == 3, "intermediate",
-                                 ifelse(RNSSEC %in% 4:7, "lower", "other"))) |>
-        factor(levels = c("lower", "intermediate", "higher", "other")),
+      ## missing
+      # job_status = ifelse(RNSSEC %in% 1:2, "higher",  # managerial
+      #                     ifelse(RNSSEC == 3, "intermediate",
+      #                            ifelse(RNSSEC %in% 4:7, "lower", "other"))) |>
+      #   factor(levels = c("lower", "intermediate", "higher", "other")),
 
       # --- thresholds ---
 

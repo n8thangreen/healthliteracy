@@ -124,12 +124,16 @@ fe_names <- c("sex", "age", "ethnicity", "english_lang", "qualification",
 fe_form <- paste(fe_names, collapse = " + ")
 fe_form <- glue::glue("year * ({fe_form})")
 
+# literacy
+
 fit_interaction_lit <-
   stats::glm(glue("lit_thresholdL2_bin ~ {fe_form}"),
              data = combined_data_lit, family = binomial(),
              weights = weights)
 
 summary(fit_interaction_lit)
+
+# numeracy
 
 survey_data2003$num$year <- "2003"
 survey_data2011$num$year <- "2011"

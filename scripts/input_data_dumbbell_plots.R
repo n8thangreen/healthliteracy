@@ -4,8 +4,10 @@
 
 library(ggalt)
 
-# load data
-##TODO: full_table
+year <- 2011
+
+# load NRS and SFL combined table
+load(glue::glue("data/full_table_{year}.rda"))
 
 # select
 output <- "literacy"

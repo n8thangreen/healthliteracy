@@ -13,10 +13,15 @@ library(stringr)
 ##################
 # skills for life
 
-load(here::here("data/skills_for_life_2011_data.RData"))
-# load(here::here("data/skills_for_life_2003_data.RData"))
+year <- "2011"
 
-survey_data <- clean_data(data)
+load(here::here(glue::glue("data/skills_for_life_{year}_data.RData")))
+
+if (year == "2003") {
+  survey_data <- clean_sfl_data_2003(data2003)
+} else {
+  survey_data <- clean_sfl_data_2011(data2011)
+}
 
 summarize_data <- function(data) {
   data %>%
@@ -61,6 +66,7 @@ summarize_data <- function(data) {
 summary_results <- summarize_data(survey_data$lit)
 summary_results
 
+# to single dataframe
 summary_results <- lapply(survey_data, summarize_data) |>
   plyr::join_all(by = c("Variable", "Category"))
 
@@ -84,7 +90,8 @@ kable(summary_results,
 # Newham
 
 # ONS Census 2011 for Newham
-imd_dat <- read.csv(here::here("raw_data/localincomedeprivationdata_Newham.csv")) |>
+imd_dat <-
+  read.csv(here::here("raw_data/localincomedeprivationdata_Newham.csv")) |>
   rename(LSOA11CD = "LSOA.code..2011.",
          imd = "Index.of.Multiple.Deprivation..IMD..Decile..where.1.is.most.deprived.10..of.LSOAs.",
          pop = "Total.population..mid.2015..excluding.prisoners.") |>
@@ -126,6 +133,7 @@ imd_lookup <-
   select(-pop)
 
 ##TODO: check these numbers with the original data set
+
 newham_props <- tribble(
   ~Variable, ~Category, ~n, ~Newham,
   "age", "16-44", 145 + 523 + 567, 0.15 + 0.27 + 0.22,
@@ -187,6 +195,8 @@ full_table$Variable <-
 # maths type for totals
 table_names <- str_replace_all(names(full_table), "\\bn\\b", "$n$")
 full_table <- setNames(full_table, table_names)
+
+save(full_table, file = glue::glue("data/full_table_{year}.rda"))
 
 # latex table
 
