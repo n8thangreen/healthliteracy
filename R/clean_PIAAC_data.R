@@ -213,8 +213,9 @@ clean_PIAAC_data <- function(data, save = FALSE) {
     ) |>
 
     # remove missing
-    dplyr::filter(!is.na(age), age != "other",
-                  !is.na(ethnicity))
+    dplyr::filter(!is.na(age)
+                  # !is.na(ethnicity)
+                  )
 
   # health literacy assessment specific data sets
   # filtered by answered question
