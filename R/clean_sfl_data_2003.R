@@ -111,8 +111,8 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
         factor(levels = c("No", "Yes")),
 
       age = ifelse(AGEBAND %in% 1:4, "16-44",
-                   ifelse(AGEBAND %in% 5:7, ">=45", "other")) |>
-        factor(levels = c("16-44", ">=45", "other")),
+                   ifelse(AGEBAND %in% 5:7, ">=45", NA)) |>
+        factor(levels = c("16-44", ">=45")),
 
       english_lang = factor(ENGSTAT, levels = c(2,1), labels = c("No", "Yes")),
 
@@ -161,7 +161,7 @@ clean_sfl_data_2003 <- function(data, save = FALSE) {
       ) |>
 
     # remove missing
-    dplyr::filter(!is.na(age), age != "other",
+    dplyr::filter(!is.na(age),
                   !is.na(ethnicity))
 
   # health literacy assessment specific data sets

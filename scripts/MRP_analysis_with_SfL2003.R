@@ -39,7 +39,6 @@ out_name <- c("lit", "num", "ict")
 ame_data <- list()
 
 for (i in out_name) {
-
   ame_data[[i]] <-
     average_marginal_effect(
       fit[[i]],
@@ -61,6 +60,7 @@ load(here::here("data/all_ame_data_2003.RData"))
 # bar plots
 
 out <- list()
+
 for (i in names(ame_data)) {
   out[[i]] <- bar_plot(ame_data[[i]], title = i) + ylim(-0.3, 0.3)
 }
@@ -76,6 +76,9 @@ title_text <- c(ict = "ICT", lit = "Literacy", num = "Numeracy")
 for (i in names(ame_data)) {
   scatter_plot(ame_data[[i]], title = title_text[i], save = T)
 }
+
+# ggsave(gridout, filename = here::here("plots/scatter_plots_2003.png"),
+#        width = 5, height = 6, dpi = 300, bg = "white")
 
 # AME forest plot
 
@@ -93,21 +96,6 @@ ame_forest
 
 ggsave(plot = ame_forest,
        filename = here::here("plots/ame_forest_group_plot_2003.png"),
-       width = 9, height = 7, dpi = 300, bg = "white")
-
-att_forest <-
-  ame_forest_group_plot(att_data, save = F) +
-  ylab("Average treatment effect on treated") +
-  scale_color_discrete(
-    name = "Outcome:",
-    labels = c("ict" = "ICT",
-               "lit" = "Literacy",
-               "num" = "Numeracy"))
-att_forest
-
-
-ggsave(plot = ame_forest,
-       filename = "plots/ame_forest_group_plot_2003.png",
        width = 9, height = 7, dpi = 300, bg = "white")
 
 ## rank bar plot
@@ -130,19 +118,20 @@ ame_data <- setNames(ame_data, nm = c("Literacy", "Numeracy", "ICT"))
 
 gg <- list()
 
-gg[[1]] <- cumrank_group_plot(ame_data, max_rank = 4,
+gg_cumrank <- cumrank_group_plot(ame_data, max_rank = 4,
                               threshold = 0.2,
                               abs_val = TRUE, save = F)
-gg[[1]]
+gg_cumrank
 
 gg_cumrank_complete <- cumrank_group_plot(ame_data, abs_val = TRUE, save = F)
+
+gg_cumrank_complete
 
 ggsave(gg_cumrank_complete,
        filename = here::here("plots/gg_cumrank_complete_2003.png"),
        width = 18, height = 12, dpi = 300, bg = "white")
 
-# ATE only
-ggsave(gg[[1]],
+ggsave(gg_cumrank,
        filename = here::here("plots/ame_cumrank_group_plot_2003.png"),
        width = 12, height = 6, dpi = 300, bg = "white")
 

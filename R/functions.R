@@ -87,8 +87,8 @@ clean_sfl_data_2011 <- function(data, save = FALSE) {
         factor(levels = c("No", "Yes")),
 
       age = ifelse(AGE1NET %in% 1:2, "16-44",
-                   ifelse(AGE1NET == 3, ">=45", "other")) |>
-        factor(levels = c("16-44", ">=45", "other")),
+                   ifelse(AGE1NET == 3, ">=45", NA)) |>
+        factor(levels = c("16-44", ">=45")),            # other entries as NA
 
       english_lang = factor(Sesol, levels = c(2,1), labels = c("No", "Yes")),
 
@@ -136,7 +136,7 @@ clean_sfl_data_2011 <- function(data, save = FALSE) {
       ict_weightsEL3 = unclass(rimweightICT2003)) |>
 
     # remove missing
-    dplyr::filter(!is.na(age), age != "other",
+    dplyr::filter(!is.na(age),
                   !is.na(ethnicity))
 
   # health literacy assessment specific data sets
@@ -193,19 +193,31 @@ fit_models <- function(survey_data, stan = TRUE, save = FALSE, file_suffix = "",
 
   model_type <- if (stan) "stan" else "freq"
 
-  # construct formula object
+  # --- construct formula object
 
-  # fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
-  #               "workingstatus", "job_status", "gross_income", "own_home", "imd")
+  # # all FE
+  # if (file_suffix == "2003") {
+  #   # remove uk_born which is not available in 2003
+  #   fe_names <- c("sex", "age", "ethnicity", "english_lang", "qualification",
+  #                 "workingstatus", "job_status", "gross_income", "own_home", "imd")
+  # } else {
+  #   fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
+  #                 "workingstatus", "job_status", "gross_income", "own_home", "imd")
+  # }
+  #
+  # re_names <- NULL
 
-  # remove uk_born which is not available in 2003
-  fe_names <- c("sex", "age", "ethnicity", "english_lang", "qualification",
-                "workingstatus", "job_status", "gross_income", "own_home", "imd")
-  re_names <- NULL
+  # with RE for IMD
+  if (file_suffix == "2003") {
+    # remove uk_born which is not available in 2003
+    fe_names <- c("sex", "age", "ethnicity", "english_lang", "qualification",
+                  "workingstatus", "job_status", "gross_income", "own_home")
+  } else {
+    fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
+                  "workingstatus", "job_status", "gross_income", "own_home")
+  }
 
-  # fe_names <- c("sex", "age", "ethnicity", "uk_born", "english_lang", "qualification",
-  #               "workingstatus", "job_status", "gross_income", "own_home")
-  # re_names <- "imd"
+  re_names <- "imd"
 
   fe_form <- paste(fe_names, collapse = " + ")
 
