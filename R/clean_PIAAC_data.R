@@ -36,7 +36,10 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       SUBJSTATUS_BQDI,  # Current work more groups
 
       #GROSS_ANNUAL_INCOME_OLDBANDS, # Personal earnings before tax in last year
-      D2_Q14d6,  # Current work - Earnings - Broad categories - Gross pay per year
+      #
+      YEARLYINCPR,  # Yearly income percentile rank category (derived); 1: Less than #10%; 2: #10% to less than #25%; 3: #25% to less than #50%; 4: #50% to less than #75%; 5: #75% to less than #90%; 6: #90% or more
+      # # missing
+      # D2_Q14d6,  # Current work - Earnings - Broad categories - Gross pay per year
 
       # BUK,                # 19 - Whether born in the UK
       A2_Q03a,  # Background - Born in country
@@ -84,9 +87,12 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       starts_with("PVNUM"),
       # LEVNUM,  # missing
 
-      # ICT
-      starts_with("PVPSL"),
+      # # ICT  # not available
+      # starts_with("PVPSL"),
       # LEVPSL,  # missing
+
+      # adaptive problem solving
+      starts_with("PVAPS"),
 
       # weights
       SPFWT0
@@ -95,6 +101,8 @@ clean_PIAAC_data <- function(data, save = FALSE) {
     # --- calculate OECD levels ---
 
     # calculate means of plausible values for each person
+
+    # numeracy
     rowwise() %>%
     mutate(PVNUM_AVG = mean(c_across(PVNUM1:PVNUM10))) %>%
     ungroup() %>%
@@ -108,6 +116,7 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       TRUE ~ NA_character_  # missing cases
     )) |>
 
+    # literacy
     rowwise() %>%
     mutate(PVLIT_AVG = mean(c_across(PVLIT1:PVLIT10))) %>%
     ungroup() %>%
@@ -121,16 +130,17 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       TRUE ~ NA_character_
     )) |>
 
-    rowwise() %>%
-    mutate(PVPSL_AVG = mean(c_across(PVPSL1:PVPSL10))) %>%
-    ungroup() %>%
-    mutate(LEVPSL = case_when(
-      PVPSL_AVG < 241 ~ "Below Level 1",
-      PVPSL_AVG >= 241 & PVPSL_AVG < 291 ~ "Level 1",
-      PVPSL_AVG >= 291 & PVPSL_AVG < 341 ~ "Level 2",
-      PVPSL_AVG >= 341 ~ "Level 3",
-      TRUE ~ NA_character_
-    )) |>
+    # # ICT
+    # rowwise() %>%
+    # mutate(PVPSL_AVG = mean(c_across(PVPSL1:PVPSL10))) %>%
+    # ungroup() %>%
+    # mutate(LEVPSL = case_when(
+    #   PVPSL_AVG < 241 ~ "Below Level 1",
+    #   PVPSL_AVG >= 241 & PVPSL_AVG < 291 ~ "Level 1",
+    #   PVPSL_AVG >= 291 & PVPSL_AVG < 341 ~ "Level 2",
+    #   PVPSL_AVG >= 341 ~ "Level 3",
+    #   TRUE ~ NA_character_
+    # )) |>
 
     # --- calculate NQF (OK) levels ---
 
@@ -161,11 +171,12 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       workingstatus = factor(workingstatus,
                              levels = c(0,1), labels = c("No", "Yes")),
 
-      gross_income = ifelse(D2_Q14d6 == 1,
-                            "<10000",
-                            ifelse(INCOMX %in% 2:6,
-                                   ">=10000", "other")) |>
-        factor(levels = c("<10000", ">=10000", "other")),
+      # percentiles only available
+      gross_income = ifelse(YEARLYINCPR == 1,
+                            "<10pc",
+                            ifelse(YEARLYINCPR %in% 2:6,
+                                   ">=10pc", "other")) |>
+        factor(levels = c("<10pc", ">=10pc", "other")),
 
       uk_born = factor(A2_Q03a, levels = c(2,1), labels = c("No", "Yes")),
 
@@ -210,6 +221,7 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       num_thresholdL1 = ifelse(NQF_NUM %in% c("Level 1", "Level 2 and above"), "above",  # L1 or above
                                ifelse(NQF_NUM %in% c("Entry Level 1", "Entry Level 2", "Entry Level 3"),
                                       "below", "other")),
+      SPFWT0
     ) |>
 
     # remove missing
@@ -226,15 +238,15 @@ clean_PIAAC_data <- function(data, save = FALSE) {
            lit_thresholdL2_bin = as.integer(lit_thresholdL2) - 1L,
            lit_thresholdL1 = factor(lit_thresholdL1, levels = c("above", "below")),
            lit_thresholdL1_bin = as.integer(lit_thresholdL1) - 1L,
-           weights = WTLIT) |>
-    select(-num_thresholdEL3, -num_thresholdL1)
+           weights = SPFWT0) |>
+    select(-num_thresholdEL3, -num_thresholdL1, -SPFWT0)
 
   num <- model_dat |>
     dplyr::filter(num_thresholdL1 %in% c("above", "below")) |>
     mutate(num_thresholdL1 = factor(num_thresholdL1, levels = c("above", "below")),
            num_thresholdL1_bin = as.integer(num_thresholdL1) - 1L,
-           weights = WTNUM) |>
-    select(-num_thresholdEL3, -lit_thresholdL2)
+           weights = SPFWT0) |>
+    select(-num_thresholdEL3, -lit_thresholdL2, -SPFWT0)
 
   tibble::lst(lit, num)
 }
