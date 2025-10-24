@@ -231,7 +231,8 @@ clean_PIAAC_data <- function(data, save = FALSE) {
                   # !is.na(ethnicity)
                   ) |>
 
-    mutate(age = droplevels(age))
+    mutate(age = droplevels(age),
+           SPFWT0 = SPFWT0 / n())
 
   # health literacy assessment specific data sets
   # filtered by answered question

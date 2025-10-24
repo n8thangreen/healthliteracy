@@ -86,10 +86,11 @@ gg[[1]]
 gg[[2]]
 
 ame_forest <- ame_forest_group_plot(ame_data, save = F) +
-  scale_color_discrete(
+  scale_fill_discrete( # Use scale_fill_discrete instead
     name = "Outcome:",
     labels = c("lit" = "Literacy",
-               "num" = "Numeracy"))
+               "num" = "Numeracy")
+  )
 ame_forest
 
 ggsave(plot = ame_forest,
@@ -112,7 +113,7 @@ for (i in names(ame_data)) {
   cumrank_plot(ps_var = ame_data[[i]], title = title_text[i], save = F)
 }
 
-ame_data <- setNames(ame_data, nm = c("Literacy", "Numeracy", "ICT"))
+ame_data <- setNames(ame_data, nm = c("Literacy", "Numeracy"))
 
 gg <- list()
 
