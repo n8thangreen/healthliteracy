@@ -38,7 +38,7 @@ clean_PIAAC_data <- function(data, save = FALSE) {
       #GROSS_ANNUAL_INCOME_OLDBANDS, # Personal earnings before tax in last year
       #
       YEARLYINCPR,  # Yearly income percentile rank category (derived); 1: Less than #10%; 2: #10% to less than #25%; 3: #25% to less than #50%; 4: #50% to less than #75%; 5: #75% to less than #90%; 6: #90% or more
-      # # missing
+      # # missing / suppressed
       # D2_Q14d6,  # Current work - Earnings - Broad categories - Gross pay per year
 
       # BUK,                # 19 - Whether born in the UK
@@ -172,11 +172,11 @@ clean_PIAAC_data <- function(data, save = FALSE) {
                              levels = c(0,1), labels = c("No", "Yes")),
 
       # percentiles only available
-      gross_income = ifelse(YEARLYINCPR == 1,
-                            "<10pc",
-                            ifelse(YEARLYINCPR %in% 2:6,
-                                   ">=10pc", "other")) |>
-        factor(levels = c("<10pc", ">=10pc", "other")),
+      # gross_income = ifelse(YEARLYINCPR == 1,
+      #                       "<10pc",
+      #                       ifelse(YEARLYINCPR %in% 2:6,
+      #                              ">=10pc", "other")) |>
+      #   factor(levels = c("<10pc", ">=10pc", "other")),
 
       uk_born = factor(A2_Q03a, levels = c(2,1), labels = c("No", "Yes")),
 
@@ -225,9 +225,13 @@ clean_PIAAC_data <- function(data, save = FALSE) {
     ) |>
 
     # remove missing
-    dplyr::filter(!is.na(age)
+    dplyr::filter(!is.na(age),
+                  !is.na(uk_born),
+                  !is.na(sex)
                   # !is.na(ethnicity)
-                  )
+                  ) |>
+
+    mutate(age = droplevels(age))
 
   # health literacy assessment specific data sets
   # filtered by answered question

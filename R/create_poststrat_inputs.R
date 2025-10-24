@@ -7,37 +7,30 @@
 #'
 create_covariate_data <- function(survey_dat) {
 
-  unique_workingstatus <- unique(survey_dat$workingstatus)
-  unique_gross_income <- unique(survey_dat$gross_income)
-  unique_uk_born <- unique(survey_dat$uk_born)
-  unique_sex <- unique(survey_dat$sex)
-  unique_own_home <- unique(survey_dat$own_home)
-  unique_age <- unique(survey_dat$age)
-  unique_english_lang <- unique(survey_dat$english_lang)
-  unique_ethnicity <- unique(survey_dat$ethnicity)
-  unique_qualification <- unique(survey_dat$qualification)
-  unique_imd <- unique(survey_dat$imd)
-  unique_job_status <- unique(survey_dat$job_status)
+  # potential all covariates
+  all_covariate_names <- c(
+    "workingstatus", "gross_income", "uk_born", "sex", "own_home",
+    "age", "english_lang", "ethnicity", "qualification", "imd", "job_status"
+  )
+
+  # which actually exist in the input data
+  existing_covariate_names <-
+    intersect(all_covariate_names, names(survey_dat))
+
+  # get named list of unique values for existing columns
+  unique_vals_list <-
+    lapply(existing_covariate_names, function(col_name) {
+      unique(survey_dat[[col_name]])
+    })
+
+  names(unique_vals_list) <- existing_covariate_names
 
   # generate all combinations
-  res <- expand.grid(
-    workingstatus = unique_workingstatus,
-    gross_income = unique_gross_income,
-    uk_born = unique_uk_born,
-    sex = unique_sex,
-    own_home = unique_own_home,
-    age = unique_age,
-    english_lang = unique_english_lang,
-    ethnicity = unique_ethnicity,
-    qualification = unique_qualification,
-    imd = unique_imd,
-    job_status = unique_job_status) |>
-    as_tibble()
+  res_df <- do.call(expand.grid, unique_vals_list)
 
-  names_vars <- names(res)
-
-  res
+  tibble::as_tibble(res_df)
 }
+
 
 #' @title Create target population data without individual level data
 #'
@@ -82,7 +75,7 @@ create_target_marginal_pop_data <- function(covariate_data, save = FALSE) {
 
 #' @title Create target population data
 #'
-#' Use individual level Resident survey data
+#' Use individual level Newham Resident survey data
 #' so can estimate full joint distribution
 #'
 #' @param additional_prob_data non-NRS data
@@ -113,8 +106,7 @@ create_target_pop_data <- function(covariate_data,
     reduce(left_join, .init = res) |>
     merge(imd_lookup) |>
 
-    #####################
-  # calculate product of probabilities, assuming independence
+  # --- calculate product of probabilities, assuming independence
   rowwise() |>
     mutate(product_p = prod(c_across(starts_with("p_")))) |>
     ungroup() |>

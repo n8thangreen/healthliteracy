@@ -184,17 +184,10 @@ ame_forest_group_plot <- function(ame_data,
     geom_point(aes(shape = group), size = 4, position = position_dodge(width = 0.8)) +
     geom_linerange(aes(ymin = lower, ymax = upper, colour = group, linetype = group), size = 1.3,
                    position = position_dodge(width = 0.8)) +
-    scale_shape_manual(name = "Outcome:", labels = group_labels,
-                       values = c(16, 17, 18)) +  # 16=circle, 17=triangle, 18=diamond
-    scale_linetype_manual(name = "Outcome:", labels = group_labels,
-                          values = c("solid", "dashed", "longdash")) +
-    scale_color_manual(
-      name = "Outcome:",
-      labels = group_labels,
-      values = c("red", "blue", "darkgreen")) +
+
     coord_flip() +
     # facet_grid(variable ~ ., scales = "free", space = "free") +   # grid
-    # facet_wrap(~ variable, scales = "free_y", ncol = 2) +         # warp
+    # facet_wrap(~ variable, scales = "free_y", ncol = 2) +         # wrap
     ylab("MRP-ATE for probability not health literate") +
     xlab("") +
     # ggtitle(title) +
@@ -203,24 +196,37 @@ ame_forest_group_plot <- function(ame_data,
     theme(legend.position = "top") +
     # strip.text = element_markdown(size = 10, face = "plain"),
     scale_x_discrete(expand = expansion(add = 2)) +    # add extra space
+
+    # arrows
     annotate("segment", x = 0, xend = 0, y = -0.1, yend = -0.3,
              arrow = arrow(type = "open", length = unit(0.2, "cm")), color = "black") +
     annotate("text", x = -0.5, y = -0.2, label = "Better", hjust = 0.5, color = "black") +
     annotate("segment", x = 0, xend = 0, y = 0.1, yend = 0.3,
              arrow = arrow(type = "open", length = unit(0.2, "cm")), color = "black") +
-    annotate("text", x = -0.5, y = 0.2, label = "Worse", hjust = 0.5, color = "black") +
-    guides(
-      color = guide_legend(
-        override.aes = list(
-          shape = c(16, 17, 18),         # Specify shapes for the legend entries
-          linetype = c("solid", "dashed", "longdash"), # Specify linetypes for the legend entries
-          size = 4 # Optional: Adjust the size of points in the legend
-        ),
-        order = 1 # Optional: Ensure this combined legend is the first/main one
-      ),
-      shape = "none", # Hide the separate shape legend
-      linetype = "none" # Hide the separate linetype legend
-    )
+    annotate("text", x = -0.5, y = 0.2, label = "Worse", hjust = 0.5, color = "black") #+
+
+    # # --- reformat
+    # scale_shape_manual(name = "Outcome:", labels = group_labels,
+    #                    values = c(16, 17, 18)) +  # 16=circle, 17=triangle, 18=diamond
+    # scale_linetype_manual(name = "Outcome:", labels = group_labels,
+    #                       values = c("solid", "dashed", "longdash")) +
+    # scale_color_manual(
+    #   name = "Outcome:",
+    #   labels = group_labels,
+    #   values = c("red", "blue", "darkgreen")) +
+
+    # guides(
+    #   color = guide_legend(
+    #     override.aes = list(
+    #       shape = c(16, 17, 18),         # Specify shapes for the legend entries
+    #       linetype = c("solid", "dashed", "longdash"), # Specify linetypes for the legend entries
+    #       size = 4 # Optional: Adjust the size of points in the legend
+    #     ),
+    #     order = 1 # Optional: Ensure this combined legend is the first/main one
+    #   ),
+    #   shape = "none", # Hide the separate shape legend
+    #   linetype = "none" # Hide the separate linetype legend
+    # )
 
   if (save) {
     ggsave(plot = res, filename = here::here(glue::glue("plots/{filename}")),

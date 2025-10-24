@@ -3,13 +3,21 @@
 #'
 average_marginal_effect <- function(fit, data, save = FALSE) {
 
-  is_stan <- inherits(fit, "stanfit")
   ndraws <- 20
 
   poststrat_est <- poststratification(fit, data)
 
-  names_fe <- all.vars(terms(fit)[[3]])
-  names_re <- rstanarm::ranef(fit) |> names()
+  names_fe <- all.vars(delete.response(terms(fit)))
+  names_re <- character(0)
+
+  # has random effect?
+  if (inherits(fit, "glmerMod") || inherits(fit, "lmerMod")) {
+    re_structure <- rstanarm::ranef(fit)
+
+    if (!is.null(re_structure) && length(re_structure) > 0) {
+      names_re <- names(re_structure)
+    }
+  }
 
   names_vars <- c(names_fe, names_re)
 
