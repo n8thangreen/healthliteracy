@@ -1,11 +1,22 @@
 
 #' @title Create covariate data
-#' Skills for Life survey
+#'
+#' Select columns and create full factorial design.
+#' For Skills for Life survey or PIAAC data
 #'
 #' @param survey_dat Survey data for a particular health literacy outcome
 #' @return grid of all combinations of values
 #'
 create_covariate_data <- function(survey_dat) {
+
+  if (inherits(survey_dat, "mids")) {
+    # extract a multiple imputation complete data set
+    data_to_scan <- survey_dat$data
+  } else if (inherits(survey_dat, "data.frame")) {
+    data_to_scan <- survey_dat
+  } else {
+    stop("Input 'survey_dat' must be a 'mids' object or a 'data.frame'.")
+  }
 
   # potential all covariates
   all_covariate_names <- c(
@@ -15,12 +26,21 @@ create_covariate_data <- function(survey_dat) {
 
   # which actually exist in the input data
   existing_covariate_names <-
-    intersect(all_covariate_names, names(survey_dat))
+    intersect(all_covariate_names, names(data_to_scan))
 
   # get named list of unique values for existing columns
   unique_vals_list <-
     lapply(existing_covariate_names, function(col_name) {
-      unique(survey_dat[[col_name]])
+
+      col_data <- data_to_scan[[col_name]]
+
+      if (is.factor(col_data)) {
+        levels(col_data)
+      } else if (is.numeric(col_data)) {
+        mean(col_data, na.rm = TRUE)
+      } else {
+        unique(col_data[!is.na(col_data)])
+      }
     })
 
   names(unique_vals_list) <- existing_covariate_names
@@ -214,3 +234,42 @@ create_imd_lookup <- function(quintile = NA, decile = NA) {
   imd_lookup
 }
 
+#' @title Post-stratification
+#'
+#' Perform poststratification on a fitted model (glm, stanreg, or brmsfit)
+#'
+#' @param fit A fitted model object.
+#' @param data The poststratification data frame, which must contain
+#'             all covariates and a 'product_p' column with weights.
+#' @return A vector of posterior draws of the poststratified estimate (for stanreg/brms)
+#'         or a data frame with a single point estimate (for glm).
+#'
+#' @importFrom rstanarm posterior_epred
+#' @importFrom dplyr summarize
+#'
+poststratification <- function(fit, data, ndraws = NULL) {
+
+  is_stan <- inherits(fit, "stanreg")
+  is_brms <- inherits(fit, "brmsfit")
+
+  if (is_stan || is_brms) {
+
+    if (is_stan) {
+      posterior_draws <- rstanarm::posterior_epred(fit, newdata = data,
+                                                   draws = ndraws)
+    } else {
+      posterior_draws <- brms::posterior_epred(fit, newdata = data,
+                                               ndraws = ndraws)
+    }
+
+    poststrat_est <- posterior_draws %*% data$product_p
+  } else {
+
+    data$predicted_prob <- predict(fit, data, type = 'response')
+
+    poststrat_est <- data |>
+      dplyr::summarize(estimate = weighted.mean(predicted_prob, product_p))
+  }
+
+  return(poststrat_est)
+}

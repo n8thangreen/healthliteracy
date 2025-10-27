@@ -1,4 +1,4 @@
-# PIAAC data
+# MRP analysis with PIAAC data
 
 
 library(purrr)
@@ -39,8 +39,7 @@ mrp_data <-
 save(fit, file = here::here("data/fit_piaac.RData"))
 save(mrp_data, file = here::here("data/mrp_data_piaac.RData"))
 
-###########
-# outcomes
+# --- outcomes
 
 out_name <- c("lit", "num")
 
