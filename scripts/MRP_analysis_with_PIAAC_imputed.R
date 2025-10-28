@@ -4,9 +4,11 @@ library(dplyr)
 library(mice)
 library(here)
 library(parallel)
+library(purrr)
 
 # save compile brms models
 rstan::rstan_options(auto_write = TRUE)
+# options(brms.backend = "cmdstanr")
 options(mc.cores = parallel::detectCores())
 
 covariate_names <- c(
@@ -40,14 +42,23 @@ imputed_piaac_data_list <-
 
 names(imputed_piaac_data_list) <- domains_to_process
 
+save(imputed_piaac_data_list, file = here::here("data/imputed_piaac_data_list.RData"))
+
+# model fit
+
+load(here::here("data/imputed_piaac_data_list.RData"))
+
+# options(mc.cores = 1)  # fix sink() invalid connection error
+
 if (refit) {
   fit <- fit_all_models(imputed_piaac_data_list,
-                        stan = use_stan,         # over-ridden by mice mids
+                        stan = TRUE,             # over-ridden by mice mids
                         year_suffix = "2011")    # determines set of covariates
-  # backend = "cmdstanr" ##TODO
 } else {
   load(here::here("data/fit_piaac_imp.RData"))
 }
+
+save(fit, file = here::here("data/fit_piaac_imp.RData"))
 
 mrp_data <-
   map(imputed_piaac_data_list,
@@ -55,8 +66,6 @@ mrp_data <-
         create_target_pop_data(additional_prob_data = synth_data)
   )
 
-save(imputed_piaac_data_list, file = here::here("data/imputed_piaac_data_list.RData"))
-save(fit, file = here::here("data/fit_piaac_imp.RData"))
 save(mrp_data, file = here::here("data/mrp_data_piaac_imp.RData"))
 
 # --- outcomes
@@ -74,7 +83,7 @@ for (i in out_name) {
       ndraws = 20)
 }
 
-save(ame_data, file = here::here("data/all_ame_data_piaas_imp.RData"))
+save(ame_data, file = here::here("data/all_ame_data_piaac_imp.RData"))
 
 
 ########
@@ -84,27 +93,26 @@ save(ame_data, file = here::here("data/all_ame_data_piaas_imp.RData"))
 library(ggplot2)
 library(gridExtra)
 
-load(here::here("data/all_ame_data_piaas_imp.RData"))
+load(here::here("data/all_ame_data_piaac_imp.RData"))
 
 # scatter plots
 
-title_text <- c(lit = "Literacy", num = "Numeracy")
+# title_text <- c(lit = "Literacy", num = "Numeracy")
 
 for (i in names(ame_data)) {
-  scatter_plot(ame_data[[i]], title = title_text[i], save = F)
+  scatter_plot(ame_data[[i]],
+               save = TRUE, title = glue::glue("{i}_piaac_imp"))
 }
 
-# ggsave(gridout, filename = here::here("plots/scatter_plots_piass.png"),
-#        width = 5, height = 6, dpi = 300, bg = "white")
 
 # --- AME forest plot
 
 gg <- list()
 for (i in names(ame_data)) {
-  gg[[i]] <- ame_forest_plot(ame_data[[i]], title = title_text[i], save = F)
+  gg[[i]] <- ame_forest_plot(ame_data[[i]], title = i, save = F)
 }
-gg[[1]] + ylim(-.2,.2)
-gg[[2]] + ylim(-.2,.2)
+gg[[1]] #+ ylim(-.2,.2)
+gg[[2]] #+ ylim(-.2,.2)
 
 ame_forest <- ame_forest_group_plot(ame_data, save = F) +
   scale_fill_discrete( # Use scale_fill_discrete instead
@@ -115,7 +123,7 @@ ame_forest <- ame_forest_group_plot(ame_data, save = F) +
 ame_forest
 
 ggsave(plot = ame_forest,
-       filename = here::here("plots/ame_forest_group_plot_piaas_imp.png"),
+       filename = here::here("plots/ame_forest_group_plot_piaac_imp.png"),
        width = 9, height = 7, dpi = 300, bg = "white")
 
 ## rank bar plot
@@ -126,12 +134,11 @@ for (i in names(ame_data)) {
 }
 
 rank_group_plot(ame_data, max_rank = 3, save = F)
-rank_group_plot(att_data, max_rank = 3, save = F)  # error
 
 ## cumulative rank plots
 
 for (i in names(ame_data)) {
-  cumrank_plot(ps_var = ame_data[[i]], title = title_text[i], save = F)
+  cumrank_plot(ps_var = ame_data[[i]], title = i, save = F)
 }
 
 ame_data <- setNames(ame_data, nm = c("Literacy", "Numeracy"))
@@ -148,9 +155,9 @@ gg_cumrank_complete <- cumrank_group_plot(ame_data, abs_val = TRUE, save = F)
 gg_cumrank_complete
 
 ggsave(gg_cumrank_complete,
-       filename = here::here("plots/gg_cumrank_complete_piaas_imp.png"),
+       filename = here::here("plots/gg_cumrank_complete_piaac_imp.png"),
        width = 18, height = 12, dpi = 300, bg = "white")
 
 ggsave(gg_cumrank,
-       filename = here::here("plots/ame_cumrank_group_plot_piass_imp.png"),
+       filename = here::here("plots/ame_cumrank_group_plot_piaac_imp.png"),
        width = 12, height = 6, dpi = 300, bg = "white")
