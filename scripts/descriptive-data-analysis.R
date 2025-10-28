@@ -210,4 +210,12 @@ full_table |>
         $\\dagger$ ONS Census 2021 data are used for English Language, Job Status and Gross Income.
         The ONS local income deprivation data set for mid 2015 was used for IMD. \\label{tab:s4l-summary}") |>
   kable_styling(latex_options = c()) |> # drop addlinespace?
-  add_header_above(c(" " = 2, "Literacy" = 2, "Numeracy" = 2, "ICT" = 2, "Newham" = 1))
+  add_header_above(c(" " = 2, "Literacy" = 2, "Numeracy" = 2, "ICT" = 2, "Newham" = 1)) |>
+  add_header_above(c(
+    " " = 2,
+    "Skills for Life (SfL) 2011 Survey" = 6,
+    "Newham 2023" = 2)) |>
+  add_header_above(c(
+    " " = 2,
+    "(Source Population)" = 6,
+    "(Target Population)" = 2))
