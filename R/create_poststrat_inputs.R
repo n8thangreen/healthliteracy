@@ -94,10 +94,7 @@ create_target_marginal_pop_data <- function(covariate_data, save = FALSE) {
 }
 
 
-#' @title Create target population data
-#'
-#' Use individual level Newham Resident survey data
-#' so can estimate full joint distribution
+#' @title Calculate product of probabilities, assuming independence
 #'
 #' @param additional_prob_data non-NRS data
 #' @param save logical
@@ -105,30 +102,10 @@ create_target_marginal_pop_data <- function(covariate_data, save = FALSE) {
 #' @return dataframe of levels and joint probability
 #' @importFrom glue glue
 #'
-create_target_pop_data <- function(covariate_data,
-                                   additional_prob_data = NULL,
+create_target_pop_data <- function(covariate_prob_data,
                                    save = FALSE) {
-
-  imd_lookup <- create_imd_lookup(quintile = TRUE)
-
-  nrs_prob_data <- create_NRS_prob_data()
-
-  # when its a single dataframe
-  if (!inherits(additional_prob_data, "list")) {
-    additional_prob_data <- list(additional_prob_data)
-  }
-
-  res <-
-    covariate_data |>
-    merge(nrs_prob_data)
-
-  res <-
-    additional_prob_data |>
-    reduce(left_join, .init = res) |>
-    merge(imd_lookup) |>
-
-  # --- calculate product of probabilities, assuming independence
-  rowwise() |>
+  covariate_prob_data |>
+    rowwise() |>
     mutate(product_p = prod(c_across(starts_with("p_")))) |>
     ungroup() |>
     mutate(
@@ -142,6 +119,22 @@ create_target_pop_data <- function(covariate_data,
   }
 
   res
+}
+
+#
+combine_all_prop_data <- function(covariate_data,
+                                  prob_data_list) {
+
+  # when its a single dataframe
+  if (!inherits(prob_data_list, "list")) {
+    prob_data_list <- list(prob_data_list)
+  }
+
+  res <-
+    prob_data_list |>
+    reduce(left_join, .init = covariate_data)
+
+  return(res)
 }
 
 #' Create Newham Resident Survey probability data

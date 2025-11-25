@@ -28,6 +28,8 @@ res_survey_prop_tables <- function() {
 
 
 #' Proportion marginal tables other sources
+#' from Census
+#'
 #' @export
 demo_prop_tables <- function(equivalise_income = FALSE) {
   list(

@@ -21,19 +21,26 @@ if (refit) {
 
 save(fit, file = here::here("data/fit_2011.RData"))
 
-# --- Newham Specific
+# --- Newham specific
 
 newham_marginals <- demo_prop_tables()
 synth_data_newham <- create_lfs_synth_data(newham_marginals)
 
+imd_lookup <- create_imd_lookup(quintile = TRUE)
+nrs_prob_data <- create_NRS_prob_data()
+
+combined_props_newham <-
+  combine_all_prop_data(
+    list(synth_data_newham,
+         nrs_prob_data,
+         imd_lookup))
+
 mrp_data_newham <-
   map(survey_data,
       ~ create_covariate_data(.x) |>
-        # create_target_pop_data(additional_prob_data = demo_prop_tables())     # ONS marginals
-        create_target_pop_data(additional_prob_data = synth_data_newham)        # LFS with ONS
+        create_target_pop_data(combined_props_newham)
   )
 
-# save(mrp_data_newham, file = here::here("data/mrp_data_newham_ons_2011.RData"))
 save(mrp_data_newham, file = here::here("data/mrp_data_newham_lfs_2011.RData"))
 
 # --- England baseline
@@ -41,11 +48,13 @@ save(mrp_data_newham, file = here::here("data/mrp_data_newham_lfs_2011.RData"))
 england_marginals <- get_national_marginals()
 synth_data_england <- create_lfs_synth_data(england_marginals)
 
-mrp_data_england <- map(
-  survey_data,
-  ~ create_covariate_data(.x) |>
-    create_target_pop_data(additional_prob_data = synth_data_england)
-)
+mrp_data_england <-
+  map(survey_data,
+      ~ create_covariate_data(.x) |>
+        create_target_pop_data(synth_data_england)
+  )
+
+save(mrp_data_england, file = here::here("data/mrp_data_england_lfs_2011.RData"))
 
 ###########
 # outcomes
@@ -183,10 +192,10 @@ swate_forest <-
   ame_forest_group_plot(save = F) +
   ylab("Subpopulation weighted average treatment effect") +
   scale_color_discrete(
-  name = "Outcome:",
-  labels = c("ict" = "ICT",
-             "lit" = "Literacy",
-             "num" = "Numeracy"))
+    name = "Outcome:",
+    labels = c("ict" = "ICT",
+               "lit" = "Literacy",
+               "num" = "Numeracy"))
 swate_forest
 
 # IMD only
@@ -319,7 +328,7 @@ tab_swate <- sucra_table(swatt_data, abs_val = TRUE)
 
 tab_ame |>
   kable(format = "latex", booktabs = TRUE, escape = FALSE,
-      # align = c("l", "l", "r", "r", "r"),
+        # align = c("l", "l", "r", "r", "r"),
         caption = "SUCRA and expected rank using the average treatment effect for the health literacy
 outcomes ICT, literacy and numeracy. \\label{tab:sucra-ate}",
         col.names = c("Variable", "Category", "ICT", "Literacy", "Numeracy", "ICT", "Literacy", "Numeracy")) |>
@@ -329,7 +338,7 @@ outcomes ICT, literacy and numeracy. \\label{tab:sucra-ate}",
 
 tab_att |>
   kable(format = "latex", booktabs = TRUE, escape = FALSE,
-      # align = c("l", "l", "r", "r", "r"),
+        # align = c("l", "l", "r", "r", "r"),
         caption = "SUCRA and expected rank using the average treatment on treated effect for the health literacy
 outcomes ICT, literacy and numeracy. \\label{tab:}",
         col.names = c("Variable", "Category", "ICT", "Literacy", "Numeracy", "ICT", "Literacy", "Numeracy")) |>
@@ -339,7 +348,7 @@ outcomes ICT, literacy and numeracy. \\label{tab:}",
 
 tab_swate |>
   kable(format = "latex", booktabs = TRUE, escape = FALSE,
-      # align = c("l", "l", "r", "r", "r"),
+        # align = c("l", "l", "r", "r", "r"),
         caption = "SUCRA and expected rank using the subpopulation weighted average treatment effect for the health literacy
 outcomes ICT, literacy and numeracy. \\label{tab:}",
         col.names = c("Variable", "Category", "ICT", "Literacy", "Numeracy", "ICT", "Literacy", "Numeracy")) |>
