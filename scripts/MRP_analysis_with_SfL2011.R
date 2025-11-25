@@ -370,8 +370,10 @@ if (!exists("ame_data_england") || !is.list(ame_data_england)) {
 }
 
 # Reset ame_data to original names if previously renamed (for reproducibility)
+# Note: This reloads 'ame_data' from the saved file, which may overwrite any
+# modifications made earlier in the session
 if (!all(out_name %in% names(ame_data))) {
-  # Reload to ensure we have original names
+  message("Reloading ame_data from file to restore original outcome names (lit, num, ict)...")
   load(here::here("data/all_ame_data_2011.RData"))
 }
 
@@ -412,6 +414,11 @@ for (outcome in out_name) {
 }
 
 # Compute difference summary (Newham - England) per factor and write CSVs
+# Ensure tables directory exists
+if (!dir.exists(here::here("tables"))) {
+  dir.create(here::here("tables"), recursive = TRUE)
+}
+
 for (outcome in out_name) {
   newham_df <- ame_combined[[outcome]] |>
     filter(Region == "Newham") |>
