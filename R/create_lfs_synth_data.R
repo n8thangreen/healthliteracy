@@ -3,6 +3,7 @@
 #'
 #' Using {simPop} package to perform iterative proportional fitting (IPF).
 #'
+#' @param target_marginals_props Target marginal proportions as a list.
 #' @import dplyr
 #' @import simPop
 #'
@@ -20,51 +21,37 @@
 #'          }) |>
 #'   setNames(vars_to_simulate)
 #' }
-create_lfs_synth_data <- function() {
+create_lfs_synth_data <- function(target_marginals_props = NULL) {
 
   lfs_data <- clean_lfs_data()
 
-  #########
-  # simpop
-
-  target_marginals_props <- demo_prop_tables()
+  if (is.null(target_marginals_props)) {
+    # Default: Newham Analysis (Mix of sources)
+    target_marginals_props <- demo_prop_tables()
+  }
 
   N_small_area <- 10000  # number of synthetic individuals
 
   # Convert proportions to counts for simPop
   # counts are integers and sum exactly to N_small_area
-  target_counts_list <- list(
-    qualification = setNames(
-      round(
-        target_marginals_props$qualification$p_qual * N_small_area
-      ),
-      target_marginals_props$qualification$qualification
-    ),
+  # Dynamic list creation based on input names
+  # matches "p_xxx" column in marginal tables to variable name
+  ##TODO fix mismatch
+  target_counts_list <- lapply(names(target_marginals_props), function(var) {
 
-    gross_income = setNames(
-      round(
-        target_marginals_props$gross_income$p_income * N_small_area
-      ),
-      target_marginals_props$gross_income$gross_income
-    ),
+    df <- target_marginals_props[[var]]
 
-    uk_born = setNames(
-      round(target_marginals_props$uk_born$p_uk * N_small_area),
-      target_marginals_props$uk_born$uk_born
-    ),
+    # Identify proportion column (assumes it starts with "p_")
+    prop_col <- grep("^p_", names(df), value = TRUE)
 
-    english_lang = setNames(
-      round(
-        target_marginals_props$english_lang$p_english * N_small_area
-      ),
-      target_marginals_props$english_lang$english_lang
-    ),
-
-    job_status = setNames(
-      round(target_marginals_props$job_status$p_job * N_small_area),
-      target_marginals_props$job_status$job_status
+    counts <- setNames(
+      round(df[[prop_col]] * N_small_area),
+      df[[var]]
     )
-  )
+    return(counts)
+  })
+
+  names(target_counts_list) <- names(target_marginals_props)
 
   # adjust for rounding errors to ensure sum to N_small_area
   for (i in seq_along(target_counts_list)) {
@@ -73,10 +60,13 @@ create_lfs_synth_data <- function() {
     if (diff != 0) {
       # Add/subtract the difference from the largest category
       largest_cat_idx <- which.max(target_counts_list[[i]])
+
       target_counts_list[[i]][largest_cat_idx] <-
         target_counts_list[[i]][largest_cat_idx] + diff
     }
   }
+
+  # --- simPop ---
 
   # 1. Create a simPop input object
   lfs_data$person_id <- 1:nrow(lfs_data)
@@ -104,31 +94,53 @@ create_lfs_synth_data <- function() {
     by = "strata_col"
   )
 
+  # --- calibration
+
   vars_to_simulate <- names(target_counts_list)
 
   # list format for calibPop() input
-  pers_tables_for_calibPop <- lapply(vars_to_simulate, function(var_name) {
-    current_lfs_data_levels <- levels(lfs_data[[var_name]])
-    dummy_strata_level <- levels(lfs_data$strata_col)[1]
+  pers_tables_for_calibPop <-
+    lapply(vars_to_simulate, function(var_name) {
 
-    df <- data.frame(
-      Category = names(target_counts_list[[var_name]]),
-      Freq = as.numeric(target_counts_list[[var_name]]),
-      stringsAsFactors = FALSE
-    )
-    colnames(df)[1] <- var_name
+      current_levels <- levels(lfs_data[[var_name]])
 
-    # Add the strata_col to each marginal table
-    df$strata_col <- dummy_strata_level # All entries get the same dummy strata value
+      ##TODO: replace below with this?
+      # # Extract counts from our list
+      # counts_vec <- target_counts_list[[var_name]]
+      #
+      # df <- data.frame(
+      #   Var = names(counts_vec),
+      #   Freq = as.numeric(counts_vec),
+      #   stringsAsFactors = FALSE
+      # )
+      # # Rename first col to match variable name
+      # colnames(df)[1] <- var_name
+      #
+      # df$strata_col <- factor("default_strata", levels = levels(lfs_data$strata_col))
+      # df[[var_name]] <- factor(df[[var_name]], levels = current_levels)
 
-    df[[var_name]] <- factor(df[[var_name]],
-                             levels = current_lfs_data_levels)
 
-    df[["strata_col"]] <- factor(df[["strata_col"]],
-                                 levels = levels(lfs_data$strata_col))
+      dummy_strata_level <- levels(lfs_data$strata_col)[1]
 
-    return(df)
-  })
+      df <- data.frame(
+        Category = names(target_counts_list[[var_name]]),
+        Freq = as.numeric(target_counts_list[[var_name]]),
+        stringsAsFactors = FALSE
+      )
+
+      colnames(df)[1] <- var_name
+
+      # add strata_col to each marginal table
+      df$strata_col <- dummy_strata_level # All entries get same dummy strata value
+
+      df[[var_name]] <- factor(df[[var_name]],
+                               levels = current_levels)
+
+      df[["strata_col"]] <- factor(df[["strata_col"]],
+                                   levels = levels(lfs_data$strata_col))
+
+      return(df)
+    })
 
   names(pers_tables_for_calibPop) <- vars_to_simulate
 
@@ -152,8 +164,9 @@ create_lfs_synth_data <- function() {
     mutate(p_synth = round(frequency/sum(frequency), 3)) |>
     select(-frequency)
 
-  # fill in missing categories
-  load(here::here("data/skills_for_life_data.RData"))
+  # fill in missing categories with 0
+  load(here::here("data/skills_for_life_2011_data.RData"))
+  survey_data <- clean_sfl_data_2011(data2011)
 
   synth_data <- survey_data[[1]] |>
     create_covariate_data() |>
@@ -164,10 +177,9 @@ create_lfs_synth_data <- function() {
     mutate(p_synth = coalesce(p_synth, p_default)) |>
     select(-p_default)
 
-  save(synth_data, file = here::here("data/synth_data.rda"))
-
   invisible(synth_data)
 }
+
 
 #' clean labour force survey data
 #'
@@ -177,13 +189,20 @@ clean_lfs_data <- function() {
 
   res <- lfs_data |>
     as_tibble() |>
-    select(LEVQUL22,  # highest qualification
-           BANDG,    # Expected gross earnings, <10,000 = < 1.17 code
-           CRYOX7_EUL_Sub,   # Country of birth, 1 UNITED KINGDOM
-           CRYOX7_EUL_Main,
-           CRY12,    # (921) England, (924) Wales, (923) Scotland, (922) Northern Ireland, (926) UK, Britain (don’t know country)
-           LANG,     # First language at home, (1) English
-           NSECMJ20  # NS-SEC major group (SOC2020 based)
+    select(
+      LEVQUL22,  # highest qualification
+      BANDG,     # Expected gross earnings, <10,000 = < 1.17 code
+      CRYOX7_EUL_Sub,   # Country of birth, 1 UNITED KINGDOM
+      CRYOX7_EUL_Main,
+      CRY12,     # (921) England, (924) Wales, (923) Scotland, (922) Northern Ireland, (926) UK, Britain (don’t know country)
+      LANG,      # First language at home, (1) English
+      NSECMJ20,   # NS-SEC major group (SOC2020 based)
+
+      SEX,        # Gender
+      AGE,        # Age (continuous) or AGEBAND
+      ETHUKEUL,   # Ethnicity (EUL simplified)
+      ILODEFR,    # Economic Activity (for Working Status)
+      TEN1        # Tenure (for Own Home)
     ) |>
     mutate(
       english_lang = ifelse(LANG == 1, "Yes", "No"),
@@ -197,25 +216,31 @@ clean_lfs_data <- function() {
       qualification = ifelse(LEVQUL22 %in% c(1,2,3,4,5,6,7),
                              ">=level 2", "<=Level 1"),
 
-      # job_status = ifelse(NSECMJ20 %in% c(1,2),  ##TODO: changed to include "other"
-      #                     "higher", ifelse(NSECMJ20 %in% c(3,4),
-      #                                      "intermediate", "lower"))
       job_status = ifelse(NSECMJ20 %in% c(1,2), "higher",  # managerial
                           ifelse(NSECMJ20 %in% c(3,4), "intermediate",
-                                 ifelse(NSECMJ20 %in% c(5,6,7), "lower", "other")))
+                                 ifelse(NSECMJ20 %in% c(5,6,7), "lower", "other"))),
+
+      # in Newham resident survey ---
+
+      sex = ifelse(SEX == 1, "Male", "Female"),
+
+      age = ifelse(AGE >= 16 & AGE <= 44, "16-44",
+                   ifelse(AGE >= 45, ">=45", "other")),
+
+      ethnicity = ifelse(ETHUKEUL == 1, "White", "BME"),
+
+      workingstatus = ifelse(ILODEFR == 1, "Yes", "No"),
+
+      own_home = ifelse(TEN1 %in% c(1, 2), "Yes", "No"),
+
+      # LFS usually doesn't provide IMD
+      # --- TODO --- (approx uniform across quintiles)
+      imd = sample(c("1", "2", "3", "4", "5"), size = n(), replace = TRUE)
     ) |>
 
-    select(qualification, gross_income, uk_born, english_lang, job_status) |>
+    select(qualification, gross_income, uk_born, english_lang, job_status,
+           sex, age, ethnicity, workingstatus, own_home, imd) |>
     mutate(across(everything(), as.factor))
-
-  # table(
-  #   demo_data$job_status,
-  #   demo_data$english_lang,
-  #   demo_data$uk_born,
-  #   demo_data$gross_income,
-  #   demo_data$qualification
-  # ) |>
-  #   prop.table()
 
   res
 }

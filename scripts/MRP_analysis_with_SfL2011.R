@@ -11,9 +11,6 @@ create_target_pop_fn <- create_target_pop_data             # from individual res
 # raw data
 load(here::here("data/skills_for_life_2011_data.RData"))
 
-# IPF data
-load(here::here("data/synth_data.rda"))  # create_lfs_synth_data()
-
 survey_data <- clean_sfl_data_2011(data2011)
 
 if (refit) {
@@ -22,63 +19,90 @@ if (refit) {
   load(here::here("data/fit_2011.RData"))
 }
 
-mrp_data <-
+save(fit, file = here::here("data/fit_2011.RData"))
+
+# --- Newham Specific
+
+newham_marginals <- demo_prop_tables()
+synth_data_newham <- create_lfs_synth_data(newham_marginals)
+
+mrp_data_newham <-
   map(survey_data,
       ~ create_covariate_data(.x) |>
-        # create_target_pop_data(additional_prob_data = demo_prop_tables())               # ONS marginals
-        create_target_pop_data(additional_prob_data = synth_data)                      # LFS with ONS
+        # create_target_pop_data(additional_prob_data = demo_prop_tables())     # ONS marginals
+        create_target_pop_data(additional_prob_data = synth_data_newham)        # LFS with ONS
   )
 
-save(fit, file = here::here("data/fit_2011.RData"))
-# save(mrp_data, file = here::here("data/mrp_data_ons_2011.RData"))
-save(mrp_data, file = here::here("data/mrp_data_lfs_2011.RData"))
+# save(mrp_data_newham, file = here::here("data/mrp_data_newham_ons_2011.RData"))
+save(mrp_data_newham, file = here::here("data/mrp_data_newham_lfs_2011.RData"))
+
+# --- England baseline
+
+england_marginals <- get_national_marginals()
+synth_data_england <- create_lfs_synth_data(england_marginals)
+
+mrp_data_england <- map(
+  survey_data,
+  ~ create_covariate_data(.x) |>
+    create_target_pop_data(additional_prob_data = synth_data_england)
+)
 
 ###########
 # outcomes
 
 out_name <- c("lit", "num", "ict")
 
-poststrat <- list()
 ame_data <- list()
-att_data <- list()
-swatt_data <- list()
-strat_ame_data <- list()
+ame_data_england <- list()
+
+# poststrat <- list()
+# att_data <- list()
+# swatt_data <- list()
+# strat_ame_data <- list()
 
 for (i in out_name) {
 
   # poststrat[[i]] <-
   #   poststratification(
   #   fit[[i]],
-  #   mrp_data[[i]])
+  #   mrp_data_newham[[i]])
 
   ame_data[[i]] <-
     average_marginal_effect(
       fit[[i]],
-      mrp_data[[i]],
+      mrp_data_newham[[i]],
+      save = TRUE)
+
+  ame_data_england[[i]] <-
+    average_marginal_effect(
+      fit[[i]],
+      mrp_data_england[[i]],
       save = TRUE)
 
   # att_data[[i]] <-
   #   average_effect_on_treatment(
   #     fit[[i]],
-  #     mrp_data[[i]],
+  #     mrp_data_newham[[i]],
   #     save = TRUE)
   #
   # # change to swatt?
   # swatt_data[[i]] <-
   #   subpop_weighted_average_effect(
   #     att_data[[i]],
-  #     mrp_data[[i]])
+  #     mrp_data_newham[[i]])
 
   # # slow
   # strat_ame_data[[i]] <-
   #   all_cate(
   #     fit[[i]],
   #     survey_data[[i]],
-  #     mrp_data[[i]],
+  #     mrp_data_newham[[i]],
   #     save = TRUE)
 }
 
 save(ame_data, file = here::here("data/all_ame_data_2011.RData"))
+save(ame_data_england, file = here::here("data/all_ame_data_2011_england.RData"))
+
 # save(poststrat, file = here::here("data/all_poststrat.RData"))
 # save(att_data, file = here::here("data/all_att_data.RData"))
 # save(swatt_data, file = here::here("data/all_swatt_data.RData"))
@@ -324,3 +348,23 @@ outcomes ICT, literacy and numeracy. \\label{tab:}",
   row_spec(0, bold = TRUE)
 
 
+#############################
+# England comparison
+##TODO
+
+# Add a 'Region' column to distinguish them
+for(i in out_name) {
+  ame_data_newham[[i]]$Region <- "Newham"
+  ame_data_england[[i]]$Region <- "England Average"
+}
+
+ame_data_combined <- list(
+  lit = bind_rows(ame_data_newham$lit, ame_data_england$lit),
+  num = bind_rows(ame_data_newham$num, ame_data_england$num)
+)
+
+ggplot(ame_data_combined$lit, aes(x = mean, y = factor_value, color = Region)) +
+  geom_pointrange(aes(xmin = lower, xmax = upper), position = position_dodge(width = 0.5)) +
+  facet_wrap(~factor_name, scales = "free_y") +
+  theme_bw() +
+  labs(title = "Health Literacy Determinants: Newham vs England Average")

@@ -15,8 +15,7 @@
 #'
 fit_model <- function(dat, outcome_var, formula_rhs, model_fun, common_args, ...) {
 
-  model_args <- list(
-    data = dat)
+  model_args <- list(data = dat)
 
   all_args <- c(model_args, common_args, list(...))
 
@@ -26,7 +25,7 @@ fit_model <- function(dat, outcome_var, formula_rhs, model_fun, common_args, ...
     all_args$formula <- stats::as.formula(full_formula_str)
     all_args$family <- brms::bernoulli()
 
-    all_args$combine <- TRUE  # pool models
+    all_args$combine <- TRUE        # pool models
     all_args$backend <- "cmdstanr"  # default is rstan
 
     if (is.null(all_args$chains)) all_args$chains <- 2
@@ -61,12 +60,13 @@ fit_model <- function(dat, outcome_var, formula_rhs, model_fun, common_args, ...
 #' @param stan Boolean, whether to use rstanarm (TRUE) or stats/lme4 (FALSE).
 #'             Ignored if 'survey_data' elements are 'mids' objects.
 #' @param save Boolean, whether to save the fitted models to an .RData file.
-#' @param year_suffix A string suffix for the saved file (e.g., "2003").
+#' @param year_suffix A string suffix for the saved file (e.g., "2003"). This is used to determine the list of covariates.
+#' @param algorithm A string specifying the algorithm to use (e.g. "meanfield", "fullrank"). Defaults to "sampling".
 #' @param ... Additional arguments passed to the modelling functions
 #'            (e.g., control, chains, iter).
 #' @return A named list containing the fitted models ('lit', 'num', 'ict').
 #'
-fit_all_models <- function(survey_data, stan = TRUE, save = FALSE, year_suffix = "", ...) {
+fit_all_models <- function(survey_data, stan = TRUE, save = FALSE, year_suffix = "", algorithm = "sampling", ...) {
 
   lit_dat <- survey_data$lit
   num_dat <- survey_data$num
@@ -81,7 +81,7 @@ fit_all_models <- function(survey_data, stan = TRUE, save = FALSE, year_suffix =
   }
 
   if (year_suffix == "2003") {
-    fe_names <- c("sex", "age", "ethnicity", "english_lang", "qualification",
+    fe_names <- c("sex", "age", "ethnicity", "english_lang", "qualification",  # missing uk_born
                   "workingstatus", "job_status", "gross_income", "own_home")
     re_names <- "imd"
   } else if (year_suffix %in% c("", "2011")) {
@@ -125,9 +125,11 @@ fit_all_models <- function(survey_data, stan = TRUE, save = FALSE, year_suffix =
     if (has_re) lme4::glmer else stats::glm
   }
 
-  # These 'common_args' will be passed to stan_glmer OR brm_multiple
+  # passed to stan_glmer OR brm_multiple
   common_args <- if (stan || model_type == "brms") {
-    list(chains = 2, iter = 2000)
+    list(chains = 2,
+         iter = 2000,
+         algorithm = algorithm)
   } else {
     list()
   }

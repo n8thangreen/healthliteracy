@@ -3,7 +3,9 @@
 \name{create_covariate_data}
 \alias{create_covariate_data}
 \title{Create covariate data
-Skills for Life survey}
+
+Select columns and create full factorial design.
+For Skills for Life survey or PIAAC data}
 \usage{
 create_covariate_data(survey_dat)
 }
@@ -15,5 +17,7 @@ grid of all combinations of values
 }
 \description{
 Create covariate data
-Skills for Life survey
+
+Select columns and create full factorial design.
+For Skills for Life survey or PIAAC data
 }

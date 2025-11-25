@@ -4,10 +4,13 @@
 \alias{create_lfs_synth_data}
 \title{Create labour force survey synthetic data}
 \usage{
-create_lfs_synth_data()
+create_lfs_synth_data(target_marginals_props)
+}
+\arguments{
+\item{target_marginals_props}{Target marginal proportions as a list.}
 }
 \description{
-Create labour force survey synthetic data
+Using {simPop} package to perform iterative proportional fitting (IPF).
 }
 \examples{
 # Verification: Check Marginals

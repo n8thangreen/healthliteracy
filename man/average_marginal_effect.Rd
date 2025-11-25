@@ -2,10 +2,21 @@
 % Please edit documentation in R/average_marginal_effect.R
 \name{average_marginal_effect}
 \alias{average_marginal_effect}
-\title{Average Marginal Effect For All Variables}
+\title{Calculate Average Marginal Effects (AMEs)}
 \usage{
-average_marginal_effect(fit, data, save = FALSE)
+average_marginal_effect(fit, data, save = FALSE, ndraws = NULL)
+}
+\arguments{
+\item{fit}{A fitted model object (can be glm, stanreg, brmsfit, or brmsfit_multiple).}
+
+\item{data}{The poststratification data frame (e.g., from create_covariate_data).}
+
+\item{save}{Boolean, whether to save the fitted models to an .RData file.}
+}
+\value{
+A named list ('ame_dat') where each element contains a data frame
+        of AMEs for a specific variable.
 }
 \description{
-Average Marginal Effect For All Variables
+Works for frequentist (glm/glmer) and Bayesian (stanreg/brmsfit) models.
 }

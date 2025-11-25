@@ -2,10 +2,10 @@
 % Please edit documentation in R/create_lfs_synth_data.R
 \name{clean_lfs_data}
 \alias{clean_lfs_data}
-\title{clean labour force survey data}
+\title{clean labour force survey data for use with Newlon resident survey}
 \usage{
 clean_lfs_data()
 }
 \description{
-clean labour force survey data
+clean labour force survey data for use with Newlon resident survey
 }

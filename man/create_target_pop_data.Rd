@@ -4,7 +4,7 @@
 \alias{create_target_pop_data}
 \title{Create target population data
 
-Use individual level Resident survey data
+Use individual level Newham Resident survey data
 so can estimate full joint distribution}
 \usage{
 create_target_pop_data(
@@ -26,6 +26,6 @@ dataframe of levels and joint probability
 \description{
 Create target population data
 
-Use individual level Resident survey data
+Use individual level Newham Resident survey data
 so can estimate full joint distribution
 }
