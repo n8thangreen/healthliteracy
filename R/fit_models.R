@@ -27,6 +27,7 @@ fit_model <- function(dat, outcome_var, formula_rhs, model_fun, common_args, ...
     all_args$family <- brms::bernoulli()
 
     all_args$combine <- TRUE  # pool models
+    all_args$backend <- "cmdstanr"  # default is rstan
 
     if (is.null(all_args$chains)) all_args$chains <- 2
     if (is.null(all_args$iter)) all_args$iter <- 2000
@@ -131,7 +132,8 @@ fit_all_models <- function(survey_data, stan = TRUE, save = FALSE, year_suffix =
     list()
   }
 
-  # --- run models ---
+  # --- run models
+
   models_list <- lapply(tasks, function(task) {
     fit_model(
       dat = task$data,

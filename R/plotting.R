@@ -40,6 +40,9 @@ scatter_plot <- function(ps_var, save = FALSE, title = "") {
   plot_ls <- list()
 
   for (i in names_vars) {
+    ##TODO: for some reason this is renamed?
+    ps_var[[i]] <- mutate(ps_var[[i]], value = estimate)
+
     # calculate means for each level of 'name'
     means_df <- ps_var[[i]] %>%
       mutate(name = factor(name,
@@ -237,7 +240,7 @@ ame_forest_group_plot <- function(ame_data,
 }
 
 
-# rank plots
+# Rank plots
 #
 rank_plot <- function(ps_var,
                       max_rank = 5,
@@ -246,6 +249,10 @@ rank_plot <- function(ps_var,
   ame_wide <-
     bind_rows(ps_var, .id = "vars") |>
     filter(ame_base != 0) |>
+
+    ##TODO: renamed
+    mutate(variable = draw_id) |>
+
     select(vars, name, variable, ame_base) |>
     group_by(vars, name) |>
     reshape2::dcast(variable ~ vars + name,
@@ -305,6 +312,10 @@ rank_group_plot <- function(ame_data,
       bind_rows(ps_var, .id = "vars") %>%
       mutate(ame_base = if (abs_val) abs(ame_base) else ame_base) |>
       filter(ame_base != 0) |>
+
+      ##TODO: renamed
+      mutate(variable = draw_id) |>
+
       select(vars, name, variable, ame_base) |>
       group_by(vars, name) |>
       reshape2::dcast(variable ~ vars + name,
@@ -363,6 +374,10 @@ rank_plot_by_var <- function(ps_var,
   ame_wide <-
     bind_rows(ps_var, .id = "vars") |>
     filter(ame_base != 0) |>
+
+    ##TODO: renamed
+    mutate(variable = draw_id) |>
+
     select(vars, name, variable, ame_base) |>
     group_by(vars, name) |>
     reshape2::dcast(variable ~ vars + name,
@@ -415,6 +430,10 @@ cumrank_plot <- function(ps_var,
   ame_wide <-
     bind_rows(ps_var, .id = "vars") |>
     filter(ame_base != 0) |>
+
+    ##TODO: renamed
+    mutate(variable = draw_id) |>
+
     select(vars, name, variable, ame_base) |>
     group_by(vars, name) |>
     reshape2::dcast(variable ~ vars + name,
@@ -520,6 +539,10 @@ cumrank_group_plot <- function(ame_data,
              ame_base = if (abs_val) -abs(ame_base) else ame_base) |>  # ranks the largest first
       filter(ame_base != 0) |>     # remove comparison with itself
       ungroup() |>
+
+      ##TODO: renamed
+      mutate(variable = draw_id) |>
+
       select(vars, name, variable, ame_base) |>
       # group_by(vars, name) |>
       reshape2::dcast(variable ~ vars + name,
