@@ -6,6 +6,7 @@
 #'
 #' @param survey_dat Survey data for a particular health literacy outcome
 #' @return grid of all combinations of values
+#' @export
 #'
 create_covariate_data <- function(survey_dat) {
 
@@ -255,11 +256,13 @@ poststratification <- function(fit, data, ndraws = NULL) {
   if (is_stan || is_brms) {
 
     if (is_stan) {
-      posterior_draws <- rstanarm::posterior_epred(fit, newdata = data,
-                                                   draws = ndraws)
+      posterior_draws <-
+        rstanarm::posterior_epred(fit, newdata = data,
+                                  draws = ndraws)
     } else {
-      posterior_draws <- brms::posterior_epred(fit, newdata = data,
-                                               ndraws = ndraws)
+      posterior_draws <-
+        brms::posterior_epred(fit, newdata = data,
+                              ndraws = ndraws)
     }
 
     poststrat_est <- posterior_draws %*% data$product_p
