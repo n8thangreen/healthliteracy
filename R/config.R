@@ -31,7 +31,7 @@ res_survey_prop_tables <- function() {
 #' from Census
 #'
 #' @export
-demo_prop_tables <- function(equivalise_income = FALSE) {
+get_newham_census_props <- function(equivalise_income = FALSE) {
   list(
     # ONS census 2021 Highest level of qualification
     qualification = tribble(~qualification, ~p_qual,
@@ -92,3 +92,80 @@ demo_prop_tables <- function(equivalise_income = FALSE) {
     )
   )
 }
+
+#' Proportion marginal tables other sources
+#' from 2021 Census (see nomis)
+#'
+#' @export
+get_england_census_props <- function() {
+  list(
+    qualification = tribble(~qualification, ~p_qual,
+                            ">=level 2", 0.133 + 0.169 + 0.339,
+                            "<=Level 1", 0.181 + 0.097 + 0.028 + 0.053),
+
+    # Annual Survey of Hours and Earnings (ASHE)
+    # Publisher: Office for National Statistics (ONS)
+    # Latest Release: Employee earnings in the UK: 2024 (Released October 2024)
+    # assume "Earnings" only (wages from a job)
+    gross_income = tribble(~gross_income, ~p_income,
+                           ">=10000", 0.56,
+                           "<10000", 0.44,
+                           "other", 0),
+
+    # census 2021 usual resident population
+    uk_born = tribble(~uk_born, ~p_uk,
+                      "Yes", 0.826,
+                      "No", 0.174),
+
+    # ONS census 2021 English as main language
+    english_lang = tribble(~english_lang, ~p_english,
+                           "Yes", 0.911,
+                           "No", 0.089),
+
+    # L1, L2 and L3 Higher managerial, administrative and professional occupations
+    # L4, L5 and L6 Lower managerial, administrative and professional occupations
+    # L7 Intermediate occupations
+    # L8 and L9 Small employers and own account workers
+    # L10 and L11 Lower supervisory and technical occupations
+    # L12 Semi-routine occupations
+    # L13 Routine occupations
+    # L14.1 and L14.2 Never worked and long-term unemployed
+    # L15 Full-time students
+
+    job_status = tribble(~job_status, ~p_job,
+                         "higher", 0.132 + 0.199,         # L1 to L6
+                         "intermediate", 0.114 + 0.106,   # L7, L8, L9
+                         "lower", 0.053 + 0.113 + 0.12,   # L10 to L13
+                         "other", 0.085 + 0.077           # L14.1, L14.2, L15
+    ),
+
+    workingstatus = tribble(~workingstatus, ~p_workingstatus,
+                            "No", 0.443,
+                            "Yes", 0.557),
+
+    sex = tribble(~sex, ~p_sex,
+                  "Male", 0.49,
+                  "Female", 0.51),
+
+    age = tribble(~age, ~p_age,
+                  "16-44", 0.457,
+                  ">=45", 0.543),
+
+    ethnicity = tribble(~ethnicity, ~p_ethnicity,
+                        "White", 0.81,
+                        "BME", 0.19),
+
+    # tenure
+    own_home = tribble(~own_home, ~p_own_home,
+                       "Yes", 0.325 + 0.298,
+                       "No", 1 - 0.623),
+    # by definition
+    imd = tribble(~imd, ~p_imd,
+                  "1", 0.2,
+                  "2", 0.2,
+                  "3", 0.2,
+                  "4", 0.2,
+                  "5", 0.2)
+  )
+}
+

@@ -4,6 +4,7 @@ library(purrr)
 
 refit <- TRUE
 use_stan <- TRUE
+save_output <- FALSE
 
 # create_target_pop_fn <- create_target_marginal_pop_data  # from tables only (marginal)
 create_target_pop_fn <- create_target_pop_data             # from individual resident survey responses (joint)
@@ -14,47 +15,58 @@ load(here::here("data/skills_for_life_2011_data.RData"))
 survey_data <- clean_sfl_data_2011(data2011)
 
 if (refit) {
-  fit <- fit_models(survey_data, stan = use_stan, year_suffix = "2003")
+  fit <- fit_all_models(survey_data, stan = use_stan, year_suffix = "2003")
 } else {
   load(here::here("data/fit_2011.RData"))
 }
 
-save(fit, file = here::here("data/fit_2011.RData"))
+if (save_output) {
+  save(fit, file = here::here("data/fit_2011.RData"))
+}
 
 # --- Newham specific
 
-newham_marginals <- demo_prop_tables()
-synth_data_newham <- create_lfs_synth_data(newham_marginals)
+newham_census_marginals <- get_newham_census_props()
+synth_data_census_newham <- create_lfs_synth_data(newham_census_marginals)
 
 imd_lookup <- create_imd_lookup(quintile = TRUE)
 nrs_prob_data <- create_NRS_prob_data()
 
-combined_props_newham <-
-  combine_all_prop_data(
-    list(synth_data_newham,
-         nrs_prob_data,
-         imd_lookup))
+props_newham_list <-
+  list(synth_data_census_newham,
+       nrs_prob_data,
+       imd_lookup)
 
 mrp_data_newham <-
-  map(survey_data,
-      ~ create_covariate_data(.x) |>
-        create_target_pop_data(combined_props_newham)
+  map(
+    survey_data,
+    ~ create_covariate_data(.x) |>
+      combine_all_prop_data(props_newham_list) |>
+      create_target_pop_data()
   )
 
-save(mrp_data_newham, file = here::here("data/mrp_data_newham_lfs_2011.RData"))
+if (save_output) {
+  save(mrp_data_newham, file = here::here("data/mrp_data_newham_lfs_2011.RData"))
+}
 
 # --- England baseline
 
-england_marginals <- get_national_marginals()
-synth_data_england <- create_lfs_synth_data(england_marginals)
+# england_joint <- get_national_joint()
+england_census_marginals <- get_england_census_props()
+synth_data_census_england <- create_lfs_synth_data(england_census_marginals)
 
 mrp_data_england <-
-  map(survey_data,
-      ~ create_covariate_data(.x) |>
-        create_target_pop_data(synth_data_england)
+  map(
+    survey_data,
+    ~ create_covariate_data(.x) |>
+      combine_all_prop_data(synth_data_census_england) |>
+      create_target_pop_data()
   )
 
-save(mrp_data_england, file = here::here("data/mrp_data_england_lfs_2011.RData"))
+
+if (save_output) {
+  save(mrp_data_england, file = here::here("data/mrp_data_england_lfs_2011.RData"))
+}
 
 ###########
 # outcomes
@@ -82,6 +94,8 @@ for (i in out_name) {
       mrp_data_newham[[i]],
       save = TRUE)
 
+  ##TODO:
+  # returns NAs
   ame_data_england[[i]] <-
     average_marginal_effect(
       fit[[i]],
@@ -109,14 +123,16 @@ for (i in out_name) {
   #     save = TRUE)
 }
 
-save(ame_data, file = here::here("data/all_ame_data_2011.RData"))
-save(ame_data_england, file = here::here("data/all_ame_data_2011_england.RData"))
+if (save_output) {
+  save(ame_data, file = here::here("data/all_ame_data_2011.RData"))
+  save(ame_data_england, file = here::here("data/all_ame_data_2011_england.RData"))
 
-# save(poststrat, file = here::here("data/all_poststrat.RData"))
-# save(att_data, file = here::here("data/all_att_data.RData"))
-# save(swatt_data, file = here::here("data/all_swatt_data.RData"))
-# save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
-# save(cate_data, file = here::here("data/all_cate_data.RData"))
+  # save(poststrat, file = here::here("data/all_poststrat.RData"))
+  # save(att_data, file = here::here("data/all_att_data.RData"))
+  # save(swatt_data, file = here::here("data/all_swatt_data.RData"))
+  # save(strat_ame_data, file = here::here("data/all_strat_ame_data.RData"))
+  # save(cate_data, file = here::here("data/all_cate_data.RData"))
+}
 
 ########
 # plots
@@ -141,8 +157,10 @@ for (i in names(ame_data)) {
 }
 gridout <- gridExtra::grid.arrange(grobs = out, ncol = 1)
 
-ggsave(gridout, filename = here::here("plots/all_bar_plots_2011.png"),
-       width = 5, height = 6, dpi = 300, bg = "white")
+if (save_output) {
+  ggsave(gridout, filename = here::here("plots/all_bar_plots_2011.png"),
+         width = 5, height = 6, dpi = 300, bg = "white")
+}
 
 # scatter plots
 
@@ -169,8 +187,10 @@ ame_forest <- ame_forest_group_plot(ame_data, save = F) +
                "num" = "Numeracy"))
 ame_forest
 
-ggsave(plot = ame_forest, filename = here::here("plots/ame_forest_group_plot_2011.png"),
-       width = 9, height = 7, dpi = 300, bg = "white")
+if (save_output) {
+  ggsave(plot = ame_forest, filename = here::here("plots/ame_forest_group_plot_2011.png"),
+         width = 9, height = 7, dpi = 300, bg = "white")
+}
 
 att_forest <-
   ame_forest_group_plot(att_data, save = F) +
@@ -227,15 +247,16 @@ gridout <- cowplot::plot_grid(
 )
 gridout
 
-ggsave(plot = att_forest, filename = "plots/att_forest_group_plot_2011.png",
-       width = 9, height = 7, dpi = 300, bg = "white")
+if (save_output) {
+  ggsave(plot = att_forest, filename = "plots/att_forest_group_plot_2011.png",
+         width = 9, height = 7, dpi = 300, bg = "white")
 
-ggsave(plot = swate_forest, filename = "plots/swate_forest_group_plot_2011.png",
-       width = 9, height = 7, dpi = 300, bg = "white")
+  ggsave(plot = swate_forest, filename = "plots/swate_forest_group_plot_2011.png",
+         width = 9, height = 7, dpi = 300, bg = "white")
 
-ggsave(plot = gridout, filename = "plots/forest_group_grid_plot_2011.png",
-       width = 11, height = 7, dpi = 300, bg = "white")
-
+  ggsave(plot = gridout, filename = "plots/forest_group_grid_plot_2011.png",
+         width = 11, height = 7, dpi = 300, bg = "white")
+}
 
 ## rank bar plot
 
@@ -264,8 +285,10 @@ gg[[1]]
 
 gg_cumrank_complete <- cumrank_group_plot(ame_data, abs_val = TRUE, save = F)
 
-ggsave(gg_cumrank_complete, filename = here::here("plots/gg_cumrank_complete_2011.png"),
-       width = 18, height = 12, dpi = 300, bg = "white")
+if (save_output) {
+  ggsave(gg_cumrank_complete, filename = here::here("plots/gg_cumrank_complete_2011.png"),
+         width = 18, height = 12, dpi = 300, bg = "white")
+}
 
 # extract common legend
 legend <- cowplot::get_legend(gg[[1]])
@@ -284,13 +307,14 @@ gridout <- cowplot::plot_grid(
 )
 gridout
 
-ggsave(gridout, filename = here::here("plots/all_cumrank_group_plot_2011.png"),
-       width = 10, height = 12, dpi = 300, bg = "white")
+if (save_output) {
+  ggsave(gridout, filename = here::here("plots/all_cumrank_group_plot_2011.png"),
+         width = 10, height = 12, dpi = 300, bg = "white")
 
-# ATE only
-ggsave(gg[[1]], filename = here::here("plots/ame_cumrank_group_plot_2011.png"),
-       width = 12, height = 6, dpi = 300, bg = "white")
-
+  # ATE only
+  ggsave(gg[[1]], filename = here::here("plots/ame_cumrank_group_plot_2011.png"),
+         width = 12, height = 6, dpi = 300, bg = "white")
+}
 
 #########
 # tables

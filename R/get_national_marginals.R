@@ -30,3 +30,21 @@ get_national_marginals <- function() {
 
   return(target_marginals)
 }
+
+#
+get_national_joint <- function() {
+
+  lfs_data <- clean_lfs_data()
+
+  all_vars <- c("qualification", "gross_income", "uk_born", "english_lang",
+                "job_status", "sex", "age", "ethnicity",
+                "workingstatus", "own_home", "imd")
+
+  joint_dist <- lfs_data |>
+    # Count unique combinations of all variables at once
+    count(across(all_of(all_vars))) |>
+    mutate(p_joint = n / sum(n)) |>
+    select(-n)
+
+  return(joint_dist)
+}

@@ -27,7 +27,7 @@ create_lfs_synth_data <- function(target_marginals_props = NULL) {
 
   if (is.null(target_marginals_props)) {
     # Default: Newham Analysis (Mix of sources)
-    target_marginals_props <- demo_prop_tables()
+    target_marginals_props <- get_newham_census_props()
   }
 
   N_small_area <- 10000  # number of synthetic individuals
@@ -175,7 +175,8 @@ create_lfs_synth_data <- function(target_marginals_props = NULL) {
     mutate(p_default = 0) |>
     left_join(synth_data) |>
     mutate(p_synth = coalesce(p_synth, p_default)) |>
-    select(-p_default)
+    select(-p_default) |>
+    mutate(across(where(is.factor), as.character))
 
   invisible(synth_data)
 }

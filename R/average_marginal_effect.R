@@ -53,7 +53,7 @@ calc_ame_bayesian <- function(fit, poststrat_data, var_name,
     ) %>%
     dplyr::group_by(draw_id) %>%
     dplyr::mutate(
-      ame_base = estimate - first(estimate), # AME relative to first level
+      ame_base = estimate - first(estimate),    # AME relative to first level
       ame = estimate - baseline_draws[draw_id]  # AME relative to grand mean
     ) %>%
     dplyr::ungroup()
@@ -67,29 +67,24 @@ calc_ame_bayesian <- function(fit, poststrat_data, var_name,
 #'
 #' @param fit A fitted model object (can be glm, stanreg, brmsfit, or brmsfit_multiple).
 #' @param data The poststratification data frame (e.g., from create_covariate_data).
-#' @param save Boolean, whether to save the fitted models to an .RData file.
+#' @param save_output Boolean, whether to save the fitted models to an .RData file.
 #'
 #' @return A named list ('ame_dat') where each element contains a data frame
 #'         of AMEs for a specific variable.
 #'
-average_marginal_effect <- function(fit, data, save = FALSE, ndraws = NULL) {
+average_marginal_effect <- function(fit, data, save_output = FALSE, ndraws = NULL) {
 
-  # --- 1. Check Model Type ---
   is_bayesian <- inherits(fit, "stanreg") || inherits(fit, "brmsfit")
   is_brms <- inherits(fit, "brmsfit")
 
-  # --- 2. Baseline Poststratified Estimate ---
   poststrat_est <- poststratification(fit, data, ndraws = ndraws)
 
-  # --- 3. Get Variable Names ---
-
-  # 3a. Get Random Effect grouping names (names_re)
   names_re <- character(0)
 
   if (inherits(fit, "brmsfit")) { # This works for brmsfit_multiple too
     re_structure <- brms::ranef(fit)
     if (!is.null(re_structure) && length(re_structure) > 0) {
-      names_re <- names(re_structure) # e.g., "imd"
+      names_re <- names(re_structure)  # imd
     }
   } else if (inherits(fit, "stanreg")) {
     re_structure <- rstanarm::ranef(fit)
@@ -103,7 +98,7 @@ average_marginal_effect <- function(fit, data, save = FALSE, ndraws = NULL) {
     }
   }
 
-  # 3b. Get Fixed Effect names (names_fe)
+  # get Fixed Effect names (names_fe)
   if (inherits(fit, "brmsfit")) {
     the_formula <- fit$formula$formula
 
@@ -133,9 +128,7 @@ average_marginal_effect <- function(fit, data, save = FALSE, ndraws = NULL) {
 
   ame_dat <- list()
 
-  # --- 5. Main Loop ---
   if (is_bayesian) {
-    # --- Bayesian Path ---
     for (i in names_vars) {
       ame_dat[[i]] <- calc_ame_bayesian(
         fit = fit,
@@ -148,7 +141,6 @@ average_marginal_effect <- function(fit, data, save = FALSE, ndraws = NULL) {
     ame_dat <- purrr::compact(ame_dat) # Remove NULLs from skipped non-factors
 
   } else {
-    # --- Frequentist Path ---
     for (i in names_vars) {
       fac_levels <- levels(data[[i]])
 
@@ -175,7 +167,7 @@ average_marginal_effect <- function(fit, data, save = FALSE, ndraws = NULL) {
     }
   }
 
-  if (save) {
+  if (save_output) {
     if (is_bayesian) {
       if (is_brms) {
         save(ame_dat, file = here::here("data/ame_data_brms.RData"))

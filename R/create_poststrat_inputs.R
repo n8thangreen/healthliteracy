@@ -49,6 +49,9 @@ create_covariate_data <- function(survey_dat) {
   # generate all combinations
   res_df <- do.call(expand.grid, unique_vals_list)
 
+  # convert covariates
+  res_df <- mutate(res_df, across(where(is.factor), as.character))
+
   tibble::as_tibble(res_df)
 }
 
@@ -97,24 +100,27 @@ create_target_marginal_pop_data <- function(covariate_data, save = FALSE) {
 #' @title Calculate product of probabilities, assuming independence
 #'
 #' @param additional_prob_data non-NRS data
-#' @param save logical
+#' @param save_output logical
 #' @param covariate_data Covariate data from SfL
 #' @return dataframe of levels and joint probability
 #' @importFrom glue glue
 #'
 create_target_pop_data <- function(covariate_prob_data,
-                                   save = FALSE) {
-  covariate_prob_data |>
+                                   save_output = FALSE) {
+  res <-
+    covariate_prob_data |>
     rowwise() |>
     mutate(product_p = prod(c_across(starts_with("p_")))) |>
     ungroup() |>
     mutate(
       across(
-        c(workingstatus, sex, own_home, age, ethnicity, gross_income,
-          uk_born, english_lang, qualification, job_status),
-        as.factor))
+        where(is.character),
+        # c(workingstatus, sex, own_home, age, ethnicity, gross_income,
+        #   uk_born, english_lang, qualification, job_status),
+        as.factor)) |>
+    mutate(product_p = tidyr::replace_na(product_p, 0))
 
-  if (save) {
+  if (save_output) {
     write.csv(res, here::here("data/total_dat.csv"))
   }
 
@@ -132,7 +138,7 @@ combine_all_prop_data <- function(covariate_data,
 
   res <-
     prob_data_list |>
-    reduce(left_join, .init = covariate_data)
+    purrr::reduce(dplyr::left_join, .init = covariate_data)
 
   return(res)
 }
@@ -142,7 +148,7 @@ combine_all_prop_data <- function(covariate_data,
 #' from resident survey individual level data
 #' joint distribution
 #'
-create_NRS_prob_data <- function(save = TRUE) {
+create_NRS_prob_data <- function(save_output = TRUE) {
 
   filename <- "Newham Resident Survey 2023/London Borough of Newham - Residents Survey - 2023 - Dataset v3.xlsx"
   file_loc <- here::here(glue("../../data/{filename}"))
@@ -177,7 +183,7 @@ create_NRS_prob_data <- function(save = TRUE) {
     ungroup() |>
     mutate(p_nrs = round(frequency/sum(frequency), 3))
 
-  if (save) {
+  if (save_output) {
     save(nrs_joint, file = here::here("data/nrs_joint.rda"))
   }
 
@@ -223,7 +229,8 @@ create_imd_lookup <- function(quintile = NA, decile = NA) {
     full_join(missing_imd, by = "imd") |>
     mutate(pop = coalesce(pop, pop_default)) |>
     select(imd, pop) |>
-    mutate(p_imd = pop / sum(pop))
+    mutate(p_imd = pop / sum(pop)) |>
+    mutate(imd = as.character(imd))
 
   imd_lookup
 }
