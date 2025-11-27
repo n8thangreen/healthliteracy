@@ -4,7 +4,7 @@
 \alias{create_lfs_synth_data}
 \title{Create labour force survey synthetic data}
 \usage{
-create_lfs_synth_data(target_marginals_props)
+create_lfs_synth_data(target_marginals_props = NULL)
 }
 \arguments{
 \item{target_marginals_props}{Target marginal proportions as a list.}

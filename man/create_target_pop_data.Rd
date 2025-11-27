@@ -2,30 +2,20 @@
 % Please edit documentation in R/create_poststrat_inputs.R
 \name{create_target_pop_data}
 \alias{create_target_pop_data}
-\title{Create target population data
-
-Use individual level Newham Resident survey data
-so can estimate full joint distribution}
+\title{Calculate product of probabilities, assuming independence}
 \usage{
-create_target_pop_data(
-  covariate_data,
-  additional_prob_data = NULL,
-  save = FALSE
-)
+create_target_pop_data(covariate_prob_data, save_output = FALSE)
 }
 \arguments{
-\item{covariate_data}{Covariate data from SfL}
+\item{save_output}{logical}
 
 \item{additional_prob_data}{non-NRS data}
 
-\item{save}{logical}
+\item{covariate_data}{Covariate data from SfL}
 }
 \value{
 dataframe of levels and joint probability
 }
 \description{
-Create target population data
-
-Use individual level Newham Resident survey data
-so can estimate full joint distribution
+Calculate product of probabilities, assuming independence
 }

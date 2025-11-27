@@ -4,14 +4,14 @@
 \alias{average_marginal_effect}
 \title{Calculate Average Marginal Effects (AMEs)}
 \usage{
-average_marginal_effect(fit, data, save = FALSE, ndraws = NULL)
+average_marginal_effect(fit, data, save_output = FALSE, ndraws = NULL)
 }
 \arguments{
 \item{fit}{A fitted model object (can be glm, stanreg, brmsfit, or brmsfit_multiple).}
 
 \item{data}{The poststratification data frame (e.g., from create_covariate_data).}
 
-\item{save}{Boolean, whether to save the fitted models to an .RData file.}
+\item{save_output}{Boolean, whether to save the fitted models to an .RData file.}
 }
 \value{
 A named list ('ame_dat') where each element contains a data frame

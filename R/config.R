@@ -100,7 +100,7 @@ get_newham_census_props <- function(equivalise_income = FALSE) {
 get_england_census_props <- function() {
   list(
     qualification = tribble(~qualification, ~p_qual,
-                            ">=level 2", 0.133 + 0.169 + 0.339,
+                            ">=Level 2", 0.133 + 0.169 + 0.339,
                             "<=Level 1", 0.181 + 0.097 + 0.028 + 0.053),
 
     # Annual Survey of Hours and Earnings (ASHE)
@@ -109,8 +109,8 @@ get_england_census_props <- function() {
     # assume "Earnings" only (wages from a job)
     gross_income = tribble(~gross_income, ~p_income,
                            ">=10000", 0.56,
-                           "<10000", 0.44,
-                           "other", 0),
+                           "<10000", 0.44),
+                           # "other", 0),
 
     # census 2021 usual resident population
     uk_born = tribble(~uk_born, ~p_uk,

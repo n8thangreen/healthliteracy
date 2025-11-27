@@ -4,7 +4,7 @@
 \alias{create_NRS_prob_data}
 \title{Create Newham Resident Survey probability data}
 \usage{
-create_NRS_prob_data(save = TRUE)
+create_NRS_prob_data(save_output = TRUE)
 }
 \description{
 from resident survey individual level data

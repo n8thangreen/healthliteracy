@@ -6,6 +6,7 @@
 #' @param target_marginals_props Target marginal proportions as a list.
 #' @import dplyr
 #' @import simPop
+#' @import ipfp
 #'
 #' @examples
 #' # Verification: Check Marginals
@@ -26,17 +27,15 @@ create_lfs_synth_data <- function(target_marginals_props = NULL) {
   lfs_data <- clean_lfs_data()
 
   if (is.null(target_marginals_props)) {
-    # Default: Newham Analysis (Mix of sources)
     target_marginals_props <- get_newham_census_props()
   }
 
-  N_small_area <- 10000  # number of synthetic individuals
+  N_small_area <- 10000
 
   # Convert proportions to counts for simPop
   # counts are integers and sum exactly to N_small_area
   # Dynamic list creation based on input names
   # matches "p_xxx" column in marginal tables to variable name
-  ##TODO fix mismatch
   target_counts_list <- lapply(names(target_marginals_props), function(var) {
 
     df <- target_marginals_props[[var]]
@@ -45,9 +44,8 @@ create_lfs_synth_data <- function(target_marginals_props = NULL) {
     prop_col <- grep("^p_", names(df), value = TRUE)
 
     counts <- setNames(
-      round(df[[prop_col]] * N_small_area),
-      df[[var]]
-    )
+      round(df[[prop_col]] * N_small_area), df[[var]])
+
     return(counts)
   })
 
@@ -68,7 +66,6 @@ create_lfs_synth_data <- function(target_marginals_props = NULL) {
 
   # --- simPop ---
 
-  # 1. Create a simPop input object
   lfs_data$person_id <- 1:nrow(lfs_data)
   lfs_data$sim_weight <- 1
   lfs_data$strata_col <- factor("default_strata")
@@ -76,109 +73,175 @@ create_lfs_synth_data <- function(target_marginals_props = NULL) {
   inp <- simPop::specifyInput(
     data = as.data.frame(lfs_data),
     hhid = "person_id",
-    # hhsize = NULL,
-    # pid = "person_id",
     weight = "sim_weight",
     strata = "strata_col",
   )
 
+  # NOTE: generating all vars in simStructure limits you to combinations
+  # present in the input LFS data.
   sim_struc <- simPop::simStructure(
     data = inp,
     method = "direct",
     basicHHvars = names(target_counts_list))
 
+  # Note: No simCategorical needed if you aren't modeling NEW variables,
+  # but relying on the structure of the input data.
   sim_pop_obj <- simPop::simCategorical(
     simPopObj = sim_struc,
-    additional = NULL,  #names(target_counts_list), # Variables to simulate
+    additional = NULL,
     method = "multinom",
     by = "strata_col"
   )
 
-  # --- calibration
-
   vars_to_simulate <- names(target_counts_list)
 
-  # list format for calibPop() input
-  pers_tables_for_calibPop <-
-    lapply(vars_to_simulate, function(var_name) {
-
-      current_levels <- levels(lfs_data[[var_name]])
-
-      ##TODO: replace below with this?
-      # # Extract counts from our list
-      # counts_vec <- target_counts_list[[var_name]]
-      #
-      # df <- data.frame(
-      #   Var = names(counts_vec),
-      #   Freq = as.numeric(counts_vec),
-      #   stringsAsFactors = FALSE
-      # )
-      # # Rename first col to match variable name
-      # colnames(df)[1] <- var_name
-      #
-      # df$strata_col <- factor("default_strata", levels = levels(lfs_data$strata_col))
-      # df[[var_name]] <- factor(df[[var_name]], levels = current_levels)
+  if (FALSE) {
+    # --- calibration: simulated annealing
 
 
-      dummy_strata_level <- levels(lfs_data$strata_col)[1]
+    pers_tables_for_calibPop <-
+      lapply(vars_to_simulate, function(var_name) {
 
-      df <- data.frame(
-        Category = names(target_counts_list[[var_name]]),
-        Freq = as.numeric(target_counts_list[[var_name]]),
-        stringsAsFactors = FALSE
-      )
+        current_levels <- levels(lfs_data[[var_name]])
 
-      colnames(df)[1] <- var_name
+        dummy_strata_level <- levels(lfs_data$strata_col)[1]
 
-      # add strata_col to each marginal table
-      df$strata_col <- dummy_strata_level # All entries get same dummy strata value
+        df <- data.frame(
+          Category = names(target_counts_list[[var_name]]),
+          Freq = as.numeric(target_counts_list[[var_name]]),
+          stringsAsFactors = FALSE
+        )
 
-      df[[var_name]] <- factor(df[[var_name]],
-                               levels = current_levels)
+        colnames(df)[1] <- var_name
 
-      df[["strata_col"]] <- factor(df[["strata_col"]],
-                                   levels = levels(lfs_data$strata_col))
+        # add strata_col to each marginal table
+        df$strata_col <- dummy_strata_level # All entries get same dummy strata value
 
-      return(df)
-    })
+        df[[var_name]] <- factor(df[[var_name]], levels = current_levels)
 
-  names(pers_tables_for_calibPop) <- vars_to_simulate
+        df[["strata_col"]] <- factor(df[["strata_col"]],
+                                     levels = levels(lfs_data$strata_col))
+        return(df)
+      })
 
-  # Step 3: Calibrate the Simulated Population to External Marginals
-  final_sim_pop_obj <- calibPop(
-    inp = sim_pop_obj,
-    persTables = pers_tables_for_calibPop,
-    split = "strata_col",
-    # verbose = TRUE,
-    maxiter = 200
-  )
+    names(pers_tables_for_calibPop) <- vars_to_simulate
 
-  synth_data <- simPop::popData(final_sim_pop_obj)
+    # Calibrate the Simulated Population to External Marginals
+    final_sim_pop_obj <- simPop::calibPop(
+      inp = sim_pop_obj,
+      persTables = pers_tables_for_calibPop,
+      split = "strata_col",
+      epsP.factor = 0.5,
+      temp = 100,
+      verbose = TRUE,
+      maxiter = 500
+    )
 
-  # frequencies per category
-  synth_data <-
-    synth_data |>
-    as_tibble() |>
-    dplyr::count(!!!syms(vars_to_simulate), name = "frequency") |>
-    ungroup() |>
-    mutate(p_synth = round(frequency/sum(frequency), 3)) |>
-    select(-frequency)
+    # --- Extract and Calculate Probabilities
 
-  # fill in missing categories with 0
+    synth_data_raw <- simPop::popData(final_sim_pop_obj)
+
+    # Ensure we identify the correct weight column
+    # (calibPop usually names it 'calibWeight')
+    weight_col <- if ("calibWeight" %in% names(synth_data_raw)) {
+      "calibWeight"
+    } else {
+      "weight"
+    }
+
+    synth_counts <- synth_data_raw |>
+      as_tibble() |>
+      # Group by the specific combinations of variables
+      group_by(!!!syms(vars_to_simulate)) |>
+      # SUM THE WEIGHTS, do not just count the rows
+      summarise(weighted_n = sum(.data[[weight_col]]), .groups = "drop") |>
+      mutate(p_synth = round(weighted_n / sum(weighted_n), 5)) |>
+      select(-weighted_n)
+  }
+
+
+  # --- ALTERNATIVE CALIBRATION: IPU (Raking) ---
+
+  synth_raw <- simPop::popData(sim_pop_obj)
+  vars_to_calibrate <- names(target_counts_list)
+
+  # --- 2. Create the "Target Vector" and "Model Matrix" ---
+  # IPFP needs:
+  # A: A matrix where rows = constraints, columns = people (0 or 1)
+  # y: A vector of the target counts
+
+  target_vector <- numeric()
+  constraint_rows <- list()
+
+  row_counter <- 0
+
+  for (var in vars_to_calibrate) {
+    # Get the specific targets for this variable
+    targets <- target_counts_list[[var]]
+    levels_needed <- names(targets)
+
+    # Add to the master target vector
+    target_vector <- c(target_vector, as.numeric(targets))
+
+    # Create a binary row for each level
+    # If person has var="Female", the "Female" row gets a 1, otherwise 0
+    for (lvl in levels_needed) {
+      row_counter <- row_counter + 1
+
+      # Create binary indicator (safe against factors/chars)
+      binary_indicator <- as.numeric(as.character(synth_raw[[var]]) == lvl)
+
+      # Safety check: if constraint level doesn't exist in data, this is 0s
+      if (sum(binary_indicator) == 0) {
+        warning(paste("Constraint category missing in data:", var, "-", lvl))
+      }
+
+      constraint_rows[[row_counter]] <- binary_indicator
+    }
+  }
+
+  # Combine list into the matrix 'A' (Constraints x Individuals)
+  A <- do.call(rbind, constraint_rows)
+
+  # --- 3. Run Raking (IPFP) ---
+
+  # Initial weights (1 for everyone)
+  w0 <- rep(1, ncol(A))
+
+  # Run the solver
+  # tol = tolerance (1e-4 is good standard)
+  final_weights <-
+    ipfp::ipfp(y = target_vector, A = A,
+               x0 = w0, tol = 1e-4, maxit = 1000)
+
+  synth_counts <- as_tibble(synth_raw) |>
+    mutate(calibWeight = final_weights) |> # Attach new weights
+    group_by(!!!syms(vars_to_simulate)) |>
+    summarise(weighted_n = sum(calibWeight), .groups = "drop") |>
+    mutate(p_synth = round(weighted_n / sum(weighted_n), 5)) |>
+    select(-weighted_n)
+
+  # --- join to grid
+
   load(here::here("data/skills_for_life_2011_data.RData"))
   survey_data <- clean_sfl_data_2011(data2011)
 
-  synth_data <- survey_data[[1]] |>
+  # Create the full grid from Survey Data
+  full_grid <- survey_data[[1]] |>
     create_covariate_data() |>
-    select(vars_to_simulate) |>
+    select(all_of(vars_to_simulate)) |>
     distinct() |>
-    mutate(p_default = 0) |>
-    left_join(synth_data) |>
-    mutate(p_synth = coalesce(p_synth, p_default)) |>
-    select(-p_default) |>
-    mutate(across(where(is.factor), as.character))
+    mutate(across(where(is.factor), as.character)) # Convert to character to avoid factor level mismatches
 
-  invisible(synth_data)
+  # Convert synth data to character for safe joining
+  synth_counts_safe <- synth_counts |>
+    mutate(across(all_of(vars_to_simulate), as.character))
+
+  final_data <- full_grid |>
+    left_join(synth_counts_safe, by = vars_to_simulate) |>
+    mutate(p_synth = coalesce(p_synth, 0)) # Fill non-matches with 0
+
+  return(final_data)
 }
 
 
@@ -215,7 +278,7 @@ clean_lfs_data <- function() {
                             ">=10000"),
 
       qualification = ifelse(LEVQUL22 %in% c(1,2,3,4,5,6,7),
-                             ">=level 2", "<=Level 1"),
+                             ">=Level 2", "<=Level 1"),
 
       job_status = ifelse(NSECMJ20 %in% c(1,2), "higher",  # managerial
                           ifelse(NSECMJ20 %in% c(3,4), "intermediate",
@@ -241,7 +304,8 @@ clean_lfs_data <- function() {
 
     select(qualification, gross_income, uk_born, english_lang, job_status,
            sex, age, ethnicity, workingstatus, own_home, imd) |>
-    mutate(across(everything(), as.factor))
+    filter(age != "other") |>
+    mutate(across(where(is.character), as.factor))
 
   res
 }
