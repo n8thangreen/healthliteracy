@@ -383,21 +383,110 @@ outcomes ICT, literacy and numeracy. \\label{tab:}",
 
 #############################
 # England comparison
-##TODO
+#############################
 
-# Add a 'Region' column to distinguish them
-for(i in out_name) {
-  ame_data_newham[[i]]$Region <- "Newham"
-  ame_data_england[[i]]$Region <- "England Average"
+# Validate required objects exist
+if (!exists("ame_data") || !is.list(ame_data)) {
+  stop("Required object 'ame_data' (Newham AME data) does not exist or is not a list.")
+}
+if (!exists("ame_data_england") || !is.list(ame_data_england)) {
+  stop("Required object 'ame_data_england' does not exist or is not a list.")
 }
 
-ame_data_combined <- list(
-  lit = bind_rows(ame_data_newham$lit, ame_data_england$lit),
-  num = bind_rows(ame_data_newham$num, ame_data_england$num)
-)
+# Reset ame_data to original names if previously renamed (for reproducibility)
+# Note: This reloads 'ame_data' from the saved file, which may overwrite any
+# modifications made earlier in the session
+if (!all(out_name %in% names(ame_data))) {
+  message("Reloading ame_data from file to restore original outcome names (lit, num, ict)...")
+  load(here::here("data/all_ame_data_2011.RData"))
+}
 
-ggplot(ame_data_combined$lit, aes(x = mean, y = factor_value, color = Region)) +
-  geom_pointrange(aes(xmin = lower, xmax = upper), position = position_dodge(width = 0.5)) +
-  facet_wrap(~factor_name, scales = "free_y") +
-  theme_bw() +
-  labs(title = "Health Literacy Determinants: Newham vs England Average")
+# Add Region column to both datasets programmatically for all outcomes
+for (outcome in out_name) {
+  for (var_name in names(ame_data[[outcome]])) {
+    ame_data[[outcome]][[var_name]]$Region <- "Newham"
+    ame_data_england[[outcome]][[var_name]]$Region <- "England Average"
+  }
+}
+
+# Helper function to summarize AME data with variable names
+summarize_ame <- function(ame_list, region_label) {
+  dat_ls <- list()
+  for (var_name in names(ame_list)) {
+    dat_ls[[var_name]] <- ame_list[[var_name]] |>
+      group_by(name) |>
+      summarise(
+        mean = mean(ame_base, na.rm = TRUE),
+        upper = quantile(ame_base, 0.975, na.rm = TRUE),
+        lower = quantile(ame_base, 0.025, na.rm = TRUE),
+        .groups = "drop"
+      ) |>
+      mutate(
+        variable = var_name,
+        Region = region_label
+      )
+  }
+  bind_rows(dat_ls)
+}
+
+# Combine all three outcomes (lit, num, ict) into ame_combined (a named list)
+ame_combined <- list()
+for (outcome in out_name) {
+  newham_summary <- summarize_ame(ame_data[[outcome]], "Newham")
+  england_summary <- summarize_ame(ame_data_england[[outcome]], "England Average")
+  ame_combined[[outcome]] <- bind_rows(newham_summary, england_summary)
+}
+
+# Compute difference summary (Newham - England) per factor and write CSVs
+# Ensure tables directory exists
+if (!dir.exists(here::here("tables"))) {
+  dir.create(here::here("tables"), recursive = TRUE)
+}
+
+for (outcome in out_name) {
+  newham_df <- ame_combined[[outcome]] |>
+    filter(Region == "Newham") |>
+    select(variable, name, mean) |>
+    rename(mean_newham = mean)
+
+  england_df <- ame_combined[[outcome]] |>
+    filter(Region == "England Average") |>
+    select(variable, name, mean) |>
+    rename(mean_england = mean)
+
+  diff_df <- merge(newham_df, england_df, by = c("variable", "name")) |>
+    mutate(diff_newham_england = mean_newham - mean_england) |>
+    arrange(variable, name)
+
+  write.csv(diff_df,
+            here::here(paste0("tables/ame_newham_vs_england_diff_", outcome, ".csv")),
+            row.names = FALSE)
+}
+
+# Create comparison plots for all outcomes
+comparison_plots <- list()
+title_labels <- c(lit = "Literacy", num = "Numeracy", ict = "ICT")
+
+for (outcome in out_name) {
+  comparison_plots[[outcome]] <- ggplot(
+    ame_combined[[outcome]],
+    aes(x = mean, y = name, color = Region)
+  ) +
+    geom_pointrange(
+      aes(xmin = lower, xmax = upper),
+      position = position_dodge(width = 0.5)
+    ) +
+    facet_wrap(~variable, scales = "free_y") +
+    theme_bw() +
+    labs(
+      title = paste("Health Literacy Determinants: Newham vs England -", title_labels[outcome]),
+      x = "Average Marginal Effect",
+      y = "Category"
+    )
+
+  ggsave(
+    comparison_plots[[outcome]],
+    filename = here::here(paste0("plots/newham_vs_england_comparison_", outcome, ".png")),
+    width = 10, height = 8, dpi = 300, bg = "white"
+  )
+}
