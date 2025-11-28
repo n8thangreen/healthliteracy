@@ -35,7 +35,7 @@ get_newham_census_props <- function(equivalise_income = FALSE) {
   list(
     # ONS census 2021 Highest level of qualification
     qualification = tribble(~qualification, ~p_qual,
-                            ">=level 2", 0.57,
+                            ">=Level 2", 0.57,
                             "<=Level 1", 0.43),
 
     # Q61: household gross income before tax
@@ -48,15 +48,15 @@ get_newham_census_props <- function(equivalise_income = FALSE) {
       # resident_survey <- create_equivalised_income(resident_survey)  # equivalise_income.R
       tribble(~gross_income, ~p_income,
               ">=10000", 0.67,
-              "<10000", 0.33,
-              "other", 0)
+              "<10000", 0.33)
+              # "other", 0)
     } else {
       ##TODO: break down by LSOA and map to CNA
       ##  read from Newham tab in saiefy1920finalqaddownload280923.xlsx
       tribble(~gross_income, ~p_income,
               ">=10000", 0.9,
-              "<10000", 0.1,
-              "other", 0)
+              "<10000", 0.1)
+              # "other", 0)
     },
 
     # census 2021 usual resident population

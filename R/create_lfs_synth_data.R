@@ -3,7 +3,10 @@
 #'
 #' Using {simPop} package to perform iterative proportional fitting (IPF).
 #'
+#' @param smooth_alpha
+#' @param add_missing
 #' @param target_marginals_props Target marginal proportions as a list.
+#'
 #' @import dplyr
 #' @import simPop
 #' @import ipfp
@@ -22,9 +25,42 @@
 #'          }) |>
 #'   setNames(vars_to_simulate)
 #' }
-create_lfs_synth_data <- function(target_marginals_props = NULL) {
+create_lfs_synth_data <- function(target_marginals_props = NULL,
+                                  smooth_alpha = 0.5,
+                                  add_missing = FALSE) {
 
   lfs_data <- clean_lfs_data()
+
+  # -- include 'ghost' rows for missing people
+  if (add_missing) {
+    # 1. Create the full grid
+    vars_to_grid <- names(target_marginals_props)
+    full_grid <- expand.grid(lapply(lfs_data[, vars_to_grid], unique))
+
+    # 2. Find missing rows
+    missing_rows <- dplyr::anti_join(full_grid, lfs_data, by = vars_to_grid)
+
+    ##TODO:
+    # # --- SAFETY FILTER START ---
+    # # Remove logical impossibilities before adding them to data
+    # if (nrow(missing_rows) > 0) {
+    #   missing_rows <- missing_rows |>
+    #     filter(
+    #       !(age_band == "16-19" & qualification == "Level 4+ (Degree/PhD)"),
+    #       !(age_band == "16-19" & economic_status == "Retired"),
+    #       !(economic_status == "Unemployed" & occupation_group == "Managerial")
+    #       # Add other "Impossible" rules here
+    #     )
+    # }
+    # # --- SAFETY FILTER END ---
+
+    # 3. Add to data (with small weight)
+    if (nrow(missing_rows) > 0) {
+      # missing_rows$person_id <- 9000000 + 1:nrow(missing_rows)
+      # missing_rows$sim_weight <- 0.01  # "Ghost" weight
+      lfs_data <- bind_rows(lfs_data, missing_rows)
+    }
+  }
 
   if (is.null(target_marginals_props)) {
     target_marginals_props <- get_newham_census_props()
@@ -95,72 +131,7 @@ create_lfs_synth_data <- function(target_marginals_props = NULL) {
 
   vars_to_simulate <- names(target_counts_list)
 
-  if (FALSE) {
-    # --- calibration: simulated annealing
-
-
-    pers_tables_for_calibPop <-
-      lapply(vars_to_simulate, function(var_name) {
-
-        current_levels <- levels(lfs_data[[var_name]])
-
-        dummy_strata_level <- levels(lfs_data$strata_col)[1]
-
-        df <- data.frame(
-          Category = names(target_counts_list[[var_name]]),
-          Freq = as.numeric(target_counts_list[[var_name]]),
-          stringsAsFactors = FALSE
-        )
-
-        colnames(df)[1] <- var_name
-
-        # add strata_col to each marginal table
-        df$strata_col <- dummy_strata_level # All entries get same dummy strata value
-
-        df[[var_name]] <- factor(df[[var_name]], levels = current_levels)
-
-        df[["strata_col"]] <- factor(df[["strata_col"]],
-                                     levels = levels(lfs_data$strata_col))
-        return(df)
-      })
-
-    names(pers_tables_for_calibPop) <- vars_to_simulate
-
-    # Calibrate the Simulated Population to External Marginals
-    final_sim_pop_obj <- simPop::calibPop(
-      inp = sim_pop_obj,
-      persTables = pers_tables_for_calibPop,
-      split = "strata_col",
-      epsP.factor = 0.5,
-      temp = 100,
-      verbose = TRUE,
-      maxiter = 500
-    )
-
-    # --- Extract and Calculate Probabilities
-
-    synth_data_raw <- simPop::popData(final_sim_pop_obj)
-
-    # Ensure we identify the correct weight column
-    # (calibPop usually names it 'calibWeight')
-    weight_col <- if ("calibWeight" %in% names(synth_data_raw)) {
-      "calibWeight"
-    } else {
-      "weight"
-    }
-
-    synth_counts <- synth_data_raw |>
-      as_tibble() |>
-      # Group by the specific combinations of variables
-      group_by(!!!syms(vars_to_simulate)) |>
-      # SUM THE WEIGHTS, do not just count the rows
-      summarise(weighted_n = sum(.data[[weight_col]]), .groups = "drop") |>
-      mutate(p_synth = round(weighted_n / sum(weighted_n), 5)) |>
-      select(-weighted_n)
-  }
-
-
-  # --- ALTERNATIVE CALIBRATION: IPU (Raking) ---
+  # --- CALIBRATION: IPU (Raking) ---
 
   synth_raw <- simPop::popData(sim_pop_obj)
   vars_to_calibrate <- names(target_counts_list)
@@ -214,32 +185,44 @@ create_lfs_synth_data <- function(target_marginals_props = NULL) {
     ipfp::ipfp(y = target_vector, A = A,
                x0 = w0, tol = 1e-4, maxit = 1000)
 
-  synth_counts <- as_tibble(synth_raw) |>
-    mutate(calibWeight = final_weights) |> # Attach new weights
+  # --- 4. Process Results & Apply Laplace Smoothing ---
+
+  # A. Calculate RAW weighted counts from the synthetic data
+  # Do NOT calculate proportions (p_synth) yet. Just get the sum of weights.
+  synth_counts_raw <- as_tibble(synth_raw) |>
+    mutate(calibWeight = final_weights) |>
     group_by(!!!syms(vars_to_simulate)) |>
     summarise(weighted_n = sum(calibWeight), .groups = "drop") |>
-    mutate(p_synth = round(weighted_n / sum(weighted_n), 5)) |>
-    select(-weighted_n)
+    mutate(across(all_of(vars_to_simulate), as.character)) # Ensure char for joining
 
-  # --- join to grid
+  # --- 5. Join to Grid and Smooth ---
 
   load(here::here("data/skills_for_life_2011_data.RData"))
   survey_data <- clean_sfl_data_2011(data2011)
 
-  # Create the full grid from Survey Data
+  # B. Create the full grid (All possible combinations)
   full_grid <- survey_data[[1]] |>
     create_covariate_data() |>
     select(all_of(vars_to_simulate)) |>
     distinct() |>
-    mutate(across(where(is.factor), as.character)) # Convert to character to avoid factor level mismatches
+    mutate(across(where(is.factor), as.character))
 
-  # Convert synth data to character for safe joining
-  synth_counts_safe <- synth_counts |>
-    mutate(across(all_of(vars_to_simulate), as.character))
-
+  # C. Join, Fill Zeros, Apply Smoothing, Calc Probabilities
   final_data <- full_grid |>
-    left_join(synth_counts_safe, by = vars_to_simulate) |>
-    mutate(p_synth = coalesce(p_synth, 0)) # Fill non-matches with 0
+    left_join(synth_counts_raw, by = vars_to_simulate) |>
+
+    # 1. Fill missing combos with 0 (Real zeros)
+    mutate(weighted_n = coalesce(weighted_n, 0)) |>
+
+    # 2. LAPLACE SMOOTHING: Add a small constant (alpha) to EVERY row
+    # alpha = 0.5 is standard (Jeffrey's prior). You can use 1.0 for stronger smoothing.
+    mutate(weighted_n_smoothed = weighted_n + smooth_alpha) |>
+
+    # 3. Calculate Probability using the SMOOTHED sum
+    # This ensures p_synth is never exactly 0.
+    mutate(p_synth = round(weighted_n_smoothed / sum(weighted_n_smoothed), 8)) |>
+
+    select(-weighted_n, -weighted_n_smoothed)
 
   return(final_data)
 }
@@ -284,7 +267,7 @@ clean_lfs_data <- function() {
                           ifelse(NSECMJ20 %in% c(3,4), "intermediate",
                                  ifelse(NSECMJ20 %in% c(5,6,7), "lower", "other"))),
 
-      # in Newham resident survey ---
+      # also in Newham resident survey ---
 
       sex = ifelse(SEX == 1, "Male", "Female"),
 
