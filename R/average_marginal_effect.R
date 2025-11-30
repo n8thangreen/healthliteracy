@@ -81,7 +81,7 @@ average_marginal_effect <- function(fit, data, save_output = FALSE, ndraws = NUL
 
   names_re <- character(0)
 
-  if (inherits(fit, "brmsfit")) { # This works for brmsfit_multiple too
+  if (inherits(fit, "brmsfit")) {  # works for brmsfit_multiple too
     re_structure <- brms::ranef(fit)
     if (!is.null(re_structure) && length(re_structure) > 0) {
       names_re <- names(re_structure)  # imd
@@ -98,32 +98,33 @@ average_marginal_effect <- function(fit, data, save_output = FALSE, ndraws = NUL
     }
   }
 
-  # get Fixed Effect names (names_fe)
+  # get fixed effect names ---
+
   if (inherits(fit, "brmsfit")) {
     the_formula <- fit$formula$formula
 
-    # Get ALL variables from the formula (RHS and LHS)
+    # get ALL variables from the formula (RHS and LHS)
     all_form_vars <- all.vars(the_formula)
 
-    # Get response variables (e.g., "outcome", "weights")
+    # Ggt response variables (e.g., "outcome", "weights")
     resp_vars <- all.vars(brms::bf(the_formula)$resp)
 
-    # Start with all variables, then remove response AND random effects
+    # all variables then remove response AND random effects
     names_fe <- setdiff(all_form_vars, c(resp_vars, names_re))
 
   } else if (inherits(fit, "stanreg") || inherits(fit, "glm") || inherits(fit, "glmerMod")) {
-    # These objects work with the standard functions
     names_fe <- all.vars(delete.response(terms(fit)))
-    # We still need to remove the 'names_re' from this list for stanreg
+    # remove the 'names_re' from this list for stanreg
     names_fe <- setdiff(names_fe, names_re)
   } else {
     stop("Input 'fit' is not a recognized model object.", call. = FALSE)
   }
 
+  # combine and filter variable list ---
 
-  # --- 4. Combine and Filter Variable List ---
   names_vars <- unique(c(names_fe, names_re))
-  # Keep only variables that exist in our poststratification data
+
+  # keep only variables that exist in poststratification data
   names_vars <- intersect(names_vars, names(data))
 
   ame_dat <- list()
@@ -138,7 +139,7 @@ average_marginal_effect <- function(fit, data, save_output = FALSE, ndraws = NUL
         ndraws = ndraws
       )
     }
-    ame_dat <- purrr::compact(ame_dat) # Remove NULLs from skipped non-factors
+    ame_dat <- purrr::compact(ame_dat)  # remove NULLs from skipped non-factors
 
   } else {
     for (i in names_vars) {
@@ -160,7 +161,9 @@ average_marginal_effect <- function(fit, data, save_output = FALSE, ndraws = NUL
         dplyr::summarize(estimate = weighted.mean(predicted_prob, product_p))
 
       level_summary$ame <- level_summary$estimate - poststrat_est$estimate
-      level_summary <- level_summary |> dplyr::mutate(ame_base = estimate - first(estimate))
+
+      level_summary <- level_summary |>
+        dplyr::mutate(ame_base = estimate - first(estimate))
 
       names(level_summary)[1] <- "name"
       ame_dat[[i]] <- level_summary

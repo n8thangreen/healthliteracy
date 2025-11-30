@@ -3,8 +3,8 @@
 #'
 #' Using {simPop} package to perform iterative proportional fitting (IPF).
 #'
-#' @param smooth_alpha
-#' @param add_missing
+#' @param smooth_alpha After IPF, Laplace smoothing adds a small constant to EVERY row. Numeric default 0. Common value 0.5.
+#' @param add_missing Before IPF, include 'ghost' rows for missing people. Logical.
 #' @param target_marginals_props Target marginal proportions as a list.
 #'
 #' @import dplyr
@@ -26,7 +26,7 @@
 #'   setNames(vars_to_simulate)
 #' }
 create_lfs_synth_data <- function(target_marginals_props = NULL,
-                                  smooth_alpha = 0.5,
+                                  smooth_alpha = 0,
                                   add_missing = FALSE) {
 
   lfs_data <- clean_lfs_data()

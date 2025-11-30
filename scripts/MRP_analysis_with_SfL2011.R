@@ -1,4 +1,5 @@
 # MRP analysis using Skill for Life survey 2011 data
+# includes England comparison
 
 library(purrr)
 
@@ -27,7 +28,10 @@ if (save_output) {
 # --- Newham specific
 
 newham_census_marginals <- get_newham_census_props()
-synth_data_census_newham <- create_lfs_synth_data(newham_census_marginals)
+synth_data_census_newham <-
+  create_lfs_synth_data(newham_census_marginals,
+                        add_missing = TRUE,
+                        smooth_alpha = 0.5)
 
 imd_lookup <- create_imd_lookup(quintile = TRUE)
 nrs_prob_data <- create_NRS_prob_data()
@@ -53,7 +57,10 @@ if (save_output) {
 
 # england_joint <- get_national_joint()
 england_census_marginals <- get_england_census_props()
-synth_data_census_england <- create_lfs_synth_data(england_census_marginals)
+synth_data_census_england <-
+  create_lfs_synth_data(england_census_marginals,
+                        add_missing = TRUE,
+                        smooth_alpha = 0.5)
 
 mrp_data_england <-
   map(
@@ -92,15 +99,13 @@ for (i in out_name) {
     average_marginal_effect(
       fit[[i]],
       mrp_data_newham[[i]],
-      save = TRUE)
+      save = save_output)
 
-  ##TODO:
-  # returns NAs
   ame_data_england[[i]] <-
     average_marginal_effect(
       fit[[i]],
       mrp_data_england[[i]],
-      save = TRUE)
+      save = save_output)
 
   # att_data[[i]] <-
   #   average_effect_on_treatment(
@@ -173,7 +178,7 @@ for (i in names(ame_data)) {
 # ggsave(gridout, filename = here::here("plots/scatter_plots_2011.png"),
 #        width = 5, height = 6, dpi = 300, bg = "white")
 
-# AME forest plot
+# AME forest plot ---
 
 for (i in names(ame_data)) {
   ame_forest_plot(ame_data[[i]], title = title_text[i], save = F)
@@ -385,19 +390,15 @@ outcomes ICT, literacy and numeracy. \\label{tab:}",
 # England comparison
 ##TODO
 
-# Add a 'Region' column to distinguish them
-for(i in out_name) {
-  ame_data_newham[[i]]$Region <- "Newham"
-  ame_data_england[[i]]$Region <- "England Average"
-}
+ame_forest <- ame_forest_group_plot(ame_data, save = F) +
+  scale_color_discrete(
+    name = "Outcome:",
+    labels = c("ict" = "ICT",
+               "lit" = "Literacy",
+               "num" = "Numeracy")) + ylim(-0.4, 0.3)
+ame_forest
 
-ame_data_combined <- list(
-  lit = bind_rows(ame_data_newham$lit, ame_data_england$lit),
-  num = bind_rows(ame_data_newham$num, ame_data_england$num)
-)
+combined_engl_newham_forest <-
+  create_comparison_forest_plots(ame_data, ame_data_england)
 
-ggplot(ame_data_combined$lit, aes(x = mean, y = factor_value, color = Region)) +
-  geom_pointrange(aes(xmin = lower, xmax = upper), position = position_dodge(width = 0.5)) +
-  facet_wrap(~factor_name, scales = "free_y") +
-  theme_bw() +
-  labs(title = "Health Literacy Determinants: Newham vs England Average")
+combined_engl_newham_forest
