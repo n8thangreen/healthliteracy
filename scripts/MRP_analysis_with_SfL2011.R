@@ -402,3 +402,14 @@ combined_engl_newham_forest <-
   create_comparison_forest_plots(ame_data, ame_data_england)
 
 combined_engl_newham_forest
+
+if (save_output) {
+  ggsave(combined_engl_newham_forest$lit, filename = here::here("plots/combined_engl_newham_forest_lit.png"),
+         width = 9, height = 7, dpi = 300, bg = "white")
+
+  ggsave(combined_engl_newham_forest$num, filename = here::here("plots/combined_engl_newham_forest_num.png"),
+         width = 9, height = 7, dpi = 300, bg = "white")
+
+  ggsave(combined_engl_newham_forest$ict, filename = here::here("plots/combined_engl_newham_forest_ict.png"),
+         width = 9, height = 7, dpi = 300, bg = "white")
+}
