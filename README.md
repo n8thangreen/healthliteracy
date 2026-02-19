@@ -7,6 +7,7 @@ This work is carreid-out as part of a [Newham Policy Fellowship Award](https://w
 ## Table of Contents
 
 - [Overview](#overview)
+- [Associated Paper](#associated-paper)
 - [Data Sources](#data-sources)
 - [Methodology](#methodology)
 - [Setup](#setup)
@@ -17,6 +18,10 @@ This work is carreid-out as part of a [Newham Policy Fellowship Award](https://w
 ## Overview
 
 This project aims to estimate the health literacy of residents in Newham, London, using MRP techniques applied to the Skills for Life survey data. The goal is to provide detailed, small-area estimates that can be used to inform health policy and intervention strategies.
+
+## Associated Paper
+
+This is the code for the associated paper: [Health Literacy Estimation in Newham Using MRP](https://link.springer.com/article/10.1186/s12889-025-26067-9)
 
 ## Data Sources
 
