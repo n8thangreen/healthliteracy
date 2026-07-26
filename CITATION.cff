@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+type: software
+authors:
+  - family-names: Green
+    given-names: Nathan
+  - family-names: Hawkings
+    given-names: Ysabella-Rozetta
+title: "Health Literacy Estimation in Newham Using MRP"
+description: "Health literacy estimation in Newham using MRP and ATE"
+repository-code: "https://github.com/n8thangreen/healthliteracy"
+license: MIT
+references:
+  - type: journal-article
+    authors:
+      - family-names: Green
+        given-names: Nathan
+      - family-names: Hawkings
+        given-names: Ysabella-Rozetta
+    title: "Estimating the determinants of health literacy for policy prioritisation: a local level case study in Newham, London"
+    journal: "BMC Public Health"
+    year: 2026
+    volume: 26
+    issue: 1
+    pages: 649
+    date-published: 2026-01-26
+    doi: "10.1186/s12889-025-26067-9"
+    pmid: 41588414
+    pmc: PMC12918084
